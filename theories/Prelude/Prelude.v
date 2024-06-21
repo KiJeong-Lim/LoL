@@ -40,20 +40,18 @@ Class hasEqDec (A : Type) : Type :=
   eq_dec : forall x : A, forall y : A, {x = y} + {x <> y}.
 
 #[global]
-Instance Some_hasEqDec {A : Type} `{EQ_DEC : hasEqDec A} : hasEqDec (option A) :=
+Instance Some_hasEqDec {A : Type} `(EQ_DEC : hasEqDec A) : hasEqDec (option A) :=
   { eq_dec := ltac:(red in EQ_DEC; decide equality) }.
 
 End EQ_DEC.
 
 Section COUNTABLE. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.countable.html" *)
 
-#[local] Obligation Tactic := idtac.
-
 Class isCountable (A : Type) : Type :=
   { encode : A -> nat
   ; decode : nat -> option A
   ; decode_encode
-    : forall x, decode (encode x) = Some x 
+    : forall x : A, decode (encode x) = Some x 
   }.
 
 Section SEARCH. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.countable.html#choice" *)
@@ -132,11 +130,20 @@ Qed.
 
 End SEARCH.
 
-#[local]
-Instance isCountable_if_enumerable {A : Type} (enum : nat -> A) (enumerable : forall x : A, { n : nat | enum n = x }) : isCountable A :=
+End COUNTABLE.
+
+Section ENUMERABLE.
+
+Class isEnumerable (A : Type) : Type :=
+  { enum : nat -> A
+  ; enumerable : forall x : A, { n : nat | enum n = x }
+  }.
+
+#[global]
+Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) : isCountable A :=
   { encode (x : A) := proj1_sig (enumerable x)
   ; decode (n : nat) := Some (enum n)
   ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enumerable x))
   }.
 
-End COUNTABLE.
+End ENUMERABLE.
