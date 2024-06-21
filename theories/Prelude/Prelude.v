@@ -126,7 +126,7 @@ Theorem enumeration_lemma
 Proof.
   exists (fun n : nat => search n (encode_surjective n)). unnw. intros x. exists (encode x).
   assert (claim : encode (search (encode x) (encode_surjective (encode x))) = encode x).
-  { eapply search_go_spec with (P := fun y => encode y = encode x) (P_dec := fun y => Nat.eq_dec (encode y) (encode x)). }
+  { eapply search_go_spec with (P := fun y : A => encode y = encode x) (P_dec := fun y : A => Nat.eq_dec (encode y) (encode x)). }
   apply f_equal with (f := decode) in claim. do 2 rewrite decode_encode in claim. congruence.
 Qed.
 
@@ -136,7 +136,7 @@ End SEARCH.
 Instance isCountable_if_enumerable {A : Type} (enum : nat -> A) (enumerable : forall x : A, { n : nat | enum n = x }) : isCountable A :=
   { encode (x : A) := proj1_sig (enumerable x)
   ; decode (n : nat) := Some (enum n)
-  ; decode_encode (x : A) := f_equal Some (proj2_sig (enumerable x))
+  ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enumerable x))
   }.
 
 End COUNTABLE.
