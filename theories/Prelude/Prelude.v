@@ -12,3 +12,14 @@ Require Export Coq.Relations.Relation_Definitions.
 Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
 Require Export LoL.Prelude.SfLib.
+
+#[universes(polymorphic)]
+Class cat@{u v} : Type :=
+  { ob : Type@{u}
+  ; hom (dom : ob) (cod : ob) : Type@{v}
+  ; compose {A} {B} {C} (g : hom B C) (f : hom A B) : hom A C
+  ; id {A} : hom A A
+  }.
+
+#[global] Coercion ob : cat >-> Sortclass.
+#[global] Coercion hom : cat >-> Funclass.
