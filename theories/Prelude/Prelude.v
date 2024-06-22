@@ -280,8 +280,8 @@ Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
   let POSET : isPoset (A -> Prop) := arrow_isPoset Prop_isPoset in
   let SETOID : isSetoid (A -> Prop) := POSET.(Poset_isSetoid) in
   {|
-    Poset_isSetoid := {| eqProp (X1 : ensemble A) (X2 : ensemble A) := forall x : A, x \in X1 <-> x \in X2; eqProp_Equivalence := SETOID.(eqProp_Equivalence) |};
-    leProp := @subseteq A;
+    Poset_isSetoid := {| eqProp (X1 : ensemble A) (X2 : ensemble A) := forall x : A, x \in X1 <-> x \in X2; eqProp_Equivalence := SETOID.(eqProp_Equivalence); |};
+    leProp := subseteq;
     leProp_PreOrder := POSET.(leProp_PreOrder);
     leProp_PartialOrder := POSET.(leProp_PartialOrder);
   |}.
@@ -305,9 +305,9 @@ Module CAT.
 #[universes(polymorphic=yes)]
 Class Category@{u v} : Type :=
   { ob : Type@{u}
-  ; hom (dom: ob) (cod: ob) : Type@{v}
-  ; compose {A: ob} {B: ob} {C: ob} (g: hom B C) (f: hom A B) : hom A C
-  ; id {A: ob} : hom A A
+  ; hom (dom : ob) (cod : ob) : Type@{v}
+  ; compose {A : ob} {B : ob} {C : ob} (g : hom B C) (f : hom A B) : hom A C
+  ; id {A : ob} : hom A A
   }.
 
 #[global] Coercion ob : Category >-> Sortclass.
