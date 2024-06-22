@@ -160,8 +160,10 @@ Class isSetoid (A : Type) : Type :=
 
 #[local] Infix "==" := eqProp : type_scope.
 
+#[local] Obligation Tactic := intros.
+
 #[program]
-Definition mkSetoid_fromPreOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : PreOrder A leProp) : isSetoid A :=
+Definition mkSetoid_fromPreOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp) : isSetoid A :=
   {| eqProp (x : A) (y : A) := leProp x y /\ leProp y x |}.
 Next Obligation.
   split; ii.
@@ -184,8 +186,6 @@ Class isPoset (D : Type) : Type :=
   }.
 
 #[local] Infix "=<" := leProp : type_scope.
-
-#[local] Obligation Tactic := intros.
 
 End POSET.
 
