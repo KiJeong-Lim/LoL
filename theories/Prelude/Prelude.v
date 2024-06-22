@@ -17,6 +17,7 @@ Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t en
 
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
+Reserved Infix "\in" (no associativity, at level 70).
 
 Module Basic.
 
@@ -259,7 +260,7 @@ Instance Prop_isPoset : isPoset Prop :=
     Poset_isSetoid := mkSetoid_fromPreOrder Basic.impl impl_PreOrder;
     leProp := Basic.impl;
     leProp_PreOrder := impl_PreOrder;
-    leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder impl impl_PreOrder;
+    leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder Basic.impl impl_PreOrder;
   |}.
 
 End POSET.
@@ -269,7 +270,17 @@ Infix "=<" := leProp : type_scope.
 Section ENSEMBLE.
 
 #[universes(polymorphic)]
-Definition ensemble@{u} {A : Type@{u}} : Type@{u} :=
-  A -> Prop.
+Definition ensemble@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
+
+#[universes(polymorphic)]
+Definition In@{u} {A : Type@{u}} (x : A) (X : ensemble@{u} A) := X x.
+
+Infix "\in" := In : type_scope.
+
+#[global]
+Instance ensemble_isSetoid {A : Type} : isSetoid (ensemble A) :=
+  arrow_isSetoid {| eqProp := iff; eqProp_Equivalence := iff_equivalence; |}.
 
 End ENSEMBLE.
+
+Infix "\in" := In : type_scope.
