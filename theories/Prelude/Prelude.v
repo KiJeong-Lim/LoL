@@ -277,7 +277,6 @@ Definition In {A : Type} (x : A) (X : ensemble A) := X x.
 
 #[local] Infix "\in" := In : type_scope.
 
-#[universes(polymorphic)]
 Definition subseteq {A : Type} (X1 : ensemble A) (X2 : ensemble A) : Prop :=
   forall x : A, x \in X1 -> x \in X2.
 
@@ -285,7 +284,8 @@ Definition subseteq {A : Type} (X1 : ensemble A) (X2 : ensemble A) : Prop :=
 
 #[global]
 Instance ensemble_isSetoid {A : Type} : isSetoid (ensemble A) :=
-  arrow_isSetoid {| eqProp := iff; eqProp_Equivalence := iff_equivalence; |}.
+  let SETOID : isSetoid Prop := {| eqProp := iff; eqProp_Equivalence := iff_equivalence; |} in
+  arrow_isSetoid SETOID.
 
 #[global]
 Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
