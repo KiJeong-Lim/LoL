@@ -13,7 +13,10 @@ Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
 Require Export LoL.Prelude.SfLib.
 
-Notation " '⟪' x ':' t '⟫' " := (NW (fun x: unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
+Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
+
+Reserved Infix "==" (no associativity, at level 70).
+Reserved Infix "=<" (no associativity, at level 70).
 
 Definition Some_dec {A : Type} (x : option A)
   : { x' : A | x = Some x' } + { x = None }.
@@ -147,3 +150,43 @@ Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) :
   }.
 
 End ENUMERABLE.
+
+Section SETOID.
+
+Class isSetoid (A : Type) : Type :=
+  { eqProp (lhs : A) (rhs : A) : Prop
+  ; eqProp_Equivalence :: Equivalence eqProp
+  }.
+
+#[local] Infix "==" := eqProp : type_scope.
+
+#[program]
+Definition mkSetoid_fromPreOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : PreOrder A leProp) : isSetoid A :=
+  {| eqProp (x : A) (y : A) := leProp x y /\ leProp y x |}.
+Next Obligation.
+  split; ii.
+  - exact (conj (@PreOrder_Reflexive A leProp leProp_PreOrder x) (@PreOrder_Reflexive A leProp leProp_PreOrder x)).
+  - exact (conj (proj2 H) (proj1 H)).
+  - exact (conj (@PreOrder_Transitive A leProp leProp_PreOrder x y z (proj1 H) (proj1 H0)) (@PreOrder_Transitive A leProp leProp_PreOrder z y x (proj2 H0) (proj2 H))).
+Defined.
+
+End SETOID.
+
+Infix "==" := eqProp : type_scope.
+
+Section POSET.
+
+Class isPoset (D : Type) : Type :=
+  { Poset_isSetoid :: isSetoid D
+  ; leProp (lhs : D) (rhs : D) : Prop
+  ; leProp_PreOrder :: PreOrder leProp
+  ; leProp_PartialOrder :: PartialOrder eqProp leProp 
+  }.
+
+#[local] Infix "=<" := leProp : type_scope.
+
+#[local] Obligation Tactic := intros.
+
+End POSET.
+
+Infix "=<" := leProp : type_scope.
