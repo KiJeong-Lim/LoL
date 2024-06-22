@@ -37,12 +37,26 @@ End Basic.
 Class cat@{u v} : Type :=
   { ob : Type@{u}
   ; hom (dom : ob) (cod : ob) : Type@{v}
-  ; compose {A} {B} {C} (g : hom B C) (f : hom A B) : hom A C
-  ; id {A} : hom A A
+  ; compose {A : ob} {B : ob} {C : ob} (g : hom B C) (f : hom A B) : hom A C
+  ; id {A : ob} : hom A A
   }.
 
 #[global] Coercion ob : cat >-> Sortclass.
 #[global] Coercion hom : cat >-> Funclass.
+
+Section CATEGORY.
+
+Universe u_Hask.
+
+#[local]
+Instance Hask : cat :=
+  { ob := Type@{u_Hask}
+  ; hom A B := A -> B
+  ; compose {A} {B} {C} (g : B -> C) (f : A -> B) := fun x : A => g (f x)
+  ; id {A} := fun x : A => x
+  }.
+
+End CATEGORY.
 
 Section EQ_DEC.
 
@@ -232,19 +246,18 @@ Defined.
 Next Obligation.
   intros f g. split.
   - intros f_eq_g.
-    assert (claim : forall x, f x =< g x /\ g x =< f x).
-    { intros x. do 2 red in f_eq_g. specialize f_eq_g with (x := x). revert f_eq_g. eapply leProp_PartialOrder. }
+    assert (claim : forall x : A, f x =< g x /\ g x =< f x).
+    { intros x. eapply leProp_PartialOrder. exact (f_eq_g x). }
     exact (conj (fun x => proj1 (claim x)) (fun x => proj2 (claim x))).
-  - intros [f_le_g g_le_f] x. specialize f_le_g with (x := x). red in g_le_f. specialize g_le_f with (x := x).
-    eapply leProp_PartialOrder. exact (conj f_le_g g_le_f).
+  - intros [f_le_g g_le_f] x. eapply leProp_PartialOrder. exact (conj (f_le_g x) (g_le_f x)).
 Defined.
 
 #[global]
 Instance Prop_isPoset : isPoset Prop :=
-  let impl_PreOrder : PreOrder impl := {| PreOrder_Reflexive (P : Prop) := Basic.id (A := P); PreOrder_Transitive (P : Prop) (Q : Prop) (R : Prop) := Basic.flip (Basic.compose (A := P) (B := Q) (C := R)) |} in
+  let impl_PreOrder : PreOrder Basic.impl := {| PreOrder_Reflexive (A : Prop) := Basic.id (A := A); PreOrder_Transitive (A : Prop) (B : Prop) (C : Prop) := Basic.flip (Basic.compose (A := A) (B := B) (C := C)); |} in
   {|
-    Poset_isSetoid := mkSetoid_fromPreOrder impl impl_PreOrder;
-    leProp := impl;
+    Poset_isSetoid := mkSetoid_fromPreOrder Basic.impl impl_PreOrder;
+    leProp := Basic.impl;
     leProp_PreOrder := impl_PreOrder;
     leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder impl impl_PreOrder;
   |}.
