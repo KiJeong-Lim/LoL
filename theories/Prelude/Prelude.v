@@ -155,7 +155,7 @@ Section SETOID.
 
 Class isSetoid (A : Type) : Type :=
   { eqProp (lhs : A) (rhs : A) : Prop
-  ; eqProp_Equivalence :: Equivalence eqProp
+  ; eqProp_Equivalence :: @Equivalence A eqProp
   }.
 
 #[local] Infix "==" := eqProp : type_scope.
@@ -172,6 +172,31 @@ Next Obligation.
   - exact (conj (@PreOrder_Transitive A leProp leProp_PreOrder x y z (proj1 H) (proj1 H0)) (@PreOrder_Transitive A leProp leProp_PreOrder z y x (proj2 H0) (proj2 H))).
 Defined.
 
+Definition mkSetoid_fromPreOrder_hasPartialOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp)
+  : @PartialOrder A (mkSetoid_fromPreOrder leProp leProp_PreOrder).(eqProp) (mkSetoid_fromPreOrder leProp leProp_PreOrder).(eqProp_Equivalence) leProp leProp_PreOrder.
+Proof.
+  cbv. intros x y. split; exact (fun H => H).
+Defined.
+
+#[global, program]
+Instance arrow_isSetoid {A : Type} {B : Type} `(SETOID : isSetoid B) : isSetoid (A -> B) :=
+  { eqProp (f : A -> B) (g : A -> B) := forall x : A, f x == g x }.
+Next Obligation.
+  split.
+  - intros f1 x. exact (Equivalence_Reflexive (f1 x)).
+  - intros f1 f2 EQ1 x. exact (Equivalence_Symmetric (f1 x) (f2 x) (EQ1 x)).
+  - intros f1 f2 f3 EQ1 EQ2 x. exact (Equivalence_Transitive (f1 x) (f2 x) (f3 x) (EQ1 x) (EQ2 x)).
+Defined.
+
+Class isSetoid1 (F : Type -> Type) : Type :=
+  mkSetoid1 (X : Type) `(SETOID : isSetoid X) :: isSetoid (F X).
+
+#[local]
+Instance trivialSetoid {A : Type} : isSetoid A :=
+  { eqProp (x : A) (y : A) := x = y
+  ; eqProp_Equivalence := @eq_equivalence A
+  }.
+
 End SETOID.
 
 Infix "==" := eqProp : type_scope.
@@ -181,12 +206,50 @@ Section POSET.
 Class isPoset (D : Type) : Type :=
   { Poset_isSetoid :: isSetoid D
   ; leProp (lhs : D) (rhs : D) : Prop
-  ; leProp_PreOrder :: PreOrder leProp
-  ; leProp_PartialOrder :: PartialOrder eqProp leProp 
+  ; leProp_PreOrder :: @PreOrder D leProp
+  ; leProp_PartialOrder :: @PartialOrder D eqProp eqProp_Equivalence leProp leProp_PreOrder
   }.
 
 #[local] Infix "=<" := leProp : type_scope.
 
+#[local] Obligation Tactic := intros.
+
+#[global, program]
+Instance arrow_isPoset {A : Type} {B : Type} `(POSET : isPoset B) : isPoset (A -> B) :=
+  { Poset_isSetoid := arrow_isSetoid Poset_isSetoid; leProp f g := forall x : A, f x =< g x }.
+Next Obligation.
+  split.
+  - intros f1 x. exact (PreOrder_Reflexive (f1 x)).
+  - intros f1 f2 f3 LE1 LE2 x. exact (PreOrder_Transitive (f1 x) (f2 x) (f3 x) (LE1 x) (LE2 x)).
+Defined.
+Next Obligation.
+  intros f g. split.
+  - intros f_eq_g.
+    assert (claim : forall x, f x =< g x /\ g x =< f x).
+    { intros x. do 2 red in f_eq_g. specialize f_eq_g with (x := x). revert f_eq_g. eapply leProp_PartialOrder. }
+    exact (conj (fun x => proj1 (claim x)) (fun x => proj2 (claim x))).
+  - intros [f_le_g g_le_f] x. specialize f_le_g with (x := x). red in g_le_f. specialize g_le_f with (x := x).
+    eapply leProp_PartialOrder. exact (conj f_le_g g_le_f).
+Defined.
+
+#[global]
+Instance Prop_isPoset : isPoset Prop :=
+  let impl_PreOrder : PreOrder impl := {| PreOrder_Reflexive P := fun H_P => H_P; PreOrder_Transitive P Q R := fun P2Q => fun Q2R => fun H_P => Q2R (P2Q H_P); |} in
+  {|
+    Poset_isSetoid := mkSetoid_fromPreOrder impl impl_PreOrder;
+    leProp := impl;
+    leProp_PreOrder := impl_PreOrder;
+    leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder impl impl_PreOrder;
+  |}.
+
 End POSET.
 
 Infix "=<" := leProp : type_scope.
+
+Section ENSEMBLE.
+
+#[universes(polymorphic)]
+Definition ensemble@{u} {A : Type@{u}} : Type@{u} :=
+  A -> Prop.
+
+End ENSEMBLE.
