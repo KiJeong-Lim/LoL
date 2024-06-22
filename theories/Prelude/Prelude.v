@@ -49,6 +49,19 @@ Inductive sum1 (F : Type -> Type) (G : Type -> Type) (X : Type) : Type :=
 #[global] Arguments inl1 {F}%type_scope {G}%type_scope {X}%type_scope FX.
 #[global] Arguments inr1 {F}%type_scope {G}%type_scope {X}%type_scope GX.
 
+Definition maybe {A : Type} {B : Type} (d : B) (f : A -> B) (m : option A) : B :=
+  match m with
+  | None => d
+  | Some x => f x
+  end.
+
+Lemma Some_ne_None {A : Type} (x : A)
+  : Some x <> None.
+Proof.
+  assert (TRUE : match Some x with None => False | _ => True end) by exact I.
+  intros EQ. rewrite EQ in TRUE. exact TRUE.
+Defined.
+
 End B.
 
 Infix "×" := B.pair (at level 40, left associativity) : type_scope.
@@ -60,8 +73,23 @@ Class hasEqDec (A : Type) : Type :=
   eq_dec : forall x : A, forall y : A, {x = y} + {x <> y}.
 
 #[global]
-Instance Some_hasEqDec {A : Type} `(EQ_DEC : hasEqDec A) : hasEqDec (option A) :=
-  { eq_dec := ltac:(red in EQ_DEC; decide equality) }.
+Instance Some_hasEqDec {A : Type}
+  `(EQ_DEC : hasEqDec A)
+  : hasEqDec (option A).
+Proof.
+  exact (fun x : option A => fun y : option A =>
+    match x, y with
+    | None, None => left eq_refl
+    | None, Some y' => right (fun EQ : None = Some y' => B.Some_ne_None y' (eq_equivalence.(Equivalence_Symmetric) None (Some y') EQ))
+    | Some x', None => right (fun EQ : Some x' = None => B.Some_ne_None x' EQ)
+    | Some x', Some y' =>
+      match EQ_DEC x' y' with
+      | left EQ => left (f_equal (@Some A) EQ)
+      | right NE => right (fun EQ : Some x' = Some y' => NE (f_equal (B.maybe x' B.id) EQ))
+      end
+    end
+  ).
+Defined.
 
 End EQ_DEC.
 
