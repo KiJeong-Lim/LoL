@@ -58,7 +58,7 @@ Definition maybe {A : Type} {B : Type} (d : B) (f : A -> B) (m : option A) : B :
 Lemma Some_ne_None {A : Type} (x : A)
   : Some x <> None.
 Proof.
-  assert (TRUE : match Some x with None => False | _ => True end) by exact I.
+  assert (TRUE : option_rect (fun _ : option A => Prop) (fun _ : A => True) (False) (Some x)) by exact I.
   intros EQ. rewrite EQ in TRUE. exact TRUE.
 Defined.
 

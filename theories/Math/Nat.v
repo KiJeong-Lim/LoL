@@ -64,7 +64,7 @@ Lemma fst_cp_le (n : nat)
   : fst (cp n) <= n.
 Proof.
   destruct (cp n) as [x y] eqn: H_OBS. rewrite cp_spec in H_OBS.
-  subst n. unfold cpInv. simpl. enough (ENOUGH: x + y <= sum_from_0_to (x + y)) by lia.
+  subst n. unfold cpInv. simpl. enough (ENOUGH : x + y <= sum_from_0_to (x + y)) by lia.
   induction (x + y) as [ | z IH]; simpl; lia.
 Qed.
 
@@ -72,7 +72,7 @@ Lemma snd_cp_le (n : nat)
   : snd (cp n) <= n.
 Proof.
   destruct (cp n) as [x y] eqn: H_OBS. rewrite cp_spec in H_OBS.
-  subst n. unfold cpInv. simpl. enough (ENOUGH: x + y <= sum_from_0_to (x + y)) by lia.
+  subst n. unfold cpInv. simpl. enough (ENOUGH : x + y <= sum_from_0_to (x + y)) by lia.
   induction (x + y) as [ | z IH]; simpl; lia.
 Qed.
 
@@ -80,7 +80,7 @@ Lemma cpInv_inj (x1 : nat) (x2 : nat) (y1 : nat) (y2 : nat)
   (EQ : cpInv x1 y1 = cpInv x2 y2)
   : x1 = x2 /\ y1 = y2.
 Proof.
-  enough (ENOUGH: (x1, y1) = (x2, y2)) by now inv ENOUGH.
+  enough (ENOUGH : (x1, y1) = (x2, y2)) by now inv ENOUGH.
   rewrite <- cp_spec in EQ. rewrite <- EQ. symmetry. eapply cp_spec. reflexivity.
 Qed.
 
