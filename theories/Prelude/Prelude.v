@@ -180,7 +180,7 @@ Class isSetoid (A : Type) : Type :=
 #[local] Obligation Tactic := intros.
 
 #[program]
-Definition mkSetoid_fromPreOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp) : isSetoid A :=
+Definition mkSetoidFromPreOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp) : isSetoid A :=
   {| eqProp (x : A) (y : A) := leProp x y /\ leProp y x |}.
 Next Obligation.
   split; ii.
@@ -189,8 +189,8 @@ Next Obligation.
   - exact (conj (@PreOrder_Transitive A leProp leProp_PreOrder x y z (proj1 H) (proj1 H0)) (@PreOrder_Transitive A leProp leProp_PreOrder z y x (proj2 H0) (proj2 H))).
 Defined.
 
-Definition mkSetoid_fromPreOrder_hasPartialOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp)
-  : @PartialOrder A (mkSetoid_fromPreOrder leProp leProp_PreOrder).(eqProp) (mkSetoid_fromPreOrder leProp leProp_PreOrder).(eqProp_Equivalence) leProp leProp_PreOrder.
+Definition mkSetoidFromPreOrder_PartialOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp)
+  : @PartialOrder A (mkSetoidFromPreOrder leProp leProp_PreOrder).(eqProp) (mkSetoidFromPreOrder leProp leProp_PreOrder).(eqProp_Equivalence) leProp leProp_PreOrder.
 Proof.
   cbv. intros x y. split; exact (fun H => H).
 Defined.
@@ -251,10 +251,10 @@ Defined.
 Definition Prop_isPoset : isPoset Prop :=
   let impl_PreOrder : PreOrder B.impl := {| PreOrder_Reflexive (A : Prop) := B.id (A := A); PreOrder_Transitive (A : Prop) (B : Prop) (C : Prop) := B.flip (B.compose (A := A) (B := B) (C := C)); |} in
   {|
-    Poset_isSetoid := mkSetoid_fromPreOrder B.impl impl_PreOrder;
+    Poset_isSetoid := mkSetoidFromPreOrder B.impl impl_PreOrder;
     leProp := B.impl;
     leProp_PreOrder := impl_PreOrder;
-    leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder B.impl impl_PreOrder;
+    leProp_PartialOrder := mkSetoidFromPreOrder_PartialOrder B.impl impl_PreOrder;
   |}.
 
 End POSET.
