@@ -18,6 +18,11 @@ Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t en
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
 
+Module Basic.
+
+Include Coq.Init.Datatypes.
+Include Coq.Program.Basics.
+
 Definition Some_dec {A : Type} (x : option A)
   : { x' : A | x = Some x' } + { x = None }.
 Proof.
@@ -25,6 +30,8 @@ Proof.
   - left. exists x'. reflexivity.
   - right. reflexivity.
 Defined.
+
+End Basic.
 
 #[universes(polymorphic)]
 Class cat@{u v} : Type :=
@@ -86,7 +93,7 @@ Qed.
 
 Fixpoint search_go (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc} : A.
 Proof.
-  destruct (Some_dec (decode n)) as [[y SOME] | NONE].
+  destruct (Basic.Some_dec (decode n)) as [[y SOME] | NONE].
   - destruct (P_dec y) as [EQ | NE].
     + exact y.
     + exact (search_go P P_dec (S n) (Acc_inv acc (search_step_Some P n y NE SOME))).
@@ -96,7 +103,7 @@ Defined.
 Fixpoint search_go_spec (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc}
   : P (search_go P P_dec n acc).
 Proof.
-  destruct acc; simpl. destruct (Some_dec (decode n)) as [[? ?] | ?] eqn: ?.
+  destruct acc; simpl. destruct (Basic.Some_dec (decode n)) as [[? ?] | ?] eqn: ?.
   - destruct (P_dec x).
     + assumption.
     + eapply search_go_spec.
@@ -107,7 +114,7 @@ Lemma search_go_pirrel (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : 
   : search_go P P_dec n acc = search_go P P_dec n acc'.
 Proof.
   revert acc acc acc'. intros acc''. induction acc'' as [? _ IH]; intros [?] [?]. simpl.
-  destruct (Some_dec (decode x)) as [[? ?] | ?] eqn: ?.
+  destruct (Basic.Some_dec (decode x)) as [[? ?] | ?] eqn: ?.
   - destruct (P_dec x0) as [? | ?].
     + reflexivity.
     + eapply IH. eapply search_step_Some with (x := x0); trivial.
@@ -234,7 +241,7 @@ Defined.
 
 #[global]
 Instance Prop_isPoset : isPoset Prop :=
-  let impl_PreOrder : PreOrder impl := {| PreOrder_Reflexive P := fun H_P => H_P; PreOrder_Transitive P Q R := fun P2Q => fun Q2R => fun H_P => Q2R (P2Q H_P); |} in
+  let impl_PreOrder : PreOrder impl := {| PreOrder_Reflexive (P : Prop) := Basic.id (A := P); PreOrder_Transitive (P : Prop) (Q : Prop) (R : Prop) := Basic.flip (Basic.compose (A := P) (B := Q) (C := R)) |} in
   {|
     Poset_isSetoid := mkSetoid_fromPreOrder impl impl_PreOrder;
     leProp := impl;
