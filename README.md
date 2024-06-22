@@ -1,4 +1,4 @@
-# LoL : Logic of Logics
+# LoL : Lots of Logic
 
 - This repository is my proof pool.
 
