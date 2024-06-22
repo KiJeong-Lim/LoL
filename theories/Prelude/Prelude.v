@@ -18,6 +18,7 @@ Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t en
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
 Reserved Infix "\in" (no associativity, at level 70).
+Reserved Infix "\subseteq" (no associativity, at level 70).
 
 Module Basic.
 
@@ -272,15 +273,28 @@ Section ENSEMBLE.
 #[universes(polymorphic)]
 Definition ensemble@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
 
-#[universes(polymorphic)]
-Definition In@{u} {A : Type@{u}} (x : A) (X : ensemble@{u} A) := X x.
+Definition In {A : Type} (x : A) (X : ensemble A) := X x.
 
-Infix "\in" := In : type_scope.
+#[local] Infix "\in" := In : type_scope.
+
+#[universes(polymorphic)]
+Definition subseteq {A : Type} (X1 : ensemble A) (X2 : ensemble A) : Prop :=
+  forall x : A, x \in X1 -> x \in X2.
+
+#[local] Infix "\subseteq" := subseteq : type_scope.
 
 #[global]
 Instance ensemble_isSetoid {A : Type} : isSetoid (ensemble A) :=
   arrow_isSetoid {| eqProp := iff; eqProp_Equivalence := iff_equivalence; |}.
 
-End ENSEMBLE.
+#[global]
+Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
+  let POSET : isPoset (A -> Prop) := arrow_isPoset Prop_isPoset in
+  {|
+    Poset_isSetoid := POSET.(Poset_isSetoid);
+    leProp := @subseteq A;
+    leProp_PreOrder := POSET.(leProp_PreOrder);
+    leProp_PartialOrder := POSET.(leProp_PartialOrder);
+  |}.
 
-Infix "\in" := In : type_scope.
+End ENSEMBLE.
