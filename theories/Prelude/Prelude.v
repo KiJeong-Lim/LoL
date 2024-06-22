@@ -35,31 +35,6 @@ Defined.
 
 End Basic.
 
-#[universes(polymorphic)]
-Class cat@{u v} : Type :=
-  { ob : Type@{u}
-  ; hom (dom : ob) (cod : ob) : Type@{v}
-  ; compose {A : ob} {B : ob} {C : ob} (g : hom B C) (f : hom A B) : hom A C
-  ; id {A : ob} : hom A A
-  }.
-
-#[global] Coercion ob : cat >-> Sortclass.
-#[global] Coercion hom : cat >-> Funclass.
-
-Section CATEGORY.
-
-Universe u_Hask.
-
-#[local]
-Instance Hask : cat :=
-  { ob := Type@{u_Hask}
-  ; hom A B := A -> B
-  ; compose {A} {B} {C} (g : B -> C) (f : A -> B) := fun x : A => g (f x)
-  ; id {A} := fun x : A => x
-  }.
-
-End CATEGORY.
-
 Section EQ_DEC.
 
 Class hasEqDec (A : Type) : Type :=
@@ -298,3 +273,30 @@ Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
   |}.
 
 End ENSEMBLE.
+
+Module CAT.
+
+#[universes(polymorphic=yes)]
+Class Category@{u v} : Type :=
+  { ob : Type@{u}
+  ; hom (dom: ob) (cod: ob) : Type@{v}
+  ; compose {A: ob} {B: ob} {C: ob} (g: hom B C) (f: hom A B) : hom A C
+  ; id {A: ob} : hom A A
+  }.
+
+#[global] Coercion ob : Category >-> Sortclass.
+#[global] Coercion hom : Category >-> Funclass.
+
+Universe u_HASK.
+
+#[local]
+Instance HASK : Category :=
+  { ob := Type@{u_HASK}
+  ; hom A B := A -> B
+  ; compose {A} {B} {C} (g : B -> C) (f : A -> B) := fun x : A => g (f x)
+  ; id {A} := fun x : A => x
+  }.
+
+End CAT.
+
+Notation Category := CAT.Category.
