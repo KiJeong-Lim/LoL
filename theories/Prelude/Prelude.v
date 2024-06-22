@@ -218,7 +218,8 @@ Next Obligation.
 Defined.
 
 Definition mkSetoidFromPreOrder_PartialOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp)
-  : @PartialOrder A (mkSetoidFromPreOrder leProp leProp_PreOrder).(eqProp) (mkSetoidFromPreOrder leProp leProp_PreOrder).(eqProp_Equivalence) leProp leProp_PreOrder.
+  (SETOID := mkSetoidFromPreOrder leProp leProp_PreOrder)
+  : PartialOrder eqProp leProp.
 Proof.
   cbv. intros x y. split; exact (fun H => H).
 Defined.
