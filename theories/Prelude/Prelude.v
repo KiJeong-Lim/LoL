@@ -43,8 +43,8 @@ Record pair (A : Type) (B : Type) : Type :=
 #[global] Arguments snd {A} {B} _.
 
 Inductive sum1 (F : Type -> Type) (G : Type -> Type) (X : Type) : Type :=
-| inl1 (FX : F X) : sum1 F G X
-| inr1 (GX : G X) : sum1 F G X.
+  | inl1 (FX : F X) : sum1 F G X
+  | inr1 (GX : G X) : sum1 F G X.
 
 #[global] Arguments inl1 {F}%type_scope {G}%type_scope {X}%type_scope FX.
 #[global] Arguments inr1 {F}%type_scope {G}%type_scope {X}%type_scope GX.
@@ -248,8 +248,7 @@ Next Obligation.
   - intros [f_le_g g_le_f] x. eapply leProp_PartialOrder. exact (conj (f_le_g x) (g_le_f x)).
 Defined.
 
-#[global]
-Instance Prop_isPoset : isPoset Prop :=
+Definition Prop_isPoset : isPoset Prop :=
   let impl_PreOrder : PreOrder B.impl := {| PreOrder_Reflexive (A : Prop) := B.id (A := A); PreOrder_Transitive (A : Prop) (B : Prop) (C : Prop) := B.flip (B.compose (A := A) (B := B) (C := C)); |} in
   {|
     Poset_isSetoid := mkSetoid_fromPreOrder B.impl impl_PreOrder;
@@ -277,19 +276,27 @@ Definition subseteq {A : Type} (X1 : ensemble A) (X2 : ensemble A) : Prop :=
 #[local] Infix "\subseteq" := subseteq : type_scope.
 
 #[global]
-Instance ensemble_isSetoid {A : Type} : isSetoid (ensemble A) :=
-  let SETOID : isSetoid Prop := {| eqProp := iff; eqProp_Equivalence := iff_equivalence; |} in
-  arrow_isSetoid SETOID.
-
-#[global]
 Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
   let POSET : isPoset (A -> Prop) := arrow_isPoset Prop_isPoset in
+  let SETOID : isSetoid (A -> Prop) := POSET.(Poset_isSetoid) in
   {|
-    Poset_isSetoid := POSET.(Poset_isSetoid);
+    Poset_isSetoid := {| eqProp (X1 : ensemble A) (X2 : ensemble A) := forall x : A, x \in X1 <-> x \in X2; eqProp_Equivalence := SETOID.(eqProp_Equivalence) |};
     leProp := @subseteq A;
     leProp_PreOrder := POSET.(leProp_PreOrder);
     leProp_PartialOrder := POSET.(leProp_PartialOrder);
   |}.
+
+Lemma ensemble_eq_unfold {A : Type} (X1 : ensemble A) (X2 : ensemble A)
+  : (X1 == X2) = (forall x : A, x \in X1 <-> x \in X2).
+Proof.
+  reflexivity.
+Defined.
+
+Lemma ensemble_le_unfold {A : Type} (X1 : ensemble A) (X2 : ensemble A)
+  : (X1 =< X2) = (X1 \subseteq X2).
+Proof.
+  reflexivity.
+Defined.
 
 End ENSEMBLE.
 
