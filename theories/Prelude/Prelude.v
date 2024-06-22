@@ -20,9 +20,8 @@ Reserved Infix "=<" (no associativity, at level 70).
 Reserved Infix "\in" (no associativity, at level 70).
 Reserved Infix "\subseteq" (no associativity, at level 70).
 
-Module Basic.
+Module B.
 
-Include Coq.Init.Datatypes.
 Include Coq.Program.Basics.
 
 Definition Some_dec {A : Type} (x : option A)
@@ -33,7 +32,27 @@ Proof.
   - right. reflexivity.
 Defined.
 
-End Basic.
+Definition id {A : Type} : A -> A :=
+  fun x : A => x.
+
+#[projections(primitive)]
+Record pair (A : Type) (B : Type) : Type :=
+  { fst : A; snd : B }.
+
+#[global] Arguments fst {A} {B} _.
+#[global] Arguments snd {A} {B} _.
+
+Inductive sum1 (F : Type -> Type) (G : Type -> Type) (X : Type) : Type :=
+| inl1 (FX : F X) : sum1 F G X
+| inr1 (GX : G X) : sum1 F G X.
+
+#[global] Arguments inl1 {F}%type_scope {G}%type_scope {X}%type_scope FX.
+#[global] Arguments inr1 {F}%type_scope {G}%type_scope {X}%type_scope GX.
+
+End B.
+
+Infix "×" := B.pair (at level 40, left associativity) : type_scope.
+Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
 
 Section EQ_DEC.
 
@@ -84,7 +103,7 @@ Qed.
 
 Fixpoint search_go (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc} : A.
 Proof.
-  destruct (Basic.Some_dec (decode n)) as [[y SOME] | NONE].
+  destruct (B.Some_dec (decode n)) as [[y SOME] | NONE].
   - destruct (P_dec y) as [EQ | NE].
     + exact y.
     + exact (search_go P P_dec (S n) (Acc_inv acc (search_step_Some P n y NE SOME))).
@@ -94,7 +113,7 @@ Defined.
 Fixpoint search_go_spec (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc}
   : P (search_go P P_dec n acc).
 Proof.
-  destruct acc; simpl. destruct (Basic.Some_dec (decode n)) as [[? ?] | ?] eqn: ?.
+  destruct acc; simpl. destruct (B.Some_dec (decode n)) as [[? ?] | ?] eqn: ?.
   - destruct (P_dec x).
     + assumption.
     + eapply search_go_spec.
@@ -105,7 +124,7 @@ Lemma search_go_pirrel (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : 
   : search_go P P_dec n acc = search_go P P_dec n acc'.
 Proof.
   revert acc acc acc'. intros acc''. induction acc'' as [? _ IH]; intros [?] [?]. simpl.
-  destruct (Basic.Some_dec (decode x)) as [[? ?] | ?] eqn: ?.
+  destruct (B.Some_dec (decode x)) as [[? ?] | ?] eqn: ?.
   - destruct (P_dec x0) as [? | ?].
     + reflexivity.
     + eapply IH. eapply search_step_Some with (x := x0); trivial.
@@ -231,12 +250,12 @@ Defined.
 
 #[global]
 Instance Prop_isPoset : isPoset Prop :=
-  let impl_PreOrder : PreOrder Basic.impl := {| PreOrder_Reflexive (A : Prop) := Basic.id (A := A); PreOrder_Transitive (A : Prop) (B : Prop) (C : Prop) := Basic.flip (Basic.compose (A := A) (B := B) (C := C)); |} in
+  let impl_PreOrder : PreOrder B.impl := {| PreOrder_Reflexive (A : Prop) := B.id (A := A); PreOrder_Transitive (A : Prop) (B : Prop) (C : Prop) := B.flip (B.compose (A := A) (B := B) (C := C)); |} in
   {|
-    Poset_isSetoid := mkSetoid_fromPreOrder Basic.impl impl_PreOrder;
-    leProp := Basic.impl;
+    Poset_isSetoid := mkSetoid_fromPreOrder B.impl impl_PreOrder;
+    leProp := B.impl;
     leProp_PreOrder := impl_PreOrder;
-    leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder Basic.impl impl_PreOrder;
+    leProp_PartialOrder := mkSetoid_fromPreOrder_hasPartialOrder B.impl impl_PreOrder;
   |}.
 
 End POSET.
