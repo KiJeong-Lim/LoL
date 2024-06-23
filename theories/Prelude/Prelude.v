@@ -138,14 +138,14 @@ Proof.
   - exact (search_go P P_dec (S n) (Acc_inv acc (search_step_None P n NONE))).
 Defined.
 
-Fixpoint search_go_spec (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc}
+Fixpoint search_go_correct (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc}
   : P (search_go P P_dec n acc).
 Proof.
   destruct acc; simpl. destruct (B.Some_dec (decode n)) as [[? ?] | ?] eqn: ?.
   - destruct (P_dec x).
     + assumption.
-    + eapply search_go_spec.
-  - eapply search_go_spec.
+    + eapply search_go_correct.
+  - eapply search_go_correct.
 Qed.
 
 Lemma search_go_pirrel (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) (acc' : Acc (flip (search_step P)) n)
@@ -172,7 +172,7 @@ Theorem enumeration_lemma
 Proof.
   exists (fun n : nat => search n (encode_surjective n)). unnw. intros x. exists (encode x).
   assert (claim : encode (search (encode x) (encode_surjective (encode x))) = encode x).
-  { eapply search_go_spec with (P := fun y : A => encode y = encode x) (P_dec := fun y : A => Nat.eq_dec (encode y) (encode x)). }
+  { eapply search_go_correct with (P := fun y : A => encode y = encode x) (P_dec := fun y : A => Nat.eq_dec (encode y) (encode x)). }
   apply f_equal with (f := decode) in claim. do 2 rewrite decode_encode in claim. congruence.
 Qed.
 
