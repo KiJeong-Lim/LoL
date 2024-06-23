@@ -36,8 +36,8 @@ Definition id {A : Type} : A -> A :=
   fun x : A => x.
 
 #[projections(primitive)]
-Record pair (A : Type) (B : Type) : Type :=
-  { fst : A; snd : B }.
+Record prod (A : Type) (B : Type) : Type :=
+  pair { fst : A; snd : B }.
 
 #[global] Arguments fst {A} {B} _.
 #[global] Arguments snd {A} {B} _.
@@ -78,7 +78,7 @@ Definition liftM2 {M : Type -> Type} {A : Type} {B : Type} {C : Type} `{MONAD : 
 
 End B.
 
-Infix "×" := B.pair (at level 40, left associativity) : type_scope.
+Infix "×" := B.prod (at level 40, left associativity) : type_scope.
 Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
 Notation isFunctor := B.isFunctor.
 Notation fmap := (B.fmap _ _).
@@ -330,7 +330,7 @@ Module E.
 Definition t@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
 
 #[universes(polymorphic=yes)]
-Definition In@{u} {A : Type@{u}} (x : A) (X : E.t@{u} A) := X x.
+Definition In@{u} {A : Type@{u}} (x : A) (X : E.t@{u} A) : Prop := X x.
 
 #[local] Infix "\in" := E.In : type_scope.
 
