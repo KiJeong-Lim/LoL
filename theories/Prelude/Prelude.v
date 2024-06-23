@@ -73,6 +73,9 @@ Class isMonad (M : Type -> Type) : Type :=
 Definition mkFunctorFromMonad {M : Type -> Type} `(MONAD : isMonad M) : isFunctor M :=
   fun A : Type => fun B : Type => fun f : A -> B => fun m : M A => MONAD.(bind) m (fun x : A => MONAD.(pure) (f x)).
 
+Definition liftM2 {M : Type -> Type} {A : Type} {B : Type} {C : Type} `{MONAD : isMonad M} (f : A -> B -> C) (mx : M A) (my : M B) : M C :=
+  bind mx (fun x : A => bind my (fun y : B => pure (f x y))).
+
 End B.
 
 Infix "×" := B.pair (at level 40, left associativity) : type_scope.
@@ -340,6 +343,16 @@ Defined.
 
 Inductive empty {A : Type} : E.t A :=.
 
+#[global] Hint Constructors empty : datatypes.
+
+Lemma in_empty_iff {A : Type}
+  : forall z : A, z \in empty <-> False.
+Proof.
+  intros z; split; intros [].
+Qed.
+
+#[global] Hint Rewrite @in_empty_iff : datatypes.
+
 Inductive union {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
   | In_union_l (x : A)
     (H_inl : x \in X1)
@@ -348,11 +361,31 @@ Inductive union {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
     (H_inr : x \in X2)
     : x \in union X1 X2.
 
+#[global] Hint Constructors union : datatypes.
+
+Lemma in_union_iff {A : Type} (X1 : E.t A) (X2 : E.t A)
+  : forall z : A, z \in union X1 X2 <-> (z \in X1 \/ z \in X2).
+Proof.
+  intros z; split; intros [H_inl | H_inr]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_union_iff : datatypes.
+
 Inductive intersection {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
   | In_intersection (x : A)
     (H_in1 : x \in X1)
     (H_in2 : x \in X2)
     : x \in intersection X1 X2.
+
+#[global] Hint Constructors intersection : datatypes.
+
+Lemma in_intersection_iff {A : Type} (X1 : E.t A) (X2 : E.t A)
+  : forall z : A, z \in intersection X1 X2 <-> (z \in X1 /\ z \in X2).
+Proof.
+  intros z; split; intros [H_in1 H_in2]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_intersection_iff : datatypes.
 
 Inductive unions {A : Type} (Xs : E.t (E.t A)) : E.t A :=
   | In_unions (x : A) (X : E.t A)
@@ -360,9 +393,29 @@ Inductive unions {A : Type} (Xs : E.t (E.t A)) : E.t A :=
     (H_IN : X \in Xs)
     : x \in unions Xs.
 
+#[global] Hint Constructors unions : datatypes.
+
+Lemma in_unions_iff {A : Type} (Xs : E.t (E.t A))
+  : forall z : A, z \in unions Xs <-> (exists X : E.t A, z \in X /\ X \in Xs).
+Proof.
+  intros z; split; [intros [? ?] | intros [? [? ?]]]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_unions_iff : datatypes.
+
 Inductive singleton {A : Type} (x : A) : E.t A :=
   | In_singleton
     : x \in singleton x.
+
+#[global] Hint Constructors singleton : datatypes.
+
+Lemma in_singleton_iff {A : Type} (x : A)
+  : forall z : A, z \in singleton x <-> z = x.
+Proof.
+  intros z; split; [intros [ ] | intros ->]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_singleton_iff : datatypes.
 
 Inductive image {A : Type} {B : Type} (f : A -> B) (X : E.t A) : E.t B :=
   | In_image (y : B) (x : A)
@@ -370,21 +423,62 @@ Inductive image {A : Type} {B : Type} (f : A -> B) (X : E.t A) : E.t B :=
     (EQ : y = f x)
     : y \in image f X.
 
+#[global] Hint Constructors image : datatypes.
+
+Lemma in_image_iff {A : Type} {B : Type} (f : A -> B) (X : E.t A)
+  : forall z : B, z \in image f X <-> exists x : A, x \in X /\ z = f x.
+Proof.
+  intros z; split; [intros [? ? ? ?] | intros [? [? ?]]]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_image_iff : datatypes.
+
 Inductive preimage {A : Type} {B : Type} (f : A -> B) (Y : E.t B) : E.t A :=
   | In_preimage (x : A)
     (H_in : f x \in Y)
     : x \in preimage f Y.
+
+#[global] Hint Constructors preimage : datatypes.
+
+Lemma in_preimage_iff {A : Type} {B : Type} (f : A -> B) (Y : E.t B)
+  : forall z : A, z \in preimage f Y <-> exists y : B, y \in Y /\ y = f z.
+Proof.
+  intros z; split; [intros [? ?] | intros [? [? ->]]]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_intersection_iff : datatypes.
 
 Inductive finite {A : Type} (xs : list A) : E.t A :=
   | In_finite x
     (H_in : List.In x xs)
     : x \in finite xs.
 
+#[global] Hint Constructors finite : datatypes.
+
+Lemma in_finite_iff {A : Type} (xs : list A)
+  : forall z : A, z \in finite xs <-> List.In z xs.
+Proof.
+  intros z; split; [intros [?] | intros ?]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_finite_iff : datatypes.
+
 #[global]
 Instance ensemble_isMonad : isMonad E.t :=
   { pure {A} (x : A) := singleton x
   ; bind {A} {B} (m : E.t A) (k : A -> E.t B) := unions (image k m)
   }.
+
+Lemma ensemble_liftM2_spec {A : Type} {B : Type} {C : Type} (f : A -> B -> C) (X : E.t A) (Y : E.t B)
+  : forall z : C, z \in B.liftM2 f X Y <-> exists x, x \in X /\ exists y, y \in Y /\ z = f x y.
+Proof with autorewrite with datatypes in *; trivial.
+  intros z. unfold B.liftM2. unfold bind, pure. simpl...
+  split; [intros [Z [? ?]] | intros (?&?&?&?&?)].
+  - des... des... subst... des... des... subst... subst... now firstorder.
+  - subst. exists (unions (image (fun y : B => singleton (f x y)) Y)). split...
+    + exists (singleton (f x x0)). split... now firstorder.
+    + exists x... now firstorder.
+Qed.
 
 #[global]
 Instance ensemble_isFunctor : isFunctor E.t :=
