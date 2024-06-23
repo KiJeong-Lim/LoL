@@ -70,6 +70,9 @@ Class isMonad (M : Type -> Type) : Type :=
   ; bind {A : Type} {B : Type} (m : M A) (k : A -> M B) : M B
   }.
 
+Definition mkFunctorFromMonad {M : Type -> Type} `(MONAD : isMonad M) : isFunctor M :=
+  fun A : Type => fun B : Type => fun f : A -> B => fun m : M A => MONAD.(bind) m (fun x : A => MONAD.(pure) (f x)).
+
 End B.
 
 Infix "×" := B.pair (at level 40, left associativity) : type_scope.
@@ -232,7 +235,7 @@ Defined.
 
 Definition mkSetoidFromPreOrder_PartialOrder {A : Type} (leProp : A -> A -> Prop) `(leProp_PreOrder : @PreOrder A leProp)
   (SETOID := mkSetoidFromPreOrder leProp leProp_PreOrder)
-  : PartialOrder eqProp leProp.
+  : PartialOrder SETOID.(eqProp) leProp.
 Proof.
   cbv. intros x y. split; exact (fun H => H).
 Defined.
@@ -326,36 +329,66 @@ Instance ensemble_isPoset {A : Type} : isPoset (E.t A) :=
 Lemma ensemble_eq_unfold {A : Type} (X1 : E.t A) (X2 : E.t A)
   : (X1 == X2) = (forall x : A, x \in X1 <-> x \in X2).
 Proof.
-  reflexivity.
+  exact eq_refl.
 Defined.
 
 Lemma ensemble_le_unfold {A : Type} (X1 : E.t A) (X2 : E.t A)
   : (X1 =< X2) = (X1 \subseteq X2).
 Proof.
-  reflexivity.
+  exact eq_refl.
 Defined.
 
 Inductive empty {A : Type} : E.t A :=.
 
 Inductive union {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
-  | In_union_l x
+  | In_union_l (x : A)
     (H_inl : x \in X1)
     : x \in union X1 X2 
-  | In_union_r x
+  | In_union_r (x : A)
     (H_inr : x \in X2)
     : x \in union X1 X2.
 
 Inductive intersection {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
-  | In_intersection x
+  | In_intersection (x : A)
     (H_in1 : x \in X1)
     (H_in2 : x \in X2)
     : x \in intersection X1 X2.
 
 Inductive unions {A : Type} (Xs : E.t (E.t A)) : E.t A :=
-  | In_unions x X
+  | In_unions (x : A) (X : E.t A)
     (H_in : x \in X)
     (H_IN : X \in Xs)
     : x \in unions Xs.
+
+Inductive singleton {A : Type} (x : A) : E.t A :=
+  | In_singleton
+    : x \in singleton x.
+
+Inductive image {A : Type} {B : Type} (f : A -> B) (X : E.t A) : E.t B :=
+  | In_image (y : B) (x : A)
+    (H_in : x \in X)
+    (EQ : y = f x)
+    : y \in image f X.
+
+Inductive preimage {A : Type} {B : Type} (f : A -> B) (Y : E.t B) : E.t A :=
+  | In_preimage (x : A)
+    (H_in : f x \in Y)
+    : x \in preimage f Y.
+
+Inductive finite {A : Type} (xs : list A) : E.t A :=
+  | In_finite x
+    (H_in : List.In x xs)
+    : x \in finite xs.
+
+#[global]
+Instance ensemble_isMonad : isMonad E.t :=
+  { pure {A} (x : A) := singleton x
+  ; bind {A} {B} (m : E.t A) (k : A -> E.t B) := unions (image k m)
+  }.
+
+#[global]
+Instance ensemble_isFunctor : isFunctor E.t :=
+  B.mkFunctorFromMonad ensemble_isMonad.
 
 End E.
 
