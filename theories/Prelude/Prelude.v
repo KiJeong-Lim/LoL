@@ -197,6 +197,21 @@ Qed.
 
 End SEARCH.
 
+Definition markov_principle (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
+  (NOT_AT_ALL : ~ forall x : nat, f x = true)
+  : { n : nat | f n = false }.
+Proof.
+  assert (EXISTENCE : exists n : nat, f n = false).
+  { pose proof (LEM (exists n : nat, f n = false)) as [YES | NO]; [exact YES | contradiction NOT_AT_ALL; intros x; destruct (f x) as [ | ] eqn: H_OBS; trivial; firstorder]. }
+  assert (COUNTABLE : isCountable nat).
+  { exists B.id Some. reflexivity. }
+  assert (P_dec : forall x : nat, {f x = false} + {f x <> false}).
+  { intros x. now destruct (f x) as [ | ]; [right | left]. }
+  pose proof (FUEL := @Acc_flip_search_step_P_0 nat COUNTABLE (fun x : nat => f x = false) EXISTENCE).
+  set (search := @search_go nat COUNTABLE (fun x : nat => f x = false) P_dec 0 FUEL).
+  exists search. eapply search_go_correct.
+Qed.
+
 End COUNTABLE.
 
 Section ENUMERABLE.
