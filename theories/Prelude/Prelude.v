@@ -237,11 +237,12 @@ Defined.
 Class isSetoid1 (F : Type -> Type) : Type :=
   mkSetoid1 (X : Type) `(SETOID : isSetoid X) :: isSetoid (F X).
 
+Definition trivialSetoid {A : Type} : isSetoid A :=
+  {| eqProp := @eq A; eqProp_Equivalence := @eq_equivalence A; |}.
+
 #[local]
-Instance trivialSetoid {A : Type} : isSetoid A :=
-  { eqProp (x : A) (y : A) := x = y
-  ; eqProp_Equivalence := @eq_equivalence A
-  }.
+Instance fromSetoid1 {F : Type -> Type} {X : Type} `(SETOID1 : isSetoid1 F) : isSetoid (F X) :=
+  mkSetoid1 X trivialSetoid.
 
 End SETOID.
 
@@ -269,12 +270,11 @@ Next Obligation.
   - intros f1 f2 f3 LE1 LE2 x. exact (PreOrder_Transitive (f1 x) (f2 x) (f3 x) (LE1 x) (LE2 x)).
 Defined.
 Next Obligation.
-  intros f g. split.
-  - intros f_eq_g.
-    assert (claim : forall x : A, f x =< g x /\ g x =< f x).
+  intros f g. split; [intros f_eq_g | intros [f_le_g g_le_f] x].
+  - assert (claim : forall x : A, f x =< g x /\ g x =< f x).
     { intros x. eapply leProp_PartialOrder. exact (f_eq_g x). }
     exact (conj (fun x => proj1 (claim x)) (fun x => proj2 (claim x))).
-  - intros [f_le_g g_le_f] x. eapply leProp_PartialOrder. exact (conj (f_le_g x) (g_le_f x)).
+  - eapply leProp_PartialOrder. exact (conj (f_le_g x) (g_le_f x)).
 Defined.
 
 Definition Prop_isPoset : isPoset Prop :=
@@ -295,25 +295,20 @@ Section ENSEMBLE.
 #[universes(polymorphic)]
 Definition ensemble@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
 
-Definition In {A : Type} (x : A) (X : ensemble A) := X x.
+#[universes(polymorphic)]
+Definition In@{u} {A : Type@{u}} (x : A) (X : ensemble@{u} A) := X x.
 
 #[local] Infix "\in" := In : type_scope.
 
-Definition subseteq {A : Type} (X1 : ensemble A) (X2 : ensemble A) : Prop :=
-  forall x : A, x \in X1 -> x \in X2.
+#[universes(polymorphic)]
+Definition subseteq@{u} {A : Type@{u}} (X1 : ensemble@{u} A) (X2 : ensemble@{u} A) : Prop :=
+  forall x : A, In@{u} x X1 -> In@{u} x X2.
 
 #[local] Infix "\subseteq" := subseteq : type_scope.
 
 #[global]
 Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
-  let POSET : isPoset (A -> Prop) := arrow_isPoset Prop_isPoset in
-  let SETOID : isSetoid (A -> Prop) := POSET.(Poset_isSetoid) in
-  {|
-    Poset_isSetoid := {| eqProp (X1 : ensemble A) (X2 : ensemble A) := forall x : A, x \in X1 <-> x \in X2; eqProp_Equivalence := SETOID.(eqProp_Equivalence); |};
-    leProp := subseteq;
-    leProp_PreOrder := POSET.(leProp_PreOrder);
-    leProp_PartialOrder := POSET.(leProp_PartialOrder);
-  |}.
+  arrow_isPoset Prop_isPoset.
 
 Lemma ensemble_eq_unfold {A : Type} (X1 : ensemble A) (X2 : ensemble A)
   : (X1 == X2) = (forall x : A, x \in X1 <-> x \in X2).
