@@ -197,7 +197,7 @@ Qed.
 
 End SEARCH.
 
-Theorem markov_principle (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
+Theorem MarkovPrinciple_fromLEM (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
   (NOT_ALL_TRUE : ~ forall x : nat, f x = true)
   : { n : nat | f n = false }.
 Proof.
