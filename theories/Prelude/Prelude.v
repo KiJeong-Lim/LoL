@@ -198,7 +198,7 @@ Qed.
 End SEARCH.
 
 Definition markov_principle (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
-  (NOT_AT_ALL : ~ forall x : nat, f x = true)
+  (NOT_ALL : ~ forall x : nat, f x = true)
   : { n : nat | f n = false }.
 Proof.
   assert (EXISTENCE : exists n : nat, f n = false).
