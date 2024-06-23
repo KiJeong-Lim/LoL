@@ -323,26 +323,22 @@ End ENUMERATION.
 
 Section INSTANCES.
 
-Context `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)).
-
 #[local]
-Instance trm_isEnumerable : isEnumerable trm :=
+Instance trm_isEnumerable `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)) : isEnumerable trm :=
   { enum := enum_trm function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum)
-  ; enumerable := enum_trm_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enumerable) constant_symbols_isEnumerable.(enumerable)
+  ; enum_spec := enum_trm_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enum_spec) constant_symbols_isEnumerable.(enum_spec)
   }.
 
 #[local]
-Instance trms_isEnumerable (n : arity) : isEnumerable (trms n) :=
+Instance trms_isEnumerable `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)) (n : arity) : isEnumerable (trms n) :=
   { enum := enum_trms function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum)
-  ; enumerable := enum_trms_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enumerable) constant_symbols_isEnumerable.(enumerable) n
+  ; enum_spec := enum_trms_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enum_spec) constant_symbols_isEnumerable.(enum_spec) n
   }.
 
-Context `(relation_symbols_isEnumerable : isEnumerable L.(relation_symbols)).
-
 #[local]
-Instance frms_isEnumerable : isEnumerable frm :=
+Instance frms_isEnumerable `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)) `(relation_symbols_isEnumerable : isEnumerable L.(relation_symbols)) : isEnumerable frm :=
   { enum := enum_frm function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) relation_symbols_isEnumerable.(enum)
-  ; enumerable := enum_frm_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) relation_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enumerable) constant_symbols_isEnumerable.(enumerable) relation_symbols_isEnumerable.(enumerable)
+  ; enum_spec := enum_frm_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) relation_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enum_spec) constant_symbols_isEnumerable.(enum_spec) relation_symbols_isEnumerable.(enum_spec)
   }.
 
 End INSTANCES.

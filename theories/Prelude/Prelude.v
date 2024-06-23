@@ -218,14 +218,14 @@ Section ENUMERABLE.
 
 Class isEnumerable (A : Type) : Type :=
   { enum : nat -> A
-  ; enumerable : forall x : A, { n : nat | enum n = x }
+  ; enum_spec : forall x : A, { n : nat | enum n = x }
   }.
 
 #[global]
 Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) : isCountable A :=
-  { encode (x : A) := proj1_sig (enumerable x)
+  { encode (x : A) := proj1_sig (enum_spec x)
   ; decode (n : nat) := Some (enum n)
-  ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enumerable x))
+  ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enum_spec x))
   }.
 
 End ENUMERABLE.
