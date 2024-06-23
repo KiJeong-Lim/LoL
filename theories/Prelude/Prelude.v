@@ -473,12 +473,14 @@ Lemma ensemble_liftM2_spec {A : Type} {B : Type} {C : Type} (f : A -> B -> C) (X
   : forall z : C, z \in B.liftM2 f X Y <-> exists x, x \in X /\ exists y, y \in Y /\ z = f x y.
 Proof with autorewrite with datatypes in *; trivial.
   intros z. unfold B.liftM2. unfold bind, pure. simpl...
-  split; [intros [Z [? ?]] | intros (?&?&?&?&?)].
+  split; [intros (?&?&?) | intros (?&?&?&?&?)].
   - des... des... subst... des... des... subst... subst... now firstorder.
   - subst. exists (unions (image (fun y : B => singleton (f x y)) Y)). split...
     + exists (singleton (f x x0)). split... now firstorder.
     + exists x... now firstorder.
 Qed.
+
+#[global] Hint Rewrite @ensemble_liftM2_spec : datatypes.
 
 #[global]
 Instance ensemble_isFunctor : isFunctor E.t :=
@@ -493,9 +495,50 @@ Proof with autorewrite with datatypes in *; trivial.
   - des... subst... exists (singleton (f x)). split... now firstorder.
 Qed.
 
+#[global] Hint Rewrite @ensemble_fmap_spec : datatypes.
+
+Definition full {A : Type} : E.t A :=
+  fun z : A => True.
+
+#[global] Hint Unfold full : datatypes.
+
+Lemma in_full_iff {A : Type}
+  : forall z : A, z \in full <-> True.
+Proof.
+  reflexivity.
+Qed.
+
+#[global] Hint Rewrite @in_full_iff : datatypes.
+
+Definition difference {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
+  fun z : A => z \in X1 /\ ~ z \in X2.
+
+#[global] Hint Unfold difference : datatypes.
+
+Lemma in_difference_iff {A : Type} (X1 : E.t A) (X2 : E.t A)
+  : forall z : A, z \in difference X1 X2 <-> z \in X1 /\ ~ z \in X2.
+Proof.
+  reflexivity.
+Qed.
+
+#[global] Hint Rewrite @in_difference_iff : datatypes.
+
 End E.
 
 Notation ensemble := E.t.
+
+#[global] Hint Resolve E.in_empty_iff : datatypes.
+#[global] Hint Resolve E.in_union_iff : datatypes.
+#[global] Hint Resolve E.in_intersection_iff : datatypes.
+#[global] Hint Resolve E.in_unions_iff : datatypes.
+#[global] Hint Resolve E.in_singleton_iff : datatypes.
+#[global] Hint Resolve E.in_image_iff : datatypes.
+#[global] Hint Resolve E.in_preimage_iff : datatypes.
+#[global] Hint Resolve E.in_finite_iff : datatypes.
+#[global] Hint Resolve E.ensemble_liftM2_spec : datatypes.
+#[global] Hint Resolve E.ensemble_fmap_spec : datatypes.
+#[global] Hint Resolve E.in_full_iff : datatypes.
+#[global] Hint Resolve E.in_difference_iff : datatypes.
 
 Module CAT.
 
