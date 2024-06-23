@@ -197,12 +197,12 @@ Qed.
 
 End SEARCH.
 
-Definition markov_principle (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
-  (NOT_ALL : ~ forall x : nat, f x = true)
+Theorem markov_principle (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
+  (NOT_ALL_TRUE : ~ forall x : nat, f x = true)
   : { n : nat | f n = false }.
 Proof.
   assert (EXISTENCE : exists n : nat, f n = false).
-  { pose proof (LEM (exists n : nat, f n = false)) as [YES | NO]; [exact YES | contradiction NOT_AT_ALL; intros x; destruct (f x) as [ | ] eqn: H_OBS; trivial; firstorder]. }
+  { pose proof (LEM (exists n : nat, f n = false)) as [YES | NO]; [exact YES | contradiction NOT_ALL_TRUE; intros x; destruct (f x) as [ | ] eqn: H_OBS; firstorder]. }
   assert (COUNTABLE : isCountable nat).
   { exists B.id Some. reflexivity. }
   assert (P_dec : forall x : nat, {f x = false} + {f x <> false}).
