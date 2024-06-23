@@ -100,7 +100,6 @@ Definition enum_trms {n : arity} (seed : nat) : trms n :=
 Section PROOF1.
 
 Hypothesis enum_function_symbols_onto : forall f : L.(function_symbols), { n : nat | enum_function_symbols n = f }.
-
 Hypothesis enum_constant_symbols_onto : forall c : L.(constant_symbols), { n : nat | enum_constant_symbols n = c }.
 
 End PROOF1.
@@ -143,9 +142,7 @@ Definition enum_frm (seed : nat) : frm :=
 Section PROOF2.
 
 Hypothesis enum_function_symbols_onto : forall f : L.(function_symbols), { n : nat | enum_function_symbols n = f }.
-
 Hypothesis enum_constant_symbols_onto : forall c : L.(constant_symbols), { n : nat | enum_constant_symbols n = c }.
-
 Hypothesis enum_relation_symbols_onto : forall R : L.(relation_symbols), { n : nat | enum_relation_symbols n = R }.
 
 End PROOF2.

@@ -62,15 +62,28 @@ Proof.
   intros EQ. rewrite EQ in TRUE. exact TRUE.
 Defined.
 
+Class isFunctor (F : Type -> Type) : Type :=
+  fmap (A : Type) (B : Type) (f : A -> B) : F A -> F B.
+
+Class isMonad (M : Type -> Type) : Type :=
+  { pure {A : Type} (x : A) : M A
+  ; bind {A : Type} {B : Type} (m : M A) (k : A -> M B) : M B
+  }.
+
 End B.
 
 Infix "×" := B.pair (at level 40, left associativity) : type_scope.
 Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
+Notation isFunctor := B.isFunctor.
+Notation fmap := (B.fmap _ _).
+Notation isMonad := B.isMonad.
+Notation pure := B.pure.
+Notation bind := B.bind.
 
 Section EQ_DEC.
 
 Class hasEqDec (A : Type) : Type :=
-  eq_dec : forall x : A, forall y : A, {x = y} + {x <> y}.
+  eq_dec (x : A) (y : A) : {x = y} + {x <> y}.
 
 #[global]
 Instance Some_hasEqDec {A : Type}
@@ -290,39 +303,63 @@ End POSET.
 
 Infix "=<" := leProp : type_scope.
 
-Section ENSEMBLE.
+Module E.
 
-#[universes(polymorphic)]
-Definition ensemble@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
+#[universes(polymorphic=yes)]
+Definition t@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
 
-#[universes(polymorphic)]
-Definition In@{u} {A : Type@{u}} (x : A) (X : ensemble@{u} A) := X x.
+#[universes(polymorphic=yes)]
+Definition In@{u} {A : Type@{u}} (x : A) (X : E.t@{u} A) := X x.
 
-#[local] Infix "\in" := In : type_scope.
+#[local] Infix "\in" := E.In : type_scope.
 
-#[universes(polymorphic)]
-Definition subseteq@{u} {A : Type@{u}} (X1 : ensemble@{u} A) (X2 : ensemble@{u} A) : Prop :=
-  forall x : A, In@{u} x X1 -> In@{u} x X2.
+#[universes(polymorphic=yes)]
+Definition subseteq@{u} {A : Type@{u}} (X1 : E.t@{u} A) (X2 : E.t@{u} A) : Prop :=
+  forall x : A, @E.In@{u} A x X1 -> @E.In@{u} A x X2.
 
-#[local] Infix "\subseteq" := subseteq : type_scope.
+#[local] Infix "\subseteq" := E.subseteq : type_scope.
 
 #[global]
-Instance ensemble_isPoset {A : Type} : isPoset (ensemble A) :=
+Instance ensemble_isPoset {A : Type} : isPoset (E.t A) :=
   arrow_isPoset Prop_isPoset.
 
-Lemma ensemble_eq_unfold {A : Type} (X1 : ensemble A) (X2 : ensemble A)
+Lemma ensemble_eq_unfold {A : Type} (X1 : E.t A) (X2 : E.t A)
   : (X1 == X2) = (forall x : A, x \in X1 <-> x \in X2).
 Proof.
   reflexivity.
 Defined.
 
-Lemma ensemble_le_unfold {A : Type} (X1 : ensemble A) (X2 : ensemble A)
+Lemma ensemble_le_unfold {A : Type} (X1 : E.t A) (X2 : E.t A)
   : (X1 =< X2) = (X1 \subseteq X2).
 Proof.
   reflexivity.
 Defined.
 
-End ENSEMBLE.
+Inductive empty {A : Type} : E.t A :=.
+
+Inductive union {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
+  | In_union_l x
+    (H_inl : x \in X1)
+    : x \in union X1 X2 
+  | In_union_r x
+    (H_inr : x \in X2)
+    : x \in union X1 X2.
+
+Inductive intersection {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
+  | In_intersection x
+    (H_in1 : x \in X1)
+    (H_in2 : x \in X2)
+    : x \in intersection X1 X2.
+
+Inductive unions {A : Type} (Xs : E.t (E.t A)) : E.t A :=
+  | In_unions x X
+    (H_in : x \in X)
+    (H_IN : X \in Xs)
+    : x \in unions Xs.
+
+End E.
+
+Notation ensemble := E.t.
 
 Module CAT.
 
