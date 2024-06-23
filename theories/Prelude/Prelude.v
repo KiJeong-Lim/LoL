@@ -484,6 +484,15 @@ Qed.
 Instance ensemble_isFunctor : isFunctor E.t :=
   B.mkFunctorFromMonad ensemble_isMonad.
 
+Lemma ensemble_fmap_spec {A : Type} {B : Type} (f : A -> B) (X : E.t A)
+  : forall z : B, z \in fmap f X <-> z \in image f X.
+Proof with autorewrite with datatypes in *; trivial.
+  intros z. unfold fmap; simpl. unfold ensemble_isFunctor; simpl.
+  split; intros ?...
+  - des... des... subst... subst... now firstorder.
+  - des... subst... exists (singleton (f x)). split... now firstorder.
+Qed.
+
 End E.
 
 Notation ensemble := E.t.
