@@ -379,7 +379,7 @@ Section LIFTS.
 
 #[local]
 Instance relation_on_image_liftsEquivalence {A : Type} {B : Type} {eqProp : B -> B -> Prop} (f : A -> B)
-  (requiresEquivalence : Equivalence eqProp)
+  `(isEquivalence : @Equivalence B eqProp)
   : Equivalence (B.binary_relation_on_image eqProp f).
 Proof.
   constructor.
@@ -390,7 +390,7 @@ Defined.
 
 #[local]
 Instance relation_on_image_liftsPreOrder {A : Type} {B : Type} {leProp : B -> B -> Prop} (f : A -> B)
-  (requiresPreOrder : PreOrder leProp)
+  `(isPreOrder : @PreOrder B leProp)
   : PreOrder (B.binary_relation_on_image leProp f).
 Proof.
   constructor.
@@ -400,9 +400,9 @@ Defined.
 
 #[local]
 Instance relation_on_image_liftsPartialOrder {A : Type} {B : Type} {eqProp : B -> B -> Prop} {leProp : B -> B -> Prop} (f : A -> B)
-  {requiresEquivalence: Equivalence eqProp}
-  {requiresPreOrder: PreOrder leProp}
-  (requiresPartialOrder: PartialOrder eqProp leProp)
+  `{isEquivalence : @Equivalence B eqProp}
+  `{isPreOrder : @PreOrder B leProp}
+  `(isPartialOrder : @PartialOrder B eqProp _ leProp _)
   : PartialOrder (B.binary_relation_on_image eqProp f) (B.binary_relation_on_image leProp f).
 Proof.
   intros x1 x2. constructor.
