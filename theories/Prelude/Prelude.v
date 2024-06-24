@@ -67,6 +67,12 @@ Definition maybe {A : Type} {B : Type} (d : B) (f : A -> B) (m : option A) : B :
   | Some x => f x
   end.
 
+Definition either {A : Type} {B : Type} {C : Type} (f : A -> C) (g : B -> C) (z : A + B) : C :=
+  match z with
+  | inl x => f x
+  | inr y => g y
+  end.
+
 Lemma Some_ne_None {A : Type} (x : A)
   : Some x <> None.
 Proof.
@@ -197,6 +203,11 @@ End IDENTITY.
 
 #[universes(polymorphic=yes)]
 Definition dollar@{u v} {A : Type@{u}} {B : Type@{v}} (f : A -> B) (x : A) : B := f x.
+
+Class isMonadIter (M : Type -> Type) {M_isMonad : isMonad M} : Type :=
+  iterM (I : Type) (R : Type) (step : I -> M (I + R)%type) : I -> M R.
+
+#[global] Arguments iterM {M}%type_scope {M_isMonad} {isMonadIter} {I} {R} (step).
 
 End B.
 
@@ -794,6 +805,8 @@ Notation Category := CAT.Category.
 
 Section MONAD.
 
+#[local] Open Scope program_scope.
+#[local] Open Scope type_scope.
 #[local] Obligation Tactic := intros.
 
 #[local] Notation f_eqProp := (eqProp (isSetoid := arrow_isSetoid _)).
@@ -845,7 +858,7 @@ Instance stateT_isSetoid1 {S : Type} {M : Type -> Type} `{M_isSetoid1 : isSetoid
 
 #[local]
 Instance stateT_isNiceMonad {S : Type} {M : Type -> Type} `{M_isMonad : isMonad M} `{M_isSetoid1 : isSetoid1 M}
-  `(M_isNiceMonad : isNiceMonad M)
+  `(M_isNiceMonad : @isNiceMonad M M_isMonad M_isSetoid1)
   : isNiceMonad (B.stateT S M).
 Proof.
   split; i.
