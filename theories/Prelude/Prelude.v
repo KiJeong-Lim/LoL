@@ -65,6 +65,8 @@ Defined.
 Class isFunctor (F : Type -> Type) : Type :=
   fmap (A : Type) (B : Type) (f : A -> B) : F A -> F B.
 
+#[global] Arguments fmap {F}%type_scope {_} {A} {B}.
+
 Class isMonad (M : Type -> Type) : Type :=
   { pure {A : Type} (x : A) : M A
   ; bind {A : Type} {B : Type} (m : M A) (k : A -> M B) : M B
@@ -76,12 +78,109 @@ Definition mkFunctorFromMonad {M : Type -> Type} `(MONAD : isMonad M) : isFuncto
 Definition liftM2 {M : Type -> Type} {A : Type} {B : Type} {C : Type} `{MONAD : isMonad M} (f : A -> B -> C) (mx : M A) (my : M B) : M C :=
   bind mx (fun x : A => bind my (fun y : B => pure (f x y))).
 
+Definition eq_reflexivity {A : Type} (x1 : A) : x1 = x1 :=
+  @eq_refl A x1.
+
+Definition eq_symmetry {A : Type} (x1 : A) (x2 : A) (x1_eq_x2 : x1 = x2) : x2 = x1 :=
+  @eq_ind A x1 (fun x : A => x = x1) (@eq_refl A x1) x2 x1_eq_x2.
+
+Definition eq_transitivity {A : Type} (x1 : A) (x2 : A) (x3 : A) (x1_eq_x2 : x1 = x2) (x2_eq_x3 : x2 = x3) : x1 = x3 :=
+  @eq_ind A x2 (fun x : A => x1 = x) x1_eq_x2 x3 x2_eq_x3.
+
+Section EQ_EM_implies_EQ_PIRREL.
+
+Context {A : Type}.
+
+Lemma eq_round_trip (x : A) (y : A)
+  (x_eq_y : x = y)
+  : eq_transitivity y x y (eq_symmetry x y x_eq_y) x_eq_y = eq_reflexivity y.
+Proof.
+  destruct x_eq_y; reflexivity.
+Defined.
+
+Variable x : A.
+
+Section ABSTRACT_FORM.
+
+Variable eq_encoder : forall y : A, x = y -> x = y.
+
+Let eq_decoder (y : A) : x = y -> x = y :=
+  eq_transitivity x x y (eq_symmetry x x (eq_encoder x (eq_reflexivity x))).
+
+Lemma eq_decoder_correct (y : A)
+  (x_eq_y : x = y)
+  : eq_decoder y (eq_encoder y x_eq_y) = x_eq_y.
+Proof.
+  unfold eq_decoder. destruct x_eq_y. rewrite eq_round_trip. reflexivity.
+Defined.
+
+Hypothesis indistinguishable : forall y : A, forall H_eq1 : x = y, forall H_eq2 : x = y, eq_encoder y H_eq1 = eq_encoder y H_eq2.
+
+Lemma eq_pirrel_from_eq_em (y : A)
+  (H_eq1 : x = y)
+  (H_eq2 : x = y)
+  : H_eq1 = H_eq2.
+Proof.
+  rewrite <- eq_decoder_correct with (x_eq_y := H_eq1).
+  rewrite <- eq_decoder_correct with (x_eq_y := H_eq2).
+  eapply f_equal. eapply indistinguishable.
+Defined.
+
+End ABSTRACT_FORM.
+
+Hypothesis eq_em : forall y : A, x = y \/ x <> y.
+
+Let eq_encoder (y : A) (x_eq_y : x = y) : x = y :=
+  match eq_em y with
+  | or_introl H_eq => H_eq
+  | or_intror H_ne => False_ind (x = y) (H_ne x_eq_y)
+  end.
+
+Lemma eq_encoder_good
+  (x_eq_x : x = x)
+  : eq_encoder x x_eq_x = eq_encoder x (eq_reflexivity x).
+Proof.
+  unfold eq_encoder. destruct (eq_em x) as [H_eq | H_ne].
+  - reflexivity.
+  - contradiction (H_ne x_eq_x).
+Defined.
+
+Lemma eq_em_implies_eq_pirrel (y : A)
+  (H_eq1 : x = y)
+  (H_eq2 : x = y)
+  : H_eq1 = H_eq2.
+Proof.
+  revert y H_eq1 H_eq2.
+  eapply eq_pirrel_from_eq_em with (eq_encoder := eq_encoder).
+  ii. destruct H_eq2. eapply eq_encoder_good.
+Defined.
+
+End EQ_EM_implies_EQ_PIRREL.
+
+Section PROJ_T2_EQ.
+
+Context {A : Type} {B : A -> Type} (x : A).
+
+Hypothesis eq_pirrel : forall y : B x, forall EQ : x = x, @eq_rect A x B y x EQ = y.
+
+Lemma projT2_eq (y1 : B x) (y2 : B x)
+  (EQ : @existT A B x y1 = @existT A B x y2)
+  : y1 = y2.
+Proof.
+  set (phi := fun pr1 : @sigT A B => fun pr2 : @sigT A B => fun projT1_eq : projT1 pr1 = projT1 pr2 => @eq_rect A (projT1 pr1) B (projT2 pr1) (projT1 pr2) projT1_eq = projT2 pr2).
+  assert (claim1 : phi (@existT A B x y1) (@existT A B x y2) (@f_equal _ _ (@projT1 A B) (@existT A B x y1) (@existT A B x y2) EQ)).
+  { destruct EQ. reflexivity. }
+  unfold phi in claim1. rewrite eq_pirrel in claim1. exact claim1.
+Defined.
+
+End PROJ_T2_EQ.
+
 End B.
 
 Infix "×" := B.prod (at level 40, left associativity) : type_scope.
 Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
 Notation isFunctor := B.isFunctor.
-Notation fmap := (B.fmap _ _).
+Notation fmap := B.fmap.
 Notation isMonad := B.isMonad.
 Notation pure := B.pure.
 Notation bind := B.bind.
@@ -109,6 +208,32 @@ Proof.
     end
   ).
 Defined.
+
+Lemma eq_pirrel_fromEqDec {A : Type} {hasEqDec : hasEqDec A} (lhs : A) (rhs : A)
+  (H_eq1 : lhs = rhs)
+  (H_eq2 : lhs = rhs)
+  : H_eq1 = H_eq2.
+Proof.
+  revert rhs H_eq1 H_eq2. eapply B.eq_em_implies_eq_pirrel.
+  intros rhs. pose proof (eq_dec lhs rhs) as [H_eq | H_ne].
+  - left. exact H_eq.
+  - right. exact H_ne.
+Defined.
+
+Lemma projT2_eq_fromEqDec {A : Type} {B : A -> Type} {hasEqDec : hasEqDec A} (x : A) (y1 : B x) (y2 : B x)
+  (EQ : @existT A B x y1 = @existT A B x y2)
+  : y1 = y2.
+Proof.
+  eapply B.projT2_eq.
+  - intros y x_eq_x.
+    rewrite eq_pirrel_fromEqDec with (H_eq1 := x_eq_x) (H_eq2 := eq_refl).
+    reflexivity.
+  - exact EQ.
+Defined.
+
+#[global]
+Instance nat_hasEqDec : hasEqDec nat :=
+  ltac:(red; decide equality).
 
 End EQ_DEC.
 
@@ -197,19 +322,20 @@ Qed.
 
 End SEARCH.
 
-Theorem MarkovPrinciple_fromLEM (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
+Theorem LEM_implies_MarkovPrinciple (LEM : forall P : Prop, P \/ ~ P) (f : nat -> bool) 
   (NOT_ALL_TRUE : ~ forall x : nat, f x = true)
   : { n : nat | f n = false }.
 Proof.
-  assert (EXISTENCE : exists n : nat, f n = false).
-  { pose proof (LEM (exists n : nat, f n = false)) as [YES | NO]; [exact YES | contradiction NOT_ALL_TRUE; intros x; destruct (f x) as [ | ] eqn: H_OBS; firstorder]. }
-  assert (COUNTABLE : isCountable nat).
-  { exists B.id Some. reflexivity. }
-  assert (P_dec : forall x : nat, {f x = false} + {f x <> false}).
-  { intros x. now destruct (f x) as [ | ]; [right | left]. }
-  pose proof (FUEL := @Acc_flip_search_step_P_0 nat COUNTABLE (fun x : nat => f x = false) EXISTENCE).
-  set (search := @search_go nat COUNTABLE (fun x : nat => f x = false) P_dec 0 FUEL).
-  exists search. eapply search_go_correct.
+  enough (EXISTENCE : exists n : nat, f n = false).
+  - assert (COUNTABLE : isCountable nat).
+    { exists B.id Some. reflexivity. }
+    assert (P_dec : forall x : nat, {f x = false} + {f x <> false}).
+    { intros x. now destruct (f x) as [ | ]; [right | left]. }
+    pose proof (FUEL := @Acc_flip_search_step_P_0 nat COUNTABLE (fun x : nat => f x = false) EXISTENCE).
+    exists (@search_go nat COUNTABLE (fun x : nat => f x = false) P_dec 0 FUEL). eapply search_go_correct.
+  - pose proof (LEM (exists n : nat, f n = false)) as [YES | NO].
+    + exact YES.
+    + contradiction NOT_ALL_TRUE. intros x. destruct (f x) as [ | ] eqn: H_OBS; now firstorder.
 Qed.
 
 End COUNTABLE.
@@ -221,13 +347,6 @@ Class isEnumerable (A : Type) : Type :=
   ; enum_spec : forall x : A, { n : nat | enum n = x }
   }.
 
-#[global]
-Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) : isCountable A :=
-  { encode (x : A) := proj1_sig (enum_spec x)
-  ; decode (n : nat) := Some (enum n)
-  ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enum_spec x))
-  }.
-
 Lemma enum_spec_injective {A : Type} `{ENUMERABLE : isEnumerable A}
   (inj := fun x : A => proj1_sig (enum_spec x))
   : forall x1 : A, forall x2 : A, inj x1 = inj x2 -> x1 = x2.
@@ -236,6 +355,13 @@ Proof.
   destruct (enum_spec x1) as [n1 EQ1], (enum_spec x2) as [n2 EQ2].
   simpl in *. congruence.
 Qed.
+
+#[global]
+Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) : isCountable A :=
+  { encode (x : A) := proj1_sig (enum_spec x)
+  ; decode (n : nat) := Some (enum n)
+  ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enum_spec x))
+  }.
 
 End ENUMERABLE.
 

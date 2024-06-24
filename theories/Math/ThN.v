@@ -1,5 +1,82 @@
 Require Import LoL.Prelude.Prelude.
 
+Lemma S_eq_O_elim {A : Type} {n : nat}
+  (S_eq_O : S n = O)
+  : A.
+Proof.
+  set (f := fun n : nat => match n with O => True | S n' => False end).
+  apply f_equal with (f := f) in S_eq_O. simpl in S_eq_O.
+  enough (H_contra : False) by contradiction H_contra.
+  rewrite S_eq_O. econstructor.
+Defined.
+
+Lemma le_case_eq {n : nat} (phi : n <= n -> Prop)
+  (phi_eq : phi (@le_n n))
+  : forall H_le : n <= n, phi H_le.
+Proof.
+  intros H_le.
+  refine (
+    let claim :=
+      match H_le in le _ m return forall H_obs : m = n, phi (@eq_ind _ _ (fun m' : nat => n <= m') H_le _ H_obs) with
+      | @le_n _ => fun H_obs: n = n => _
+      | @le_S _ m' H_le' => fun H_obs: S m' = n => _
+      end
+    in _
+  ).
+  { eapply claim with (H_obs := eq_refl). }
+  Unshelve.
+  - rewrite eq_pirrel_fromEqDec with (H_eq1 := H_obs) (H_eq2 := eq_refl). exact (phi_eq).
+  - lia.
+Qed.
+
+Lemma le_case_lt {n : nat} {m : nat} (H_le : m <= n) (phi : m <= S n -> Prop)
+  (phi_lt: forall H_le' : m <= n, phi (@le_S m n H_le'))
+  : forall H_lt : m <= S n, phi H_lt.
+Proof.
+  intros H_lt.
+  refine (
+    let claim :=
+      match H_lt in le _ n' return forall H_obs : n' = S n, phi (@eq_ind _ _ (fun n' => m <= n') H_lt _ H_obs) with
+      | @le_n _ => _
+      | @le_S _ m' H_le' => _
+      end
+    in _
+  ).
+  { eapply claim with (H_obs := eq_refl). }
+  Unshelve.
+  - lia. 
+  - intros H_obs. assert (m' = n) as H_eq by now apply f_equal with (f := pred) in H_obs. subst m'.
+    rewrite eq_pirrel_fromEqDec with (H_eq1 := H_obs) (H_eq2 := eq_refl). exact (phi_lt H_le').
+Qed.
+
+Theorem le_pirrel (n : nat) (m : nat)
+  (H_le1 : n <= m)
+  (H_le2 : n <= m)
+  : H_le1 = H_le2.
+Proof.
+  assert (m = (m - n) + n)%nat as claim by lia.
+  remember (m - n)%nat as k eqn: H_eq in claim.
+  clear H_eq. revert n m H_le1 H_le2 claim.
+  induction k as [ | k IH]; simpl.
+  - i. subst m.
+    induction H_le1 using le_case_eq.
+    induction H_le2 using le_case_eq.
+    reflexivity.
+  - i. subst m.
+    assert (n <= k + n) as LE by lia.
+    induction H_le1 using (le_case_lt LE).
+    induction H_le2 using (le_case_lt LE).
+    eapply f_equal. eapply IH. reflexivity.
+Qed.
+
+Lemma greater_than_iff (x : nat) (y : nat)
+  : x > y <-> (exists z : nat, x = S (y + z)).
+Proof with try (lia || eauto).
+  split.
+  - intros Hgt. induction Hgt as [ | m Hgt [z x_eq]]; [exists 0 | rewrite x_eq]...
+  - intros [z Heq]...
+Qed.
+
 Section CANTOR_PAIRING.
 
 Import Nat.

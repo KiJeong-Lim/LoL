@@ -1,5 +1,6 @@
 Require Import LoL.Prelude.Prelude.
-Require Import LoL.Math.Nat.
+Require Import LoL.Math.ThN.
+Require Import LoL.Data.Vector.
 
 Section SYNTAX.
 
@@ -32,6 +33,100 @@ Inductive frm : Set :=
   | Neg_frm (p1 : frm) : frm
   | Imp_frm (p1 : frm) (p2 : frm) : frm
   | All_frm (y : ivar) (p1 : frm) : frm.
+
+Section trms_case.
+
+Let cast (n : nat) (m : nat) (EQ : n = m) : trms n -> trms m :=
+  match EQ with
+  | eq_refl => fun xs => xs
+  end.
+
+Lemma trms_case0 (phi : trms O -> Type)
+  (phi_nil : phi O_trms)
+  : forall ts, phi ts.
+Proof.
+  refine (
+    let claim1 (xs : trms O) : forall H_eq : O = O, phi (cast O O H_eq xs) :=
+      match xs in trms m return forall H_eq : m = O, phi (cast m O H_eq xs) with
+      | O_trms => fun H_eq : O = O => _
+      | S_trms n x' xs' => fun H_eq : S n = O => _
+      end
+    in _
+  ).
+  { intros xs. exact (claim1 xs eq_refl). }
+  Unshelve.
+  - rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
+    exact (phi_nil).
+  - inversion H_eq.
+Qed.
+
+Lemma trms_caseS {n' : nat} (phi : trms (S n') -> Type)
+  (phi_cons: forall t', forall ts', phi (S_trms n' t' ts'))
+  : forall ts, phi ts.
+Proof.
+  refine (
+    let claim1 (xs : trms (S n')) : forall H_eq : S n' = S n', phi (cast (S n') (S n') H_eq xs) :=
+      match xs in trms m return forall H_eq : m = S n', phi (cast m (S n') H_eq xs) with
+      | O_trms => fun H_eq: O = S n' => _
+      | S_trms n x' xs' => fun H_eq: S n = S n' => _
+      end
+    in _
+  ).
+  { intros xs. exact (claim1 xs eq_refl). }
+  Unshelve.
+  - inversion H_eq.
+  - pose proof (f_equal Nat.pred H_eq) as n_eq_n'. simpl in n_eq_n'. subst n'.
+    rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
+    exact (phi_cons x' xs').
+Qed.
+
+End trms_case.
+
+Lemma trms_rec2 (phi : forall n : nat, trms n -> trms n -> Type)
+  (phi_O: phi O O_trms O_trms)
+  (phi_S: forall n, forall t, forall t', forall ts, forall ts', phi n ts ts' -> phi (S n) (S_trms n t ts) (S_trms n t' ts'))
+  : forall n, forall ts, forall ts', phi n ts ts'.
+Proof.
+  refine (
+    fix trms_rec2_fix (n : nat) (ts : trms n) {struct ts} : forall ts', phi n ts ts' :=
+    match ts with
+    | O_trms => fun ts' : trms O => trms_case0 _ phi_O ts'
+    | S_trms n t ts => _
+    end
+  ).
+  eapply trms_caseS. intros t' ts'. eapply phi_S. exact (trms_rec2_fix n ts ts').
+Qed.
+
+Fixpoint trms_to_vec {n : nat} (ts : trms n) : Vector.t trm n :=
+  match ts with
+  | O_trms => Vector.VNil
+  | S_trms n' t ts => Vector.VCons n' t (trms_to_vec ts)
+  end.
+
+Lemma trms_to_vec_eq_iff n (ts : trms n) (ts' : trms n)
+  : trms_to_vec ts = trms_to_vec ts' <-> ts = ts'.
+Proof.
+  split; intros EQ.
+  - revert EQ. pattern n, ts, ts'. revert n ts ts'.
+    eapply trms_rec2 with (phi := fun n => fun ts => fun ts' => @trms_to_vec n ts = @trms_to_vec n ts' -> ts = ts'); ii.
+    + reflexivity.
+    + simpl in H0. f_equal.
+      * apply f_equal with (f := Vector.head) in H0. do 2 rewrite head_unfold in H0; eauto.
+      * apply f_equal with (f := tail) in H0. do 2 rewrite tail_unfold in H0; eauto.
+  - f_equal; eauto.
+Qed.
+
+Let uncons' (n : nat) (xs : trms (S n)) : S n = S n -> trm * trms n :=
+  match xs in trms m return S n = m -> trm * trms (pred m) with
+  | O_trms => fun H_eq: S n = O => S_eq_O_elim H_eq
+  | S_trms n' x xs' => fun H_eq: S n = S n' => (x, xs')
+  end.
+
+Definition head {n : nat} (xs: trms (S n)) : trm :=
+  fst (uncons' n xs eq_refl).
+
+Definition tail {n : nat} (xs: trms (S n)) : trms n :=
+  snd (uncons' n xs eq_refl).
 
 Section ENUMERATION.
 
@@ -348,3 +443,80 @@ End SYNTAX.
 #[global] Arguments trm : clear implicits.
 #[global] Arguments trms : clear implicits.
 #[global] Arguments frm : clear implicits.
+
+Tactic Notation "trm_ind" ident( t ) :=
+  induction t as [x | f ts | c].
+
+Tactic Notation "trms_ind" ident( ts ) :=
+  induction ts as [ | n t ts IH].
+
+Tactic Notation "frm_ind" ident( p ) :=
+  induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1].
+
+Tactic Notation "trm_ind2" ident( t ) ident( t' ) :=
+  revert t'; induction t as [x | f ts | c]; intros [x' | f' ts' | c'].
+
+Tactic Notation "trms_ind2" ident( ts ) ident( ts' ) :=
+  revert ts'; induction ts as [ | n t ts IH]; [intros ts'; pattern ts'; revert ts'; apply trms_case0 | intros ts'; pattern ts'; revert ts'; apply trms_caseS; intros t' ts'].
+
+Tactic Notation "frm_ind2" ident( p ) ident( p' ) :=
+  revert p';
+  induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1];
+  intros [r' ts' | t1' t2' | p1' | p1' p2' | y' p1'].
+
+Section EQ_DEC.
+
+Context {L : language}.
+
+Hypothesis function_symbols_hasEqDec : hasEqDec L.(function_symbols).
+
+Hypothesis constant_symbols_hasEqDec : hasEqDec L.(constant_symbols).
+
+Lemma trm_eq_dec (t1 : trm L) (t2 : trm L)
+  : {t1 = t2} + {t1 <> t2}
+with trms_eq_dec n (ts1 : trms L n) (ts2 : trms L n)
+  : {ts1 = ts2} + {ts1 <> ts2}.
+Proof with try first [now right; congruence | now left; congruence].
+  - pose proof nat_hasEqDec as ivar_hasEqDec.
+    red in ivar_hasEqDec, function_symbols_hasEqDec, constant_symbols_hasEqDec.
+    clear trm_eq_dec. trm_ind2 t1 t2...
+    + pose proof (ivar_hasEqDec x x') as [? | ?]...
+    + pose proof (function_symbols_hasEqDec f f') as [f_eq_f' | f_ne_f']...
+      subst f'. pose proof (trms_eq_dec (L.(function_arity_table) f) ts ts') as [EQ | NE]...
+      right. intros CONTRA. eapply NE. inv CONTRA.
+      apply @projT2_eq_fromEqDec with (B := fun f: function_symbols L => trms L (function_arity_table L f)) in H0.
+      * exact H0.
+      * exact function_symbols_hasEqDec.
+    + pose proof (constant_symbols_hasEqDec c c') as [? | ?]...
+  - clear trms_eq_dec. trms_ind2 ts1 ts2...
+    pose proof (trm_eq_dec t t') as [? | ?]; pose proof (IH ts2) as [EQ | NE]...
+    right. intros CONTRA. eapply NE. inv CONTRA.
+    apply @projT2_eq_fromEqDec with (B := fun n: nat => trms L n) in H1.
+    + exact H1.
+    + exact nat_hasEqDec.
+Defined.
+
+#[global] Instance trm_hasEqDec : hasEqDec (trm L) := trm_eq_dec.
+#[global] Instance trms_hasEqDec (n : nat) : hasEqDec (trms L n) := trms_eq_dec n.
+
+Hypothesis relation_symbols_hasEqDec : hasEqDec L.(relation_symbols).
+
+Lemma frm_eq_dec (p : frm L) (p' : frm L)
+  : {p = p'} + {p <> p'}.
+Proof with try first [now right; congruence | now left; congruence].
+  pose proof nat_hasEqDec as ivar_hasEqDec. red in ivar_hasEqDec. frm_ind2 p p'...
+  - pose proof (relation_symbols_hasEqDec r r') as [r_eq_r' | r_ne_r']...
+    subst r'. pose proof (trms_eq_dec (L.(relation_arity_table) r) ts ts') as [EQ | NE]...
+    right. intros CONTRA. eapply NE. inv CONTRA.
+    apply @projT2_eq_fromEqDec with (B := fun R: relation_symbols L => trms L (L.(relation_arity_table) R)) in H0.
+    + exact H0.
+    + exact relation_symbols_hasEqDec.
+  - pose proof (trm_eq_dec t1 t1') as [? | ?]; pose proof (trm_eq_dec t2 t2') as [? | ?]...
+  - pose proof (IH1 p1') as [? | ?]...
+  - pose proof (IH1 p1') as [? | ?]; pose proof (IH2 p2') as [? | ?]...
+  - pose proof (ivar_hasEqDec y y') as [? | ?]; pose proof (IH1 p1') as [? | ?]...
+Defined.
+
+#[global] Instance frm_hasEqDec : hasEqDec (frm L) := frm_eq_dec.
+
+End EQ_DEC.

@@ -2,7 +2,7 @@
 #
 theories/Data/Vector.v #
 theories/Fol/Syntax.v #
-theories/Math/Nat.v #
+theories/Math/ThN.v #
 theories/Index/Index.v #
 theories/Prelude/Notations.v #
 theories/Prelude/Prelude.v #
