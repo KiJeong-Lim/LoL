@@ -17,7 +17,7 @@ Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t en
 
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
-Reserved Infix " =~= " (no associativity, at level 70).
+Reserved Infix "=~=" (no associativity, at level 70).
 Reserved Infix "\in" (no associativity, at level 70).
 Reserved Infix "\subseteq" (no associativity, at level 70).
 Reserved Infix ">>=" (left associativity, at level 90).
@@ -771,7 +771,7 @@ Notation Category := CAT.Category.
 Section MONAD_LAW.
 
 #[local] Notation f_eqProp := (eqProp (isSetoid := arrow_isSetoid _)).
-#[local] Infix " =~= " := f_eqProp : type_scope.
+#[local] Infix "=~=" := f_eqProp : type_scope.
 #[local] Infix ">>=" := bind.
 #[local] Existing Instance fromSetoid1.
 
@@ -791,7 +791,7 @@ Class isNiceMonad (M : Type -> Type) `{M_isMonad : isMonad M} `{M_isSetoid1 : is
   }.
 
 #[global]
-Add Parametric Morphism {M : Type -> Type} `{M_isMonad: isMonad M} `{M_isSetoid1: isSetoid1 M} {A: Type} {B: Type}
+Add Parametric Morphism {M : Type -> Type} `{M_isMonad : isMonad M} `{M_isSetoid1 : isSetoid1 M} {A: Type} {B: Type}
   (M_isNiceMonad: isNiceMonad M (M_isMonad := M_isMonad) (M_isSetoid1 := M_isSetoid1))
   : (@bind M M_isMonad A B) with signature (eqProp ==> f_eqProp ==> eqProp) as bind_compatWith_eqProp.
 Proof.
