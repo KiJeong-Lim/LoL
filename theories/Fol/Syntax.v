@@ -6,6 +6,8 @@ Section SYNTAX.
 
 Definition ivar : Set := nat.
 
+Definition rename : Set := ivar -> ivar.
+
 Let arity : Set := nat.
 
 #[projections(primitive)]
@@ -151,9 +153,7 @@ Fixpoint frm_depth (p: frm) : nat :=
   | All_frm y p1 => 1 + frm_depth p1
   end.
 
-Variable enum_function_symbols : nat -> L.(function_symbols).
-
-Variable enum_constant_symbols : nat -> L.(constant_symbols).
+Context `{function_symbols_isEnumerable : isEnumerable L.(function_symbols)} `{constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)}.
 
 Fixpoint gen_trm (seed : nat) (d : nat) {struct d} : trm :=
   match d with
@@ -162,9 +162,9 @@ Fixpoint gen_trm (seed : nat) (d : nat) {struct d} : trm :=
     let '(seed1, seed') := cp seed in
     let '(seed2, seed3) := cp seed' in
     match seed1 with
-    | 0 => Con_trm (enum_constant_symbols seed')
-    | 1 => Fun_trm (enum_function_symbols seed2) (gen_trms seed3 d')
-    | S (S i) => (Var_trm i)
+    | 0 => Con_trm (enum seed')
+    | 1 => Fun_trm (enum seed2) (gen_trms seed3 d')
+    | S (S i) => Var_trm i
     end
   end
 with gen_trms {n : arity} (seed : nat) (d : nat) {struct d} : trms n :=
@@ -189,8 +189,6 @@ Definition enum_trms {n : arity} (seed : nat) : trms n :=
   let seed' := snd (cp seed) in
   gen_trms seed' d.
 
-Section PROOF1.
-
 Lemma gen_trm_unfold (seed : nat) (d : nat) :
   gen_trm seed d =
   match d with
@@ -199,12 +197,14 @@ Lemma gen_trm_unfold (seed : nat) (d : nat) :
     let '(seed1, seed') := cp seed in
     let '(seed2, seed3) := cp seed' in
     match seed1 with
-    | 0 => Con_trm (enum_constant_symbols seed')
-    | 1 => Fun_trm (enum_function_symbols seed2) (gen_trms seed3 d')
+    | 0 => Con_trm (enum seed')
+    | 1 => Fun_trm (enum seed2) (gen_trms seed3 d')
     | S (S i) => (Var_trm i)
     end
   end.
-Proof. destruct d; reflexivity. Defined.
+Proof.
+  destruct d; reflexivity.
+Defined.
 
 Lemma gen_trms_unfold (n : arity) (seed : nat) (d : nat) :
   gen_trms seed d =
@@ -218,10 +218,9 @@ Lemma gen_trms_unfold (n : arity) (seed : nat) (d : nat) :
       S_trms n' (gen_trm seed1 d') (gen_trms seed2 d')
     end
   end.
-Proof. destruct d, n; reflexivity. Defined.
-
-Hypothesis enum_function_symbols_onto : forall f : L.(function_symbols), { n : nat | enum_function_symbols n = f }.
-Hypothesis enum_constant_symbols_onto : forall c : L.(constant_symbols), { n : nat | enum_constant_symbols n = c }.
+Proof.
+  destruct n, d; reflexivity.
+Defined.
 
 Lemma gen_trm_spec (t : trm) (d : nat)
   (LE : trm_depth t <= d)
@@ -239,19 +238,19 @@ Proof.
         simpl. reflexivity.
     + destruct d as [ | d']; [lia | assert (LE' : trms_depth ts <= d') by lia].
       pose proof (gen_trms_spec _ ts d' LE') as [seed2 H_OBS].
-      exists (cpInv 1 (cpInv (proj1_sig (enum_function_symbols_onto f)) seed2)). rewrite gen_trm_unfold.
-      destruct (cp (cpInv 1 (cpInv (proj1_sig (enum_function_symbols_onto f)) seed2))) as [x1 x2] eqn: H_OBS'.
+      exists (cpInv 1 (cpInv (proj1_sig (enum_spec f)) seed2)). rewrite gen_trm_unfold.
+      destruct (cp (cpInv 1 (cpInv (proj1_sig (enum_spec f)) seed2))) as [x1 x2] eqn: H_OBS'.
       rewrite cp_spec in H_OBS'. apply cpInv_inj in H_OBS'. destruct H_OBS' as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_function_symbols_onto f)) seed2)) as [x2 y2] eqn: H_OBS''.
+      destruct (cp (cpInv (proj1_sig (enum_spec f)) seed2)) as [x2 y2] eqn: H_OBS''.
       rewrite cp_spec in H_OBS''. apply cpInv_inj in H_OBS''. destruct H_OBS'' as [<- <-].
-      assert (claim : enum_function_symbols (proj1_sig (enum_function_symbols_onto f)) = f) by now destruct (enum_function_symbols_onto f).
+      assert (claim : enum (proj1_sig (enum_spec f)) = f) by now destruct (enum_spec f).
       rewrite claim. rewrite H_OBS. reflexivity.
     + destruct d as [ | d']; [lia | assert (LE' : 0 <= d') by lia].
-      exists (cpInv 0 (proj1_sig (enum_constant_symbols_onto c))). rewrite gen_trm_unfold.
-      destruct (cp (cpInv 0 (proj1_sig (enum_constant_symbols_onto c)))) as [x1 x2] eqn: H_OBS'.
-      assert (claim: enum_constant_symbols (proj1_sig (enum_constant_symbols_onto c)) = c) by now destruct (enum_constant_symbols_onto c).
+      exists (cpInv 0 (proj1_sig (enum_spec c))). rewrite gen_trm_unfold.
+      destruct (cp (cpInv 0 (proj1_sig (enum_spec c)))) as [x1 x2] eqn: H_OBS'.
+      assert (claim : enum (proj1_sig (enum_spec c)) = c) by now destruct (enum_spec c).
       rewrite cp_spec in H_OBS'. apply cpInv_inj in H_OBS'. destruct H_OBS' as [<- <-]. rewrite claim.
-      destruct (cp (proj1_sig (enum_constant_symbols_onto c))) as [x1 x2] eqn: H_OBS'. reflexivity.
+      destruct (cp (proj1_sig (enum_spec c))) as [x1 x2] eqn: H_OBS'. reflexivity.
   - revert d LE. induction ts as [ | n t ts IH]; simpl; i.
     + simpl. exists 0. rewrite gen_trms_unfold. reflexivity.
     + destruct d as [ | d'].
@@ -283,9 +282,19 @@ Proof.
   Unshelve. reflexivity.
 Qed.
 
-End PROOF1.
+#[local]
+Instance trm_isEnumerable : isEnumerable trm :=
+  { enum := enum_trm
+  ; enum_spec := enum_trm_spec
+  }.
 
-Variable enum_relation_symbols : nat -> L.(relation_symbols).
+#[local]
+Instance trms_isEnumerable (n : arity) : isEnumerable (trms n) :=
+  { enum := enum_trms
+  ; enum_spec := enum_trms_spec n
+  }.
+
+Context `{relation_symbols_isEnumerable : isEnumerable L.(relation_symbols)}.
 
 Fixpoint gen_frm (seed : nat) (d : nat) {struct d} : frm :=
   match d with
@@ -293,8 +302,8 @@ Fixpoint gen_frm (seed : nat) (d : nat) {struct d} : frm :=
     let '(seed1, seed') := cp seed in
     let '(seed2, seed3) := cp seed' in
     match seed1 with
-    | 0 => Eqn_frm (enum_trm seed2) (enum_trm seed3)
-    | _ => Rel_frm (enum_relation_symbols seed2) (enum_trms seed3)
+    | 0 => Eqn_frm (enum seed2) (enum seed3)
+    | _ => Rel_frm (enum seed2) (enum seed3)
     end
   | S d' =>
     let '(seed1, seed') := cp seed in
@@ -305,8 +314,8 @@ Fixpoint gen_frm (seed : nat) (d : nat) {struct d} : frm :=
     | 2 => All_frm seed2 (gen_frm seed3 d')
     | S (S (S i)) =>
       match i with
-      | 0 => Eqn_frm (enum_trm seed2) (enum_trm seed3)
-      | _ => Rel_frm (enum_relation_symbols seed2) (enum_trms seed3)
+      | 0 => Eqn_frm (enum seed2) (enum seed3)
+      | _ => Rel_frm (enum seed2) (enum seed3)
       end
     end
   end.
@@ -316,8 +325,6 @@ Definition enum_frm (seed : nat) : frm :=
   let seed' := snd (cp seed) in
   gen_frm seed' d.
 
-Section PROOF2.
-
 Lemma gen_frm_unfold (seed : nat) (d : nat) :
   gen_frm seed d =
   match d with
@@ -325,8 +332,8 @@ Lemma gen_frm_unfold (seed : nat) (d : nat) :
     let '(seed1, seed') := cp seed in
     let '(seed2, seed3) := cp seed' in
     match seed1 with
-    | 0 => Eqn_frm (enum_trm seed2) (enum_trm seed3)
-    | _ => Rel_frm (enum_relation_symbols seed2) (enum_trms seed3)
+    | 0 => Eqn_frm (enum seed2) (enum seed3)
+    | _ => Rel_frm (enum seed2) (enum seed3)
     end
   | S d' =>
     let '(seed1, seed') := cp seed in
@@ -337,16 +344,14 @@ Lemma gen_frm_unfold (seed : nat) (d : nat) :
     | 2 => All_frm seed2 (gen_frm seed3 d')
     | S (S (S i)) =>
       match i with
-      | 0 => Eqn_frm (enum_trm seed2) (enum_trm seed3)
-      | _ => Rel_frm (enum_relation_symbols seed2) (enum_trms seed3)
+      | 0 => Eqn_frm (enum seed2) (enum seed3)
+      | _ => Rel_frm (enum seed2) (enum seed3)
       end
     end
   end.
-Proof. destruct d; reflexivity. Defined.
-
-Hypothesis enum_function_symbols_onto : forall f : L.(function_symbols), { n : nat | enum_function_symbols n = f }.
-Hypothesis enum_constant_symbols_onto : forall c : L.(constant_symbols), { n : nat | enum_constant_symbols n = c }.
-Hypothesis enum_relation_symbols_onto : forall R : L.(relation_symbols), { n : nat | enum_relation_symbols n = R }.
+Proof.
+  destruct d; reflexivity.
+Defined.
 
 Lemma gen_frm_spec (p : frm) (d : nat)
   (LE : frm_depth p <= d)
@@ -354,31 +359,31 @@ Lemma gen_frm_spec (p : frm) (d : nat)
 Proof.
   revert d LE. induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1]; simpl; i.
   - destruct d as [ | d'].
-    + exists (cpInv 1 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto _ ts)))).
-      rewrite gen_frm_unfold. destruct (cp (cpInv 1 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts))))) as [x y] eqn: H_OBS.
+    + exists (cpInv 1 (cpInv (proj1_sig (enum_spec r)) (proj1_sig (enum_spec ts)))).
+      rewrite gen_frm_unfold. destruct (cp (cpInv 1 (cpInv (proj1_sig (enum_spec r)) (proj1_sig (enum_spec ts))))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts)))) as [x y] eqn: H_OBS.
+      destruct (cp (cpInv (proj1_sig (enum_spec r)) (proj1_sig (enum_spec ts)))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (enum_relation_symbols_onto r) as [r_n H_r], (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts) as [ts_n H_ts]; subst r ts. reflexivity.
-    + exists (cpInv 4 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto _ ts)))).
-      rewrite gen_frm_unfold. destruct (cp (cpInv 4 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts))))) as [x y] eqn: H_OBS.
+      destruct (enum_spec r) as [r_n H_r], (enum_spec ts) as [ts_n H_ts]; subst r ts. reflexivity.
+    + exists (cpInv 4 (cpInv (proj1_sig (enum_spec r)) (proj1_sig (enum_spec ts)))).
+      rewrite gen_frm_unfold. destruct (cp (cpInv 4 (cpInv (proj1_sig (enum_spec r)) (proj1_sig (enum_spec ts))))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts)))) as [x y] eqn: H_OBS.
+      destruct (cp (cpInv (proj1_sig (enum_spec r)) (proj1_sig (enum_spec ts)))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (enum_relation_symbols_onto r) as [r_n H_r], (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts) as [ts_n H_ts]; subst r ts. reflexivity.
+      destruct (enum_spec r) as [r_n H_r], (enum_spec ts) as [ts_n H_ts]; subst r ts. reflexivity.
   - destruct d as [ | d'].
-    + exists (cpInv 0 (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2)))).
-      rewrite gen_frm_unfold. destruct (cp (cpInv 0 (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2))))) as [x y] eqn: H_OBS.
+    + exists (cpInv 0 (cpInv (proj1_sig (enum_spec t1)) (proj1_sig (enum_spec t2)))).
+      rewrite gen_frm_unfold. destruct (cp (cpInv 0 (cpInv (proj1_sig (enum_spec t1)) (proj1_sig (enum_spec t2))))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2)))) as [x y] eqn: H_OBS.
+      destruct (cp (cpInv (proj1_sig (enum_spec t1)) (proj1_sig (enum_spec t2)))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1) as [t1_n H_t1], (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2) as [t2_n H_t2]; subst t1 t2. reflexivity.
-    + exists (cpInv 3 (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2)))).
-      rewrite gen_frm_unfold. destruct (cp (cpInv 3 (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2))))) as [x y] eqn: H_OBS.
+      destruct (enum_spec t1) as [t1_n H_t1], (enum_spec t2) as [t2_n H_t2]; subst t1 t2. reflexivity.
+    + exists (cpInv 3 (cpInv (proj1_sig (enum_spec t1)) (proj1_sig (enum_spec t2)))).
+      rewrite gen_frm_unfold. destruct (cp (cpInv 3 (cpInv (proj1_sig (enum_spec t1)) (proj1_sig (enum_spec t2))))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2)))) as [x y] eqn: H_OBS.
+      destruct (cp (cpInv (proj1_sig (enum_spec t1)) (proj1_sig (enum_spec t2)))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1) as [t1_n H_t1], (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2) as [t2_n H_t2]; subst t1 t2. reflexivity.
+      destruct (enum_spec t1) as [t1_n H_t1], (enum_spec t2) as [t2_n H_t2]; subst t1 t2. reflexivity.
   - destruct d as [ | d'].
     + lia.
     + assert (claim1 : frm_depth p1 <= d') by lia.
@@ -412,37 +417,154 @@ Proof.
   Unshelve. reflexivity.
 Qed.
 
-End PROOF2.
+#[local]
+Instance frms_isEnumerable : isEnumerable frm :=
+  { enum := enum_frm
+  ; enum_spec := enum_frm_spec
+  }.
 
 End ENUMERATION.
 
-Section INSTANCES.
+#[local] Open Scope program_scope.
 
-#[local]
-Instance trm_isEnumerable `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)) : isEnumerable trm :=
-  { enum := enum_trm function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum)
-  ; enum_spec := enum_trm_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enum_spec) constant_symbols_isEnumerable.(enum_spec)
-  }.
+Section FREE_VARIABLES.
 
-#[local]
-Instance trms_isEnumerable `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)) (n : arity) : isEnumerable (trms n) :=
-  { enum := enum_trms function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum)
-  ; enum_spec := enum_trms_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enum_spec) constant_symbols_isEnumerable.(enum_spec) n
-  }.
+Import ListNotations.
 
-#[local]
-Instance frms_isEnumerable `(function_symbols_isEnumerable : isEnumerable L.(function_symbols)) `(constant_symbols_isEnumerable : isEnumerable L.(constant_symbols)) `(relation_symbols_isEnumerable : isEnumerable L.(relation_symbols)) : isEnumerable frm :=
-  { enum := enum_frm function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) relation_symbols_isEnumerable.(enum)
-  ; enum_spec := enum_frm_spec function_symbols_isEnumerable.(enum) constant_symbols_isEnumerable.(enum) relation_symbols_isEnumerable.(enum) function_symbols_isEnumerable.(enum_spec) constant_symbols_isEnumerable.(enum_spec) relation_symbols_isEnumerable.(enum_spec)
-  }.
+Fixpoint fvs_trm (t : trm) : list ivar :=
+  match t with
+  | Var_trm x => [x]
+  | Fun_trm f ts => fvs_trms ts
+  | Con_trm c => []
+  end
+with fvs_trms {n : nat} (ts : trms n) : list ivar :=
+  match ts with
+  | O_trms => []
+  | S_trms n t ts => fvs_trm t ++ fvs_trms ts
+  end.
 
-End INSTANCES.
+Fixpoint fvs_frm (p : frm) : list ivar :=
+  match p with
+  | Rel_frm r ts => fvs_trms ts
+  | Eqn_frm t1 t2 => fvs_trm t1 ++ fvs_trm t2
+  | Neg_frm p1 => fvs_frm p1
+  | Imp_frm p1 p2 => fvs_frm p1 ++ fvs_frm p2
+  | All_frm y p1 => List.remove nat_hasEqDec y (fvs_frm p1)
+  end.
+
+Definition fvs_frms (Gamma: ensemble frm) : ensemble ivar :=
+  E.unions (E.image (E.finite ∘ fvs_frm) Gamma).
+
+Fixpoint is_free_in_trm (z : ivar) (t : trm) : bool :=
+  match t with
+  | Var_trm x => if Nat.eq_dec x z then true else false
+  | Fun_trm f ts => is_free_in_trms (n := L.(function_arity_table) f) z ts
+  | Con_trm c => false
+  end
+with is_free_in_trms {n : nat} (z : ivar) (ts : trms n) : bool :=
+  match ts with
+  | O_trms => false
+  | S_trms n t ts => is_free_in_trm z t || is_free_in_trms (n := n) z ts
+  end.
+
+Fixpoint is_free_in_frm (z : ivar) (p : frm) : bool :=
+  match p with
+  | Rel_frm R ts => is_free_in_trms (n := L.(relation_arity_table) R) z ts
+  | Eqn_frm t1 t2 => is_free_in_trm z t1 || is_free_in_trm z t2
+  | Neg_frm p1 => is_free_in_frm z p1
+  | Imp_frm p1 p2 => is_free_in_frm z p1 || is_free_in_frm z p2
+  | All_frm y p1 => is_free_in_frm z p1 && negb (Nat.eqb z y)
+  end.
+
+End FREE_VARIABLES.
+
+Section SUBSTITUTION.
+
+Definition last_ivar_trm (t : trm) : ivar :=
+  maxs (fvs_trm t).
+
+Fixpoint last_ivar_trms {n : nat} (ts : trms n) : ivar :=
+  match ts with
+  | O_trms => 0
+  | S_trms n t ts => max (last_ivar_trm t) (last_ivar_trms (n := n) ts)
+  end.
+
+Definition last_ivar_frm (p: frm) : ivar :=
+  maxs (fvs_frm p).
+
+Definition subst : Set := ivar -> trm.
+
+Definition chi_frm (s : subst) (p : frm) : ivar :=
+  1 + maxs (List.map (last_ivar_trm ∘ s) (fvs_frm p)).
+
+Definition new_ivar (ps : list frm) : ivar :=
+  1 + maxs (List.concat (List.map fvs_frm ps)).
+
+Definition nil_subst : subst :=
+  fun z : ivar => Var_trm z.
+
+Definition cons_subst (y : ivar) (t : trm) (s : subst) : subst :=
+  fun z : ivar => if Nat.eq_dec z y then t else s z.
+
+Definition one_subst (x1 : ivar) (t1 : trm) : subst :=
+  cons_subst x1 t1 nil_subst.
+
+Fixpoint subst_trm (s : subst) (t : trm) : trm :=
+  match t with
+  | Var_trm x => s x
+  | Fun_trm f ts => Fun_trm f (subst_trms s ts)
+  | Con_trm c => Con_trm c
+  end
+with subst_trms {n: nat} (s : subst) (ts : trms n) : trms n :=
+  match ts with
+  | O_trms => O_trms
+  | S_trms n t ts => S_trms n (subst_trm s t) (subst_trms (n := n) s ts) 
+  end.
+
+Fixpoint subst_frm (s : subst) (p : frm) : frm :=
+  let chi : ivar := chi_frm s p in
+  match p with
+  | Rel_frm R ts => Rel_frm R (subst_trms s ts)
+  | Eqn_frm t1 t2 => Eqn_frm (subst_trm s t1) (subst_trm s t2)
+  | Neg_frm p1 => Neg_frm (subst_frm s p1)
+  | Imp_frm p1 p2 => Imp_frm (subst_frm s p1) (subst_frm s p2)
+  | All_frm y p1 => All_frm chi (subst_frm (cons_subst y (Var_trm chi) s) p1)
+  end.
+
+End SUBSTITUTION.
+
+Section ALPHA.
+
+Inductive alpha_equiv : frm -> frm -> Prop :=
+  | alpha_Rel_frm R ts ts'
+    (EQ : ts = ts')
+    : Rel_frm R ts ≡ Rel_frm R ts'
+  | alpha_Eqn_frm t1 t2 t1' t2'
+    (EQ1 : t1 = t1')
+    (EQ2 : t2 = t2')
+    : Eqn_frm t1 t2 ≡ Eqn_frm t1' t2'
+  | alpha_Neg_frm p1 p1'
+    (ALPHA1 : p1 ≡ p1')
+    : Neg_frm p1 ≡ Neg_frm p1'
+  | alpha_Imp_frm p1 p2 p1' p2'
+    (ALPHA1 : p1 ≡ p1')
+    (ALPHA2 : p2 ≡ p2')
+    : Imp_frm p1 p2 ≡ Imp_frm p1' p2'
+  | alpha_All_frm z y y' p1 p1'
+    (ALPHA1 : subst_frm (one_subst y (Var_trm z)) p1 ≡ subst_frm (one_subst y' (Var_trm z)) p1')
+    (LFRESH : is_free_in_frm z (All_frm y p1) = false)
+    (RFRESH : is_free_in_frm z (All_frm y' p1') = false)
+    : All_frm y p1 ≡ All_frm y' p1'
+  where " p ≡ p' " := (alpha_equiv p p') : type_scope.
+
+End ALPHA.
 
 End SYNTAX.
 
 #[global] Arguments trm : clear implicits.
 #[global] Arguments trms : clear implicits.
 #[global] Arguments frm : clear implicits.
+#[global] Arguments subst : clear implicits.
 
 Tactic Notation "trm_ind" ident( t ) :=
   induction t as [x | f ts | c].
@@ -497,6 +619,7 @@ Proof with try first [now right; congruence | now left; congruence].
 Defined.
 
 #[global] Instance trm_hasEqDec : hasEqDec (trm L) := trm_eq_dec.
+
 #[global] Instance trms_hasEqDec (n : nat) : hasEqDec (trms L n) := trms_eq_dec n.
 
 Hypothesis relation_symbols_hasEqDec : hasEqDec L.(relation_symbols).
