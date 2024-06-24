@@ -312,7 +312,7 @@ Lemma mod_eq_elim (a1 : nat) (a2 : nat) (b : nat)
   : exists q1, exists q2, a1 + b * q1 = a2 + b * q2.
 Proof with lia || eauto.
   remember (a2 mod b) as r eqn: H_kr.
-  symmetry in H_mod_eq. rename H_r into H_r2, H_mod_eq into H_r1.
+  symmetry in H_mod_eq. rename H_kr into H_r2, H_mod_eq into H_r1.
   exists (a2 / b), (a1 / b). transitivity (a1 + a2 - r).
   - pose proof (n_mod_b_le_n r b b_ne_0).
     enough (b * (a2 / b) + r = a2)... symmetry. rewrite H_r2.
