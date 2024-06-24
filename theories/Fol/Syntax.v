@@ -257,20 +257,20 @@ Lemma gen_frm_spec (p : frm) (d : nat)
   (LE : frm_depth p <= d)
   : { seed : nat | gen_frm seed d = p }.
 Proof.
-  revert d LE. induction p as [R ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1]; simpl; i.
+  revert d LE. induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1]; simpl; i.
   - destruct d as [ | d'].
-    + exists (cpInv 1 (cpInv (proj1_sig (enum_relation_symbols_onto R)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto _ ts)))).
-      rewrite gen_frm_unfold. destruct (cp (cpInv 1 (cpInv (proj1_sig (enum_relation_symbols_onto R)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (relation_arity_table L R) ts))))) as [x y] eqn: H_OBS.
+    + exists (cpInv 1 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto _ ts)))).
+      rewrite gen_frm_unfold. destruct (cp (cpInv 1 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts))))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_relation_symbols_onto R)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (relation_arity_table L R) ts)))) as [x y] eqn: H_OBS.
+      destruct (cp (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts)))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (enum_relation_symbols_onto R) as [R_n H_R], (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) R) ts) as [ts_n H_ts]; subst R ts. reflexivity.
-    + exists (cpInv 4 (cpInv (proj1_sig (enum_relation_symbols_onto R)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto _ ts)))).
-      rewrite gen_frm_unfold. destruct (cp (cpInv 4 (cpInv (proj1_sig (enum_relation_symbols_onto R)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (relation_arity_table L R) ts))))) as [x y] eqn: H_OBS.
+      destruct (enum_relation_symbols_onto r) as [r_n H_r], (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts) as [ts_n H_ts]; subst r ts. reflexivity.
+    + exists (cpInv 4 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto _ ts)))).
+      rewrite gen_frm_unfold. destruct (cp (cpInv 4 (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts))))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (cp (cpInv (proj1_sig (enum_relation_symbols_onto R)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (relation_arity_table L R) ts)))) as [x y] eqn: H_OBS.
+      destruct (cp (cpInv (proj1_sig (enum_relation_symbols_onto r)) (proj1_sig (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts)))) as [x y] eqn: H_OBS.
       rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-].
-      destruct (enum_relation_symbols_onto R) as [R_n H_R], (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) R) ts) as [ts_n H_ts]; subst R ts. reflexivity.
+      destruct (enum_relation_symbols_onto r) as [r_n H_r], (enum_trms_spec enum_function_symbols_onto enum_constant_symbols_onto (L.(relation_arity_table) r) ts) as [ts_n H_ts]; subst r ts. reflexivity.
   - destruct d as [ | d'].
     + exists (cpInv 0 (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2)))).
       rewrite gen_frm_unfold. destruct (cp (cpInv 0 (cpInv (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t1)) (proj1_sig (enum_trm_spec enum_function_symbols_onto enum_constant_symbols_onto t2))))) as [x y] eqn: H_OBS.

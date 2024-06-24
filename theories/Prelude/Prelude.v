@@ -228,6 +228,15 @@ Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) :
   ; decode_encode (x : A) := f_equal (@Some A) (proj2_sig (enum_spec x))
   }.
 
+Lemma enum_spec_injective {A : Type} `{ENUMERABLE : isEnumerable A}
+  (inj := fun x : A => proj1_sig (enum_spec x))
+  : forall x1 : A, forall x2 : A, inj x1 = inj x2 -> x1 = x2.
+Proof.
+  unfold inj. intros x1 x2 inj_EQ.
+  destruct (enum_spec x1) as [n1 EQ1], (enum_spec x2) as [n2 EQ2].
+  simpl in *. congruence.
+Qed.
+
 End ENUMERABLE.
 
 Section SETOID.
@@ -581,20 +590,3 @@ Instance HASK : Category :=
 End CAT.
 
 Notation Category := CAT.Category.
-
-Class hasInjection (A : Type) (B : Type) : Type :=
-  { inj : A -> B
-  ; inj_spec (x1 : A) (x2 : A)
-    (inj_EQ : inj x1 = inj x2)
-    : x1 = x2
-  }.
-
-#[global] Hint Resolve inj_spec : typeclasses.
-
-#[program]
-Definition hasInjection_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) : hasInjection A nat :=
-  {| inj (x : A) := proj1_sig (enum_spec x) |}.
-Next Obligation.
-  destruct (enum_spec x1) as [n1 EQ1], (enum_spec x2) as [n2 EQ2].
-  simpl in *. congruence.
-Defined.
