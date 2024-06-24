@@ -343,7 +343,7 @@ Qed.
 #[local]
 Instance vec_isSetoid (n : nat) (A : Type) `(A_isSetoid : isSetoid A) : isSetoid (vec n A) :=
   { eqProp (lhs : vec n A) (rhs : vec n A) := forall i, lhs !! i == rhs !! i
-  ; eqProp_Equivalence := relation_on_image_liftsEquivalence nth (arrow_isSetoid (A := Fin.t n) (B := A) A_isSetoid).(eqProp_Equivalence)
+  ; eqProp_Equivalence := relation_on_image_liftsEquivalence (arrow_isSetoid (A := Fin.t n) (B := A) A_isSetoid).(eqProp_Equivalence) nth
   }.
 
 #[local] Instance vec_isSetoid1 {n : nat} : isSetoid1 (vec n) := vec_isSetoid n.

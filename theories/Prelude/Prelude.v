@@ -403,34 +403,34 @@ End ENUMERABLE.
 Section LIFTS.
 
 #[local]
-Instance relation_on_image_liftsEquivalence {A : Type} {B : Type} {eqProp : B -> B -> Prop} (f : A -> B)
+Instance relation_on_image_liftsEquivalence {A : Type} {B : Type} {eqProp : B -> B -> Prop}
   `(isEquivalence : @Equivalence B eqProp)
-  : Equivalence (B.binary_relation_on_image eqProp f).
+  : forall f : A -> B, Equivalence (B.binary_relation_on_image eqProp f).
 Proof.
-  constructor.
+  intros f. constructor.
   - intros x1. exact (Equivalence_Reflexive (f x1)).
   - intros x1 x2 H_1EQ2. exact (Equivalence_Symmetric (f x1) (f x2) H_1EQ2).
   - intros x1 x2 x3 H_1EQ2 H_2EQ3. exact (Equivalence_Transitive (f x1) (f x2) (f x3) H_1EQ2 H_2EQ3).
 Defined.
 
 #[local]
-Instance relation_on_image_liftsPreOrder {A : Type} {B : Type} {leProp : B -> B -> Prop} (f : A -> B)
+Instance relation_on_image_liftsPreOrder {A : Type} {B : Type} {leProp : B -> B -> Prop}
   `(isPreOrder : @PreOrder B leProp)
-  : PreOrder (B.binary_relation_on_image leProp f).
+  : forall f : A -> B, PreOrder (B.binary_relation_on_image leProp f).
 Proof.
-  constructor.
+  intros f. constructor.
   - intros x1. exact (PreOrder_Reflexive (f x1)).
   - intros x1 x2 x3 H_1LE2 H_2LE3. exact (PreOrder_Transitive (f x1) (f x2) (f x3) H_1LE2 H_2LE3).
 Defined.
 
 #[local]
-Instance relation_on_image_liftsPartialOrder {A : Type} {B : Type} {eqProp : B -> B -> Prop} {leProp : B -> B -> Prop} (f : A -> B)
+Instance relation_on_image_liftsPartialOrder {A : Type} {B : Type} {eqProp : B -> B -> Prop} {leProp : B -> B -> Prop}
   `{isEquivalence : @Equivalence B eqProp}
   `{isPreOrder : @PreOrder B leProp}
   `(isPartialOrder : @PartialOrder B eqProp _ leProp _)
-  : PartialOrder (B.binary_relation_on_image eqProp f) (B.binary_relation_on_image leProp f).
+  : forall f : A -> B, PartialOrder (B.binary_relation_on_image eqProp f) (B.binary_relation_on_image leProp f).
 Proof.
-  intros x1 x2. constructor.
+  intros f x1 x2. constructor.
   - intros H_EQ. constructor.
     + exact (proj1 (proj1 (partial_order_equivalence (f x1) (f x2)) H_EQ)).
     + exact (proj2 (proj1 (partial_order_equivalence (f x1) (f x2)) H_EQ)).
@@ -849,7 +849,7 @@ Instance stateT_isMonad {S : Type} {M : Type -> Type} `(M_isMonad : isMonad M) :
 Definition stateT_isSetoid {S : Type} {M : Type -> Type} `{M_isSetoid1 : isSetoid1 M} (X : Type) : isSetoid (B.stateT S M X) :=
   {|
     eqProp lhs rhs := forall s, B.runStateT lhs s == B.runStateT rhs s;
-    eqProp_Equivalence := relation_on_image_liftsEquivalence B.runStateT (arrow_isSetoid (fromSetoid1 M_isSetoid1)).(eqProp_Equivalence);
+    eqProp_Equivalence := relation_on_image_liftsEquivalence (arrow_isSetoid (fromSetoid1 M_isSetoid1)).(eqProp_Equivalence) B.runStateT;
   |}.
 
 #[local]
