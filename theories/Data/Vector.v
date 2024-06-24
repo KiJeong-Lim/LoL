@@ -340,14 +340,13 @@ Proof.
   cbn; ii. repeat red_vec. reflexivity.
 Qed.
 
-(*
 #[local]
-Instance vec_isSetoid {n: nat} {A: Type} (A_isSetoid: isSetoid A) : isSetoid (vec n A) :=
-  { eqProp (lhs: vec n A) (rhs: vec n A) := forall i, lhs !! i == rhs !! i
+Instance vec_isSetoid (n : nat) (A : Type) `(A_isSetoid : isSetoid A) : isSetoid (vec n A) :=
+  { eqProp (lhs : vec n A) (rhs : vec n A) := forall i, lhs !! i == rhs !! i
   ; eqProp_Equivalence := relation_on_image_liftsEquivalence nth (arrow_isSetoid (A := Fin.t n) (B := A) A_isSetoid).(eqProp_Equivalence)
   }.
 
-#[local] Instance vec_isSetoid1 {n: nat} : isSetoid1 (vec n) := @vec_isSetoid n.
+#[local] Instance vec_isSetoid1 {n : nat} : isSetoid1 (vec n) := vec_isSetoid n.
 
 #[global]
 Instance vec_isNiceMonad {n: nat}
@@ -355,7 +354,6 @@ Instance vec_isNiceMonad {n: nat}
 Proof.
   split; cbn; ii; (repeat red_vec); congruence.
 Qed.
-*)
 
 End INSTANCES.
 

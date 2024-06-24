@@ -17,8 +17,10 @@ Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t en
 
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
+Reserved Infix " =~= " (no associativity, at level 70).
 Reserved Infix "\in" (no associativity, at level 70).
 Reserved Infix "\subseteq" (no associativity, at level 70).
+Reserved Infix ">>=" (left associativity, at level 90).
 
 Module B.
 
@@ -77,6 +79,12 @@ Definition mkFunctorFromMonad {M : Type -> Type} `(MONAD : isMonad M) : isFuncto
 
 Definition liftM2 {M : Type -> Type} {A : Type} {B : Type} {C : Type} `{MONAD : isMonad M} (f : A -> B -> C) (mx : M A) (my : M B) : M C :=
   bind mx (fun x : A => bind my (fun y : B => pure (f x y))).
+
+#[universes(polymorphic=yes)]
+Definition binary_relation_on_image@{dom_lv cod_lv} {dom: Type@{dom_lv}} {cod: Type@{cod_lv}} (bin_rel: cod -> cod -> Prop) (f: dom -> cod) (lhs: dom) (rhs: dom) : Prop :=
+  bin_rel (f lhs) (f rhs).
+
+Section IDENTITY.
 
 Definition eq_reflexivity {A : Type} (x1 : A) : x1 = x1 :=
   @eq_refl A x1.
@@ -174,6 +182,8 @@ Proof.
 Defined.
 
 End PROJ_T2_EQ.
+
+End IDENTITY.
 
 End B.
 
@@ -365,6 +375,47 @@ Instance isCountable_if_isEnumerable {A : Type} `(ENUMERABLE : isEnumerable A) :
 
 End ENUMERABLE.
 
+Section LIFTS.
+
+#[local]
+Instance relation_on_image_liftsEquivalence {A : Type} {B : Type} {eqProp : B -> B -> Prop} (f : A -> B)
+  (requiresEquivalence : Equivalence eqProp)
+  : Equivalence (B.binary_relation_on_image eqProp f).
+Proof.
+  constructor.
+  - intros x1. exact (Equivalence_Reflexive (f x1)).
+  - intros x1 x2 H_1EQ2. exact (Equivalence_Symmetric (f x1) (f x2) H_1EQ2).
+  - intros x1 x2 x3 H_1EQ2 H_2EQ3. exact (Equivalence_Transitive (f x1) (f x2) (f x3) H_1EQ2 H_2EQ3).
+Defined.
+
+#[local]
+Instance relation_on_image_liftsPreOrder {A : Type} {B : Type} {leProp : B -> B -> Prop} (f : A -> B)
+  (requiresPreOrder : PreOrder leProp)
+  : PreOrder (B.binary_relation_on_image leProp f).
+Proof.
+  constructor.
+  - intros x1. exact (PreOrder_Reflexive (f x1)).
+  - intros x1 x2 x3 H_1LE2 H_2LE3. exact (PreOrder_Transitive (f x1) (f x2) (f x3) H_1LE2 H_2LE3).
+Defined.
+
+#[local]
+Instance relation_on_image_liftsPartialOrder {A : Type} {B : Type} {eqProp : B -> B -> Prop} {leProp : B -> B -> Prop} (f : A -> B)
+  {requiresEquivalence: Equivalence eqProp}
+  {requiresPreOrder: PreOrder leProp}
+  (requiresPartialOrder: PartialOrder eqProp leProp)
+  : PartialOrder (B.binary_relation_on_image eqProp f) (B.binary_relation_on_image leProp f).
+Proof.
+  intros x1 x2. constructor.
+  - intros H_EQ. constructor.
+    + exact (proj1 (proj1 (partial_order_equivalence (f x1) (f x2)) H_EQ)).
+    + exact (proj2 (proj1 (partial_order_equivalence (f x1) (f x2)) H_EQ)).
+  - intros H_EQ. apply (proj2 (partial_order_equivalence (f x1) (f x2))). constructor.
+    + exact (proj1 H_EQ).
+    + exact (proj2 H_EQ).
+Defined.
+
+End LIFTS.
+
 Section SETOID.
 
 Class isSetoid (A : Type) : Type :=
@@ -404,14 +455,14 @@ Next Obligation.
 Defined.
 
 Class isSetoid1 (F : Type -> Type) : Type :=
-  mkSetoid1 (X : Type) `(SETOID : isSetoid X) :: isSetoid (F X).
+  liftSetoid1 (X : Type) `(SETOID : isSetoid X) :: isSetoid (F X).
 
 Definition trivialSetoid {A : Type} : isSetoid A :=
   {| eqProp := @eq A; eqProp_Equivalence := @eq_equivalence A; |}.
 
 #[local]
 Instance fromSetoid1 {F : Type -> Type} {X : Type} `(SETOID1 : isSetoid1 F) : isSetoid (F X) :=
-  mkSetoid1 X trivialSetoid.
+  liftSetoid1 X trivialSetoid.
 
 End SETOID.
 
@@ -716,3 +767,38 @@ Instance HASK : Category :=
 End CAT.
 
 Notation Category := CAT.Category.
+
+Section MONAD_LAW.
+
+#[local] Notation f_eqProp := (eqProp (isSetoid := arrow_isSetoid _)).
+#[local] Infix " =~= " := f_eqProp : type_scope.
+#[local] Infix ">>=" := bind.
+#[local] Existing Instance fromSetoid1.
+
+Class isNiceMonad (M : Type -> Type) `{M_isMonad : isMonad M} `{M_isSetoid1 : isSetoid1 M} : Prop :=
+  { bind_m_compatWith_eqProp {A : Type} {B : Type} (m1 : M A) (m2 : M A) (k : A -> M B)
+    (m1_eq_m2 : m1 == m2)
+    : (m1 >>= k) == (m2 >>= k)
+  ; k_bind_compatWith_eqProp {A : Type} {B : Type} (k1 : A -> M B) (k2 : A -> M B) (m : M A)
+    (k1_eq_k2 : k1 =~= k2)
+    : (m >>= k1) == (m >>= k2)
+  ; bind_assoc {A : Type} {B : Type} {C : Type} (m : M A) (k : A -> M B) (k' : B -> M C)
+    : (m >>= k >>= k') == (m >>= fun x => k x >>= k')
+  ; bind_pure_l {A : Type} {B : Type} (k : A -> M B) (x : A)
+    : (pure x >>= k) == k x
+  ; bind_pure_r {A : Type} (m : M A)
+    : (m >>= pure) == m
+  }.
+
+#[global]
+Add Parametric Morphism {M : Type -> Type} `{M_isMonad: isMonad M} `{M_isSetoid1: isSetoid1 M} {A: Type} {B: Type}
+  (M_isNiceMonad: isNiceMonad M (M_isMonad := M_isMonad) (M_isSetoid1 := M_isSetoid1))
+  : (@bind M M_isMonad A B) with signature (eqProp ==> f_eqProp ==> eqProp) as bind_compatWith_eqProp.
+Proof.
+  intros m1 m2 m1_eq_m2 k1 k2 k1_eq_k2.
+  rewrite bind_m_compatWith_eqProp with (m1 := m1) (m2 := m2) (m1_eq_m2 := m1_eq_m2).
+  rewrite k_bind_compatWith_eqProp with (k1 := k1) (k2 := k2) (k1_eq_k2 := k1_eq_k2).
+  reflexivity.
+Qed.
+
+End MONAD_LAW.
