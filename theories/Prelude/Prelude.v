@@ -42,8 +42,9 @@ Definition id {A : Type} : A -> A :=
 Record prod (A : Type) (B : Type) : Type :=
   pair { fst : A; snd : B }.
 
-#[global] Arguments fst {A} {B} _.
-#[global] Arguments snd {A} {B} _.
+#[global] Arguments B.pair {A} {B}.
+#[global] Arguments B.fst {A} {B} _.
+#[global] Arguments B.snd {A} {B} _.
 
 Inductive sum1 (F : Type -> Type) (G : Type -> Type) (X : Type) : Type :=
   | inl1 (FX : F X) : sum1 F G X
@@ -51,6 +52,14 @@ Inductive sum1 (F : Type -> Type) (G : Type -> Type) (X : Type) : Type :=
 
 #[global] Arguments inl1 {F}%type_scope {G}%type_scope {X}%type_scope FX.
 #[global] Arguments inr1 {F}%type_scope {G}%type_scope {X}%type_scope GX.
+
+#[projections(primitive)]
+Record stateT (S : Type) (M : Type -> Type) (X : Type) : Type :=
+  StateT { runStateT : S -> M (B.prod X S) }.
+
+#[global] Arguments stateT (S) (M)%type_scope.
+#[global] Arguments StateT {S} {M}%type_scope {X}.
+#[global] Arguments runStateT {S} {M}%type_scope {X}.
 
 Definition maybe {A : Type} {B : Type} (d : B) (f : A -> B) (m : option A) : B :=
   match m with
@@ -186,10 +195,14 @@ End PROJ_T2_EQ.
 
 End IDENTITY.
 
+#[universes(polymorphic=yes)]
+Definition dollar@{u v} {A : Type@{u}} {B : Type@{v}} (f : A -> B) (x : A) : B := f x.
+
 End B.
 
 Infix "×" := B.prod (at level 40, left associativity) : type_scope.
 Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
+Infix "$" := B.dollar (at level 100, right associativity).
 Notation isFunctor := B.isFunctor.
 Notation fmap := B.fmap.
 Notation isMonad := B.isMonad.
@@ -454,6 +467,16 @@ Next Obligation.
   - intros f1 f2 EQ1 x. exact (Equivalence_Symmetric (f1 x) (f2 x) (EQ1 x)).
   - intros f1 f2 f3 EQ1 EQ2 x. exact (Equivalence_Transitive (f1 x) (f2 x) (f3 x) (EQ1 x) (EQ2 x)).
 Defined.
+
+#[global, program]
+Instance pair_isSetoid {A : Type} {B : Type} `(A_isSetoid : isSetoid A) `(B_isSetoid : isSetoid B) : isSetoid (B.prod A B) :=
+  { eqProp lhs rhs := lhs.(B.fst) == rhs.(B.fst) /\ lhs.(B.snd) == rhs.(B.snd) }.
+Next Obligation.
+  split.
+  - intros x1. split; reflexivity.
+  - intros x1 x2 [-> ->]. split; reflexivity.
+  - intros x1 x2 x3 [-> ->] [-> ->]. split; reflexivity.
+Qed.
 
 Class isSetoid1 (F : Type -> Type) : Type :=
   liftSetoid1 (X : Type) `(SETOID : isSetoid X) :: isSetoid (F X).
@@ -769,7 +792,9 @@ End CAT.
 
 Notation Category := CAT.Category.
 
-Section MONAD_LAW.
+Section MONAD.
+
+#[local] Obligation Tactic := intros.
 
 #[local] Notation f_eqProp := (eqProp (isSetoid := arrow_isSetoid _)).
 #[local] Infix "=~=" := f_eqProp : type_scope.
@@ -802,4 +827,33 @@ Proof.
   reflexivity.
 Qed.
 
-End MONAD_LAW.
+#[global]
+Instance stateT_isMonad {S : Type} {M : Type -> Type} `(M_isMonad : isMonad M) : isMonad (B.stateT S M) :=
+  { pure {A} (x : A) := B.StateT $ fun s => pure (B.pair x s)
+  ; bind {A} {B} (m : B.stateT S M A) (k : A -> B.stateT S M B) := B.StateT $ fun s => B.runStateT m s >>= fun p => B.runStateT (k p.(B.fst)) p.(B.snd)
+  }.
+
+Definition stateT_isSetoid {S : Type} {M : Type -> Type} `{M_isSetoid1 : isSetoid1 M} (X : Type) : isSetoid (B.stateT S M X) :=
+  {|
+    eqProp lhs rhs := forall s, B.runStateT lhs s == B.runStateT rhs s;
+    eqProp_Equivalence := relation_on_image_liftsEquivalence B.runStateT (arrow_isSetoid (fromSetoid1 M_isSetoid1)).(eqProp_Equivalence);
+  |}.
+
+#[local]
+Instance stateT_isSetoid1 {S : Type} {M : Type -> Type} `{M_isSetoid1 : isSetoid1 M} : isSetoid1 (B.stateT S M) :=
+  fun X : Type => fun _ : isSetoid X => @stateT_isSetoid S M M_isSetoid1 X.
+
+#[local]
+Instance stateT_isNiceMonad {S : Type} {M : Type -> Type} `{M_isMonad : isMonad M} `{M_isSetoid1 : isSetoid1 M}
+  `(M_isNiceMonad : isNiceMonad M)
+  : isNiceMonad (B.stateT S M).
+Proof.
+  split; i.
+  - destruct m1 as [m1], m2 as [m2]; simpl in *. intros s. eapply bind_m_compatWith_eqProp. exact (m1_eq_m2 s).
+  - destruct m as [m]; simpl in *. intros s. eapply k_bind_compatWith_eqProp. intros p. exact (k1_eq_k2 (p.(B.fst)) (p.(B.snd))).
+  - destruct m as [m]; simpl in *. intros s. eapply bind_assoc.
+  - destruct (k x) as [m] eqn: H_OBS. simpl in *. intros s. rewrite bind_pure_l. simpl. rewrite H_OBS. reflexivity.
+  - destruct m as [m]; simpl in *. intros s. rewrite bind_pure_r. reflexivity.
+Qed.
+
+End MONAD.
