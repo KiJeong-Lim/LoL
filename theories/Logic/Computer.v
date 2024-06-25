@@ -6,7 +6,7 @@ Fixpoint first_nat (p : nat -> bool) (n : nat) : nat :=
   | S n' => if p (first_nat p n') then first_nat p n' else S n'
   end.
 
-Theorem bounded_search (p : nat -> bool) (n : nat)
+Theorem first_nat_spec (p : nat -> bool) (n : nat)
   (WITNESS : p n = true)
   (m := first_nat p n)
   : p m = true /\ ⟪ MIN : forall i, p i = true -> i >= m ⟫.
@@ -28,7 +28,7 @@ Proof with eauto.
     destruct (p (first_nat p x)) as [ | ]...
 Qed.
 
-Theorem unbounded_search (p : nat -> bool)
+Theorem nat_search_lemma (p : nat -> bool)
   (EXISTENCE : exists n : nat, p n = true)
   : { n : nat | p n = true }.
 Proof.
@@ -40,18 +40,6 @@ Proof.
   exists (@search_go nat COUNTABLE (fun x : nat => p x = true) P_dec 0 FUEL). eapply search_go_correct.
 Qed.
 
-(* [unary_mu]
-"""c
-int unary_mu(int (*f)(int n))
-{
-  int n;
-  for (n = 0; ; n++) {
-    if (f(n) == 0)
-      return n;
-  }
-}
-""" *)
-
 Theorem unary_mu (f : nat -> nat)
   (EXISTENCE : exists n : nat, f n = 0)
   : { n : nat | f n = 0 /\ (forall i, f i = 0 -> i >= n) }.
@@ -59,8 +47,8 @@ Proof.
   pose (p := fun n : nat => Nat.eqb (f n) 0).
   assert (EXISTENCE' : exists n : nat, p n = true).
   { destruct EXISTENCE as [n f_n_eq_0]. exists n. unfold p. rewrite Nat.eqb_eq. exact f_n_eq_0. }
-  pose proof (unbounded_search p EXISTENCE') as [n WITNESS].
-  exists (first_nat p n). unnw. pose proof (bounded_search p n WITNESS) as claim.
+  pose proof (nat_search_lemma p EXISTENCE') as [n WITNESS].
+  exists (first_nat p n). unnw. pose proof (first_nat_spec p n WITNESS) as claim.
   simpl in claim. unnw. destruct claim as [claim1 claim2]. split.
   - rewrite <- Nat.eqb_eq with (n := f (first_nat p n)) (m := 0). exact claim1.
   - intros i f_i_eq_0. eapply claim2. unfold p. rewrite Nat.eqb_eq. exact f_i_eq_0.
