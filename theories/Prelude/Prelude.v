@@ -238,7 +238,11 @@ Class hasEqDec (A : Type) : Type :=
   eq_dec (x : A) (y : A) : {x = y} + {x <> y}.
 
 #[global]
-Instance Some_hasEqDec {A : Type}
+Instance nat_hasEqDec : hasEqDec nat :=
+  Nat.eq_dec.
+
+#[global]
+Instance option_hasEqDec {A : Type}
   `(EQ_DEC : hasEqDec A)
   : hasEqDec (option A).
 Proof.
@@ -278,10 +282,6 @@ Proof.
   - exact EQ.
 Defined.
 
-#[global]
-Instance nat_hasEqDec : hasEqDec nat :=
-  ltac:(red; decide equality).
-
 End EQ_DEC.
 
 Section COUNTABLE. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.countable.html" *)
@@ -289,8 +289,8 @@ Section COUNTABLE. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.cou
 Class isCountable (A : Type) : Type :=
   { encode : A -> nat
   ; decode : nat -> option A
-  ; decode_encode
-    : forall x : A, decode (encode x) = Some x 
+  ; decode_encode (x : A)
+    : decode (encode x) = Some x 
   }.
 
 Section SEARCH. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.countable.html#choice" *)
