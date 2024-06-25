@@ -52,3 +52,11 @@ Proof.
   - rewrite <- Nat.eqb_eq with (n := f (first_nat p n)) (m := 0). exact claim1.
   - intros i f_i_eq_0. eapply claim2. unfold p. rewrite Nat.eqb_eq. exact f_i_eq_0.
 Defined.
+
+Example nullary_mu_example1
+  (f := fun n : nat => if Nat.ltb n 3 then 1 else 0)
+  (EXISTENCE := @ex_intro nat (fun n : nat => f n = 0) 3 eq_refl)
+  : proj1_sig (nullary_mu f EXISTENCE) = 3.
+Proof.
+  reflexivity.
+Qed.

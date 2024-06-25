@@ -452,12 +452,9 @@ Fixpoint fvs_frm (p : frm) : list ivar :=
   | All_frm y p1 => List.remove Nat.eq_dec y (fvs_frm p1)
   end.
 
-Definition fvs_frms (Gamma: ensemble frm) : ensemble ivar :=
-  E.unions (E.image (E.finite ∘ fvs_frm) Gamma).
-
 Fixpoint is_free_in_trm (z : ivar) (t : trm) : bool :=
   match t with
-  | Var_trm x => if Nat.eq_dec x z then true else false
+  | Var_trm x => Nat.eqb x z
   | Fun_trm f ts => is_free_in_trms (n := L.(function_arity_table) f) z ts
   | Con_trm c => false
   end
@@ -475,6 +472,9 @@ Fixpoint is_free_in_frm (z : ivar) (p : frm) : bool :=
   | Imp_frm p1 p2 => is_free_in_frm z p1 || is_free_in_frm z p2
   | All_frm y p1 => is_free_in_frm z p1 && negb (Nat.eqb z y)
   end.
+
+Definition fvs_frms (Gamma: ensemble frm) : ensemble ivar :=
+  E.unions (E.image (E.finite ∘ fvs_frm) Gamma).
 
 End FREE_VARIABLES.
 
@@ -496,9 +496,6 @@ Definition subst : Set := ivar -> trm.
 
 Definition chi_frm (s : subst) (p : frm) : ivar :=
   1 + maxs (List.map (last_ivar_trm ∘ s) (fvs_frm p)).
-
-Definition new_ivar (ps : list frm) : ivar :=
-  1 + maxs (List.concat (List.map fvs_frm ps)).
 
 Definition nil_subst : subst :=
   fun z : ivar => Var_trm z.
@@ -532,6 +529,10 @@ Fixpoint subst_frm (s : subst) (p : frm) : frm :=
   end.
 
 End SUBSTITUTION.
+
+Section SINGLE_SUBSTITUTION.
+
+End SINGLE_SUBSTITUTION.
 
 Section ALPHA.
 
