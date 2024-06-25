@@ -242,9 +242,9 @@ Instance Some_hasEqDec {A : Type}
   : hasEqDec (option A).
 Proof.
   exact (fun x : option A => fun y : option A =>
-    match x, y with
+    match x as a, y as b return {a = b} + {a <> b} with
     | None, None => left eq_refl
-    | None, Some y' => right (fun EQ : None = Some y' => B.Some_ne_None y' (eq_equivalence.(Equivalence_Symmetric) None (Some y') EQ))
+    | None, Some y' => right (fun EQ : None = Some y' => B.Some_ne_None y' (B.eq_symmetry None (Some y') EQ))
     | Some x', None => right (fun EQ : Some x' = None => B.Some_ne_None x' EQ)
     | Some x', Some y' =>
       match EQ_DEC x' y' with
@@ -880,7 +880,7 @@ Proof.
   - destruct m as [m]; simpl in *. intros s. rewrite bind_pure_r. reflexivity.
 Qed.
 
-#[global, program]
+#[global]
 Instance stateT_isMonadIter {S : Type} {M : Type -> Type} `{M_isMonad : isMonad M} `(M_isMonadIter : @B.isMonadIter M M_isMonad) : B.isMonadIter (B.stateT S M) :=
   fun I : Type => fun R : Type => fun step : I -> B.stateT S M (I + R) =>
   let DISTR (A : Type) (B : Type) (C : Type) (it : (A + B) × C) : (A × C) + (B × C) := B.either (fun x => inl (B.pair x (B.snd it))) (fun y => inr (B.pair y (B.snd it))) (B.fst it) in
