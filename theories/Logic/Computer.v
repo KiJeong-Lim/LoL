@@ -3,7 +3,7 @@ Require Import LoL.Prelude.Prelude.
 Fixpoint first_nat (p : nat -> bool) (n : nat) : nat :=
   match n with
   | O => 0
-  | S n' => if p (first_nat p n') then first_nat p n' else S n'
+  | S n' => if p (first_nat p n') then first_nat p n' else n
   end.
 
 Theorem first_nat_spec (p : nat -> bool) (n : nat)
@@ -39,7 +39,7 @@ Proof.
   exists (@search_go nat COUNTABLE (fun x : nat => p x = true) P_dec 0 FUEL). eapply search_go_correct.
 Defined.
 
-Theorem nullary_mu (f : nat -> nat)
+Definition nullary_mu (f : nat -> nat)
   (EXISTENCE : exists n : nat, f n = 0)
   : { n : nat | f n = 0 /\ (forall i, f i = 0 -> i >= n) }.
 Proof.
