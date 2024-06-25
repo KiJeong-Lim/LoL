@@ -317,7 +317,7 @@ Proof.
   - econs. intros j SEARCH. red in SEARCH. eapply IH.
     + lia.
     + inv SEARCH; lia.
-Qed.
+Defined.
 
 Fixpoint search_go (P : A -> Prop) (P_dec : forall x, {P x} + {~ P x}) (n : nat) (acc : Acc (flip (search_step P)) n) {struct acc} : A.
 Proof.
@@ -364,7 +364,7 @@ Proof.
   assert (claim : encode (search (encode x) (encode_surjective (encode x))) = encode x).
   { eapply search_go_correct with (P := fun y : A => encode y = encode x) (P_dec := fun y : A => Nat.eq_dec (encode y) (encode x)). }
   apply f_equal with (f := decode) in claim. do 2 rewrite decode_encode in claim. congruence.
-Qed.
+Defined.
 
 End SEARCH.
 
@@ -382,7 +382,7 @@ Proof.
   - pose proof (LEM (exists n : nat, f n = false)) as [YES | NO].
     + exact YES.
     + contradiction NOT_ALL_TRUE. intros x. destruct (f x) as [ | ] eqn: H_OBS; now firstorder.
-Qed.
+Defined.
 
 End COUNTABLE.
 

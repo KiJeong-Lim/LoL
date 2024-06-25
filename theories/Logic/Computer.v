@@ -37,7 +37,7 @@ Proof.
   { intros x. now destruct (p x) as [ | ]; [left | right]. }
   pose proof (FUEL := @Acc_flip_search_step_P_0 nat COUNTABLE (fun x : nat => p x = true) EXISTENCE).
   exists (@search_go nat COUNTABLE (fun x : nat => p x = true) P_dec 0 FUEL). eapply search_go_correct.
-Qed.
+Defined.
 
 Theorem unary_mu (f : nat -> nat)
   (EXISTENCE : exists n : nat, f n = 0)
@@ -51,4 +51,6 @@ Proof.
   simpl in claim. unnw. destruct claim as [claim1 claim2]. split.
   - rewrite <- Nat.eqb_eq with (n := f (first_nat p n)) (m := 0). exact claim1.
   - intros i f_i_eq_0. eapply claim2. unfold p. rewrite Nat.eqb_eq. exact f_i_eq_0.
-Qed.
+Defined.
+
+Eval compute in proj1_sig (unary_mu (fun n : nat => if Nat.eqb n 3 then 0 else 1) (@ex_intro _ _ 3 eq_refl)).
