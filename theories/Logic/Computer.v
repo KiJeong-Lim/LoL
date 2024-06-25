@@ -11,10 +11,9 @@ Theorem first_nat_spec (p : nat -> bool) (n : nat)
   (m := first_nat p n)
   : p m = true /\ ⟪ MIN : forall i, p i = true -> i >= m ⟫.
 Proof with eauto.
-  unnw.
   assert (claim1 : forall x, p x = true -> p (first_nat p x) = true).
   { induction x as [ | x IH]... simpl. destruct (p (first_nat p x)) as [ | ] eqn: ?... }
-  split... intros i p_i_eq_true.
+  unnw. split... intros i p_i_eq_true.
   enough (claim2 : forall x, first_nat p x <= x).
   enough (claim3 : forall x, p (first_nat p x) = true -> (forall y, x < y -> first_nat p x = first_nat p y)).
   enough (claim4 : forall x, forall y, p y = true -> first_nat p x <= y)...
