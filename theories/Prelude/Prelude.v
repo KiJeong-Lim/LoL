@@ -73,6 +73,12 @@ Definition either {A : Type} {B : Type} {C : Type} (f : A -> C) (g : B -> C) (z 
   | inr y => g y
   end.
 
+Definition uncurry {A : Type} {B : Type} {C : Type} (f : A -> B -> C) : B.prod A B -> C :=
+  fun p => f (B.fst p) (B.snd p).
+
+Definition curry {A : Type} {B : Type} {C : Type} (f : B.prod A B -> C) : A -> B -> C :=
+  fun x => fun y => f (B.pair x y).
+
 Lemma Some_ne_None {A : Type} (x : A)
   : Some x <> None.
 Proof.
@@ -204,10 +210,15 @@ End IDENTITY.
 #[universes(polymorphic=yes)]
 Definition dollar@{u v} {A : Type@{u}} {B : Type@{v}} (f : A -> B) (x : A) : B := f x.
 
-Class isMonadIter (M : Type -> Type) {M_isMonad : isMonad M} : Type :=
+Class isMonadIter (M : Type -> Type) `{M_isMonad : isMonad M} : Type :=
   iterM (I : Type) (R : Type) (step : I -> M (I + R)%type) : I -> M R.
 
 #[global] Arguments iterM {M}%type_scope {M_isMonad} {isMonadIter} {I} {R} (step).
+
+Class isAlternative (F : Type -> Type) : Type :=
+  { empty {A : Type} : F A
+  ; alt {A : Type} : F A -> F A -> F A
+  }.
 
 End B.
 
@@ -868,5 +879,11 @@ Proof.
   - destruct (k x) as [m] eqn: H_OBS. simpl in *. intros s. rewrite bind_pure_l. simpl. rewrite H_OBS. reflexivity.
   - destruct m as [m]; simpl in *. intros s. rewrite bind_pure_r. reflexivity.
 Qed.
+
+#[global, program]
+Instance stateT_isMonadIter {S : Type} {M : Type -> Type} `{M_isMonad : isMonad M} `(M_isMonadIter : @B.isMonadIter M M_isMonad) : B.isMonadIter (B.stateT S M) :=
+  fun I : Type => fun R : Type => fun step : I -> B.stateT S M (I + R) =>
+  let DISTR (A : Type) (B : Type) (C : Type) (it : (A + B) × C) : (A × C) + (B × C) := B.either (fun x => inl (B.pair x (B.snd it))) (fun y => inr (B.pair y (B.snd it))) (B.fst it) in
+  B.StateT ∘ B.curry (B.iterM (fmap (isFunctor := B.mkFunctorFromMonad M_isMonad) (DISTR I R S) ∘ B.uncurry (B.runStateT ∘ step))).
 
 End MONAD.
