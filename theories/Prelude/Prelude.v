@@ -752,7 +752,7 @@ Definition difference {A : Type} (X1 : E.t A) (X2 : E.t A) : E.t A :=
 #[global] Hint Unfold difference : datatypes.
 
 Lemma in_difference_iff {A : Type} (X1 : E.t A) (X2 : E.t A)
-  : forall z : A, z \in difference X1 X2 <-> z \in X1 /\ ~ z \in X2.
+  : forall z : A, z \in difference X1 X2 <-> (z \in X1 /\ ~ z \in X2).
 Proof.
   reflexivity.
 Qed.

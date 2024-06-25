@@ -97,13 +97,13 @@ End Fin.
 Notation FZ := Fin.FZ.
 Notation FS := Fin.FS.
 
-#[local]
+#[global]
 Tactic Notation "introFZ" :=
   let i := fresh "i" in
   intro i; pattern i; revert i;
   apply Fin.case0.
 
-#[local]
+#[global]
 Tactic Notation "introFS" ident( i' ) :=
   let i := fresh "i" in
   intro i; pattern i; revert i;
@@ -130,6 +130,8 @@ Notation " x :: xs " := (@Vector.VCons _ _ x xs) : vec_scope.
 
 Notation VNil := Vector.VNil.
 Notation VCons := Vector.VCons.
+
+Module V.
 
 #[local] Open Scope vec_scope.
 
@@ -222,17 +224,17 @@ End Accessories.
 
 Infix " !! " := nth (left associativity, at level 25).
 
-#[global]
+#[local]
 Tactic Notation "introVNil" :=
   let xs := fresh "xs" in
   intro xs; pattern xs; revert xs;
-  apply Vector.case0.
+  apply V.case0.
 
-#[global]
+#[local]
 Tactic Notation "introVCons" ident( x' ) ident( xs' ) :=
   let xs := fresh "xs" in
   intro xs; pattern xs; revert xs;
-  apply Vector.caseS; intros x' xs'.
+  apply V.caseS; intros x' xs'.
 
 Lemma nth_unfold {A : Type} {n : nat} (xs : Vector.t A n) (i : Fin.t n) :
   xs !! i = (match i in Fin.t m return Vector.t A m -> A with FZ => fun v => head v | FS i' => fun v => tail v !! i' end) xs.
@@ -391,3 +393,17 @@ Proof.
   - simpl. destruct (cp (cpInv x (gen_nat_vec_linv xs))) as [E_x E_xs] eqn: H_OBS.
     simpl. rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. congruence.
 Qed.
+
+End V.
+
+#[global]
+Tactic Notation "introVNil" :=
+  let xs := fresh "xs" in
+  intro xs; pattern xs; revert xs;
+  apply V.case0.
+
+#[global]
+Tactic Notation "introVCons" ident( x' ) ident( xs' ) :=
+  let xs := fresh "xs" in
+  intro xs; pattern xs; revert xs;
+  apply V.caseS; intros x' xs'.

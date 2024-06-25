@@ -101,8 +101,8 @@ Qed.
 
 Fixpoint trms_to_vec {n : nat} (ts : trms n) : Vector.t trm n :=
   match ts with
-  | O_trms => Vector.VNil
-  | S_trms n' t ts => Vector.VCons n' t (trms_to_vec ts)
+  | O_trms => VNil
+  | S_trms n' t ts => VCons n' t (trms_to_vec ts)
   end.
 
 Lemma trms_to_vec_eq_iff n (ts : trms n) (ts' : trms n)
@@ -113,8 +113,8 @@ Proof.
     eapply trms_rec2 with (phi := fun n => fun ts => fun ts' => @trms_to_vec n ts = @trms_to_vec n ts' -> ts = ts'); ii.
     + reflexivity.
     + simpl in H0. f_equal.
-      * apply f_equal with (f := Vector.head) in H0. do 2 rewrite head_unfold in H0; eauto.
-      * apply f_equal with (f := tail) in H0. do 2 rewrite tail_unfold in H0; eauto.
+      * apply f_equal with (f := V.head) in H0. do 2 rewrite V.head_unfold in H0; eauto.
+      * apply f_equal with (f := V.tail) in H0. do 2 rewrite V.tail_unfold in H0; eauto.
   - f_equal; eauto.
 Qed.
 
