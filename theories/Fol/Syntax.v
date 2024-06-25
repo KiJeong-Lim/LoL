@@ -90,7 +90,7 @@ Lemma trms_rec2 (phi : forall n : nat, trms n -> trms n -> Type)
   : forall n, forall ts, forall ts', phi n ts ts'.
 Proof.
   refine (
-    fix trms_rec2_fix (n : nat) (ts : trms n) {struct ts} : forall ts', phi n ts ts' :=
+    fix trms_rec2_fix (n : nat) (ts : trms n) {struct ts} : forall ts' : trms n, phi n ts ts' :=
     match ts with
     | O_trms => fun ts' : trms O => trms_case0 _ phi_O ts'
     | S_trms n t ts => _
@@ -120,8 +120,8 @@ Qed.
 
 Let uncons' (n : nat) (xs : trms (S n)) : S n = S n -> trm * trms n :=
   match xs in trms m return S n = m -> trm * trms (pred m) with
-  | O_trms => fun H_eq: S n = O => S_eq_O_elim H_eq
-  | S_trms n' x xs' => fun H_eq: S n = S n' => (x, xs')
+  | O_trms => fun H_eq : S n = O => S_eq_O_elim H_eq
+  | S_trms n' x xs' => fun H_eq : S n = S n' => (x, xs')
   end.
 
 Definition head {n : nat} (xs: trms (S n)) : trm :=
@@ -449,7 +449,7 @@ Fixpoint fvs_frm (p : frm) : list ivar :=
   | Eqn_frm t1 t2 => fvs_trm t1 ++ fvs_trm t2
   | Neg_frm p1 => fvs_frm p1
   | Imp_frm p1 p2 => fvs_frm p1 ++ fvs_frm p2
-  | All_frm y p1 => List.remove nat_hasEqDec y (fvs_frm p1)
+  | All_frm y p1 => List.remove Nat.eq_dec y (fvs_frm p1)
   end.
 
 Definition fvs_frms (Gamma: ensemble frm) : ensemble ivar :=
@@ -566,21 +566,27 @@ End SYNTAX.
 #[global] Arguments frm : clear implicits.
 #[global] Arguments subst : clear implicits.
 
+#[global]
 Tactic Notation "trm_ind" ident( t ) :=
   induction t as [x | f ts | c].
 
+#[global]
 Tactic Notation "trms_ind" ident( ts ) :=
   induction ts as [ | n t ts IH].
 
+#[global]
 Tactic Notation "frm_ind" ident( p ) :=
   induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1].
 
+#[global]
 Tactic Notation "trm_ind2" ident( t ) ident( t' ) :=
   revert t'; induction t as [x | f ts | c]; intros [x' | f' ts' | c'].
 
+#[global]
 Tactic Notation "trms_ind2" ident( ts ) ident( ts' ) :=
   revert ts'; induction ts as [ | n t ts IH]; [intros ts'; pattern ts'; revert ts'; apply trms_case0 | intros ts'; pattern ts'; revert ts'; apply trms_caseS; intros t' ts'].
 
+#[global]
 Tactic Notation "frm_ind2" ident( p ) ident( p' ) :=
   revert p';
   induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1];

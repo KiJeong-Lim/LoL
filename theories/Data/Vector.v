@@ -10,7 +10,6 @@ Inductive t : nat -> Set :=
 #[global] Arguments FZ {n}%nat.
 #[global] Arguments FS {n}%nat (i).
 
-
 Lemma case0 {phi : Fin.t O -> Type}
   : forall i, phi i.
 Proof.
