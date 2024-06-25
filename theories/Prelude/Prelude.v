@@ -1,3 +1,4 @@
+Require Export LoL.Prelude.SfLib.
 Require Export Coq.Arith.Compare_dec.
 Require Export Coq.Arith.PeanoNat.
 Require Export Coq.Arith.Wf_nat.
@@ -11,7 +12,6 @@ Require Export Coq.Program.Wf.
 Require Export Coq.Relations.Relation_Definitions.
 Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
-Require Export LoL.Prelude.SfLib.
 
 Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
 
