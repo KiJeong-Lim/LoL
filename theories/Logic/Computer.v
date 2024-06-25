@@ -39,7 +39,7 @@ Proof.
   exists (@search_go nat COUNTABLE (fun x : nat => p x = true) P_dec 0 FUEL). eapply search_go_correct.
 Defined.
 
-Theorem unary_mu (f : nat -> nat)
+Theorem nullary_mu (f : nat -> nat)
   (EXISTENCE : exists n : nat, f n = 0)
   : { n : nat | f n = 0 /\ (forall i, f i = 0 -> i >= n) }.
 Proof.
@@ -52,5 +52,3 @@ Proof.
   - rewrite <- Nat.eqb_eq with (n := f (first_nat p n)) (m := 0). exact claim1.
   - intros i f_i_eq_0. eapply claim2. unfold p. rewrite Nat.eqb_eq. exact f_i_eq_0.
 Defined.
-
-Eval compute in proj1_sig (unary_mu (fun n : nat => if Nat.eqb n 3 then 0 else 1) (@ex_intro _ _ 3 eq_refl)).

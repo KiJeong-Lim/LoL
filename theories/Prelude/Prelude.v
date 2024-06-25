@@ -225,6 +225,7 @@ End B.
 Infix "×" := B.prod (at level 40, left associativity) : type_scope.
 Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
 Infix "$" := B.dollar (at level 100, right associativity).
+Infix "∘" := B.compose.
 Notation isFunctor := B.isFunctor.
 Notation fmap := B.fmap.
 Notation isMonad := B.isMonad.
