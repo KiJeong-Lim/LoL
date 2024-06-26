@@ -224,7 +224,7 @@ Class Similarity (A : Type) (B : Type) : Type :=
   is_similar_to (x : A) (y : B) : Prop.
 
 #[global]
-Instance arrow_liftSimilarity {I : Type} {A : Type} {B : Type} `(SIMILARITY : Similarity A B) : Similarity (I -> A) (I -> B) :=
+Instance arrow_liftsSimilarity {I : Type} {A : Type} {B : Type} `(SIMILARITY : Similarity A B) : Similarity (I -> A) (I -> B) :=
   fun f : I -> A => fun g : I -> B => forall i : I, is_similar_to (f i) (g i).
 
 End B.
@@ -899,3 +899,22 @@ Instance stateT_isMonadIter {S : Type} {M : Type -> Type} `{M_isMonad : isMonad 
   B.StateT ∘ B.curry (B.iterM (fmap (isFunctor := B.mkFunctorFromMonad M_isMonad) (DISTR I R S) ∘ B.uncurry (B.runStateT ∘ step))).
 
 End MONAD.
+
+Module RETRACT.
+
+#[universes(template)]
+Record t (X : Type) (A : Type) : Type :=
+  { retraction : X -> A
+  ; incl : A -> X
+  ; id : forall x, incl (retraction x) = x
+  }.
+
+#[global] Arguments RETRACT.retraction {X} {A}.
+#[global] Arguments RETRACT.incl {X} {A}.
+#[global] Arguments RETRACT.id {X} {A}.
+
+#[universes(polymorphic=yes)]
+Definition RETRACT_REFL@{u} (X : Type@{u}) : RETRACT.t X X :=
+  {| retraction := @B.id X; incl := @B.id X; id := @eq_refl X |}.
+
+End RETRACT.
