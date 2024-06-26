@@ -1,16 +1,88 @@
 Require Import LoL.Prelude.Prelude.
+Require Import LoL.Data.Vector.
 
-Section PRIMITIVE_RECURSION.
+Section PRIMITIVE_RECURSION. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/primRec.v" *)
 
-Inductive PrimRec : nat -> Set :=
+#[local] Open Scope program_scope.
+
+Let arity : Set := nat.
+
+Fixpoint naryFun (n : arity) : Type :=
+  match n with
+  | O => nat
+  | S n' => nat -> naryFun n'
+  end.
+
+Fixpoint naryRel (n : arity) : Type :=
+  match n with
+  | O => Prop
+  | S n' => nat -> naryRel n'
+  end.
+
+Fixpoint eval_const {n : arity} (m : nat) {struct n} : naryFun n :=
+  match n with
+  | O => m
+  | S n' => B.const (eval_const (n := n') m)
+  end.
+
+Fixpoint eval_proj {n : arity} {struct n} : Fin.t n -> naryFun n :=
+  match n as m return Fin.t m -> naryFun m with
+  | O => Fin.case0
+  | S n' => Fin.caseS (eval_const (n := n')) (B.const ∘ eval_proj (n := n'))
+  end.
+
+Fixpoint eval_vec {n : arity} (xs : Vector.t nat n) {struct xs} : naryFun n -> nat :=
+  match xs with
+  | VNil => B.id
+  | VCons n' x xs' => fun f => eval_vec xs' (f x)
+  end.
+
+Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S n)) m) {struct xs} : Vector.t (naryFun n) m :=
+  match xs with
+  | VNil => VNil
+  | VCons m' f xs' => VCons m' (f x) (eval_vec_1 x xs')
+  end.
+
+Definition eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
+  nat_rect (fun n : nat => forall m : nat, Vector.t (naryFun n) m -> naryFun m -> naryFun n) (@eval_vec) (fun n' : nat => fun IH => fun m : nat => fun xs : Vector.t (naryFun (S n')) m => fun f : naryFun m => fun x : nat => IH m (eval_vec_1 x xs) f) n m.
+
+Fixpoint eval_compose_2 {n : arity} : naryFun n -> naryFun (S n) -> naryFun n :=
+  match n with
+  | O => fun x : nat => fun f : nat -> nat => f x
+  | S n' =>
+    fun f : naryFun (S n') => fun g : naryFun (S (S n')) => fun a : nat =>
+    eval_compose_2 (n := n') (f a) (fun x : nat => g x a)
+  end.
+
+Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : arity) {struct a} : naryFun n :=
+  match a with
+  | O => g
+  | S a' => eval_compose_2 (eval_primRec g h a') (h a')
+  end.
+
+Inductive PrimRec : arity -> Set :=
   | PR_succ : PrimRec 1
   | PR_zero : PrimRec 0
-  | PR_proj (n : nat) (m : nat) (LT : m < n) : PrimRec n
+  | PR_proj (n : nat) (i : Fin.t n) : PrimRec n
   | PR_compose (n : nat) (m : nat) (g : PrimRecs n m) (h : PrimRec m) : PrimRec n
   | PR_primRec (n : nat) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n)
-with PrimRecs : nat -> nat -> Set :=
+with PrimRecs : arity -> nat -> Set :=
   | PRs_nil (n : nat) : PrimRecs n 0
   | PRs_cons (n : nat) (m : nat) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
+
+Fixpoint runPrimRec {n : arity} (f : PrimRec n) {struct f} : naryFun n :=
+  match f with
+  | PR_succ => S
+  | PR_zero => 0
+  | PR_proj n i => eval_proj i
+  | PR_compose n m g h => eval_compose (n := n) (m := m) (runPrimRecs g) (runPrimRec h)
+  | PR_primRec n g h => eval_primRec (n := n) (runPrimRec g) (runPrimRec h)
+  end
+with runPrimRecs {n : arity} {m : arity} (fs : PrimRecs n m) {struct fs} : Vector.t (naryFun n) m :=
+  match fs with
+  | PRs_nil n' => VNil
+  | PRs_cons n' m' f fs' => VCons m' (runPrimRec f) (runPrimRecs fs')
+  end.
 
 End PRIMITIVE_RECURSION.
 

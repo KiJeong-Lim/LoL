@@ -40,10 +40,10 @@ Definition lowerbounds_of (X: ensemble D) : ensemble D :=
   fun l => forall x : D, forall IN : x \in X, x >= l.
 
 Definition is_supremum_of (sup_X : D) (X : ensemble D) : Prop :=
-  forall u, sup_X =< u <-> u \in upperbounds_of X.
+  forall u : D, sup_X =< u <-> u \in upperbounds_of X.
 
 Definition is_infimum_of (inf_X : D) (X : ensemble D) : Prop :=
-  forall l, inf_X >= l <-> l \in lowerbounds_of X.
+  forall l : D, inf_X >= l <-> l \in lowerbounds_of X.
 
 End POSET_basic1.
 
