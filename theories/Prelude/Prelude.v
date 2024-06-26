@@ -918,3 +918,53 @@ Definition RETRACT_REFL@{u} (X : Type@{u}) : RETRACT.t X X :=
   {| retraction := @B.id X; incl := @B.id X; id := @eq_refl X |}.
 
 End RETRACT.
+
+Lemma eqProp_refl {A : Type} `(A_isSetoid : isSetoid A)
+  : forall x : A, x == x.
+Proof.
+  eapply Equivalence_Reflexive.
+Defined.
+
+Lemma eqProp_sym {A : Type} `(A_isSetoid : isSetoid A)
+  : forall x : A, forall y : A, x == y -> y == x.
+Proof.
+  eapply Equivalence_Symmetric.
+Defined.
+
+Lemma eqProp_trans {A : Type} `(A_isSetoid : isSetoid A)
+  : forall x : A, forall y : A, forall z : A, x == y -> y == z -> x == z.
+Proof.
+  eapply Equivalence_Transitive.
+Defined.
+
+Lemma leProp_refl {A : Type} `(A_isPoset : isPoset A)
+  : forall x : A, x =< x.
+Proof.
+  eapply PreOrder_Reflexive.
+Defined.
+
+Lemma leProp_trans {A : Type} `(A_isPoset : isPoset A)
+  : forall x : A, forall y : A, forall z : A, x =< y -> y =< z -> x =< z.
+Proof.
+  eapply PreOrder_Transitive.
+Defined.
+
+Lemma leProp_antisymmetry {A : Type} `(A_isPoset : isPoset A)
+  : forall x : A, forall y : A, x =< y -> y =< x -> x == y.
+Proof.
+  intros x y x_le_y y_le_x. exact (proj2 (leProp_PartialOrder x y) (conj x_le_y y_le_x)).
+Defined.
+
+Lemma eqProp_implies_leProp {A : Type} `(A_isPoset : isPoset A)
+  : forall x : A, forall y : A, x == y -> x =< y.
+Proof.
+  intros x y x_eq_y. exact (proj1 (proj1 (leProp_PartialOrder x y) x_eq_y)).
+Defined.
+
+#[global] Hint Resolve eqProp_refl : datatypes.
+#[global] Hint Resolve eqProp_sym : datatypes.
+#[global] Hint Resolve eqProp_trans : datatypes.
+#[global] Hint Resolve leProp_refl : datatypes.
+#[global] Hint Resolve leProp_trans : datatypes.
+#[global] Hint Resolve leProp_antisymmetry : datatypes.
+#[global] Hint Resolve eqProp_implies_leProp : datatypes.

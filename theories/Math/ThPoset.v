@@ -1,56 +1,6 @@
 Require Import LoL.Prelude.Prelude.
 Require Import LoL.Prelude.Notations.
 
-Lemma eqProp_refl {A: Type} `(A_isSetoid : isSetoid A)
-  : forall x: A, x == x.
-Proof.
-  eapply Equivalence_Reflexive.
-Defined.
-
-Lemma eqProp_sym {A : Type} `(A_isSetoid : isSetoid A)
-  : forall x : A, forall y : A, x == y -> y == x.
-Proof.
-  eapply Equivalence_Symmetric.
-Defined.
-
-Lemma eqProp_trans {A : Type} `(A_isSetoid : isSetoid A)
-  : forall x : A, forall y : A, forall z : A, x == y -> y == z -> x == z.
-Proof.
-  eapply Equivalence_Transitive.
-Defined.
-
-Lemma leProp_refl {A : Type} `(A_isPoset : isPoset A)
-  : forall x : A, x =< x.
-Proof.
-  eapply PreOrder_Reflexive.
-Defined.
-
-Lemma leProp_trans {A : Type} `(A_isPoset : isPoset A)
-  : forall x : A, forall y : A, forall z : A, x =< y -> y =< z -> x =< z.
-Proof.
-  eapply PreOrder_Transitive.
-Defined.
-
-Lemma leProp_antisymmetry {A : Type} `(A_isPoset : isPoset A)
-  : forall x : A, forall y : A, x =< y -> y =< x -> x == y.
-Proof.
-  intros x y x_le_y y_le_x. exact (proj2 (leProp_PartialOrder x y) (conj x_le_y y_le_x)).
-Defined.
-
-Lemma eqProp_implies_leProp {A : Type} `(A_isPoset : isPoset A)
-  : forall x : A, forall y : A, x == y -> x =< y.
-Proof.
-  intros x y x_eq_y. exact (proj1 (proj1 (leProp_PartialOrder x y) x_eq_y)).
-Defined.
-
-#[global] Hint Resolve eqProp_refl : datatypes.
-#[global] Hint Resolve eqProp_sym : datatypes.
-#[global] Hint Resolve eqProp_trans : datatypes.
-#[global] Hint Resolve leProp_refl : datatypes.
-#[global] Hint Resolve leProp_trans : datatypes.
-#[global] Hint Resolve leProp_antisymmetry : datatypes.
-#[global] Hint Resolve eqProp_implies_leProp : datatypes.
-
 Section POSET_basic1.
 
 #[local] Infix "\in" := E.In : type_scope.
@@ -84,10 +34,10 @@ Definition postfixpedpoints_of (f : D -> D) : ensemble D :=
   fun x => x =< f x.
 
 Definition upperbounds_of (X : ensemble D) : ensemble D :=
-  fun u => forall x: D, forall x_IN: x \in X, x =< u.
+  fun u => forall x : D, forall IN : x \in X, x =< u.
 
 Definition lowerbounds_of (X: ensemble D) : ensemble D :=
-  fun l => forall x : D, forall x_IN: x \in X, x >= l.
+  fun l => forall x : D, forall IN : x \in X, x >= l.
 
 Definition is_supremum_of (sup_X : D) (X : ensemble D) : Prop :=
   forall u, sup_X =< u <-> u \in upperbounds_of X.
@@ -237,7 +187,7 @@ Proof with discriminate || eauto with *.
   intros lhs rhs; destruct (lex_compare lhs rhs) eqn: H_compare_result; now firstorder.
 Qed.
 
-Corollary lex_le_flip_iff (lhs : list A) (rhs : list A) (compare_result: comparison) :
+Corollary lex_le_flip_iff (lhs : list A) (rhs : list A) (compare_result : comparison) :
   lex_compare lhs rhs = compare_result <->
   match compare_result with
   | Lt => lex_compare rhs lhs = Gt
