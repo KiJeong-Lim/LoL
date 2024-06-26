@@ -578,10 +578,10 @@ Definition In@{u} {A : Type@{u}} (x : A) (X : E.t@{u} A) : Prop := X x.
 #[local] Infix "\in" := E.In : type_scope.
 
 #[universes(polymorphic=yes)]
-Definition subseteq@{u} {A : Type@{u}} (X1 : E.t@{u} A) (X2 : E.t@{u} A) : Prop :=
+Definition isSubsetOf@{u} {A : Type@{u}} (X1 : E.t@{u} A) (X2 : E.t@{u} A) : Prop :=
   forall x : A, @E.In@{u} A x X1 -> @E.In@{u} A x X2.
 
-#[local] Infix "\subseteq" := E.subseteq : type_scope.
+#[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
 
 #[global]
 Instance ensemble_isPoset {A : Type} : isPoset (E.t A) :=

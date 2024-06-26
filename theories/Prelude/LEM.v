@@ -3,7 +3,7 @@ Require Import LoL.Prelude.Notations.
 
 Module __LEM.
 
-Axiom axiom: forall P: Prop, P \/ ~ P.
+Axiom axiom : forall P : Prop, P \/ ~ P.
 
 Lemma NNPP (P: Prop)
   (H_NNP : ~ ~ P)
@@ -16,13 +16,13 @@ Defined.
 
 Section PROOF_IRRELEVANCE.
 
+Import RETRACT.
+
 Record RETRACT2 (X : Prop) (A : Prop) : Prop :=
   { retraction2 : X -> A
   ; incl2 : A -> X
   ; id2 : RETRACT.t X A -> forall x, incl2 (retraction2 x) = x
   }.
-
-Import RETRACT.
 
 #[local] Arguments retraction2 {X} {A}.
 #[local] Arguments incl2 {X} {A}.

@@ -1,7 +1,7 @@
 Require Import LoL.Prelude.Prelude.
 
 #[local] Infix "\in" := E.In : type_scope.
-#[local] Infix "\subseteq" := E.subseteq : type_scope.
+#[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
 
 Class Topology (A : Type) : Type :=
   { isOpen (X : ensemble A) : Prop
