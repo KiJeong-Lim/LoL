@@ -854,7 +854,8 @@ Class isNiceMonad (M : Type -> Type) `{M_isMonad : isMonad M} `{M_isSetoid1 : is
 #[global]
 Add Parametric Morphism {M : Type -> Type} `{M_isMonad : isMonad M} `{M_isSetoid1 : isSetoid1 M} {A: Type} {B: Type}
   (M_isNiceMonad: isNiceMonad M (M_isMonad := M_isMonad) (M_isSetoid1 := M_isSetoid1))
-  : (@bind M M_isMonad A B) with signature (eqProp ==> f_eqProp ==> eqProp) as bind_compatWith_eqProp.
+  : (@bind M M_isMonad A B) with signature (eqProp ==> f_eqProp ==> eqProp)
+  as bind_compatWith_eqProp.
 Proof.
   intros m1 m2 m1_eq_m2 k1 k2 k1_eq_k2.
   rewrite bind_m_compatWith_eqProp with (m1 := m1) (m2 := m2) (m1_eq_m2 := m1_eq_m2).

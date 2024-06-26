@@ -3,14 +3,14 @@ Require Import LoL.Prelude.Prelude.
 Section PRIMITIVE_RECURSION.
 
 Inductive PrimRec : nat -> Set :=
-  | succFunc : PrimRec 1
-  | zeroFunc : PrimRec 0
-  | projFunc (n : nat) (m : nat) (LT : m < n) : PrimRec n
-  | composeFunc (n : nat) (m : nat) (g : PrimRecs n m) (h : PrimRec m) : PrimRec n
-  | primRecFunc (n : nat) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n)
+  | PR_succ : PrimRec 1
+  | PR_zero : PrimRec 0
+  | PR_proj (n : nat) (m : nat) (LT : m < n) : PrimRec n
+  | PR_compose (n : nat) (m : nat) (g : PrimRecs n m) (h : PrimRec m) : PrimRec n
+  | PR_primRec (n : nat) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n)
 with PrimRecs : nat -> nat -> Set :=
-  | PRnil (n : nat) : PrimRecs n 0
-  | PRcons (n : nat) (m : nat) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
+  | PRs_nil (n : nat) : PrimRecs n 0
+  | PRs_cons (n : nat) (m : nat) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
 
 End PRIMITIVE_RECURSION.
 

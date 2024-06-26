@@ -4,8 +4,13 @@ theories/Data/Vector.v #
 theories/Fol/Semantics.v #
 theories/Fol/Syntax.v #
 theories/Logic/Computer.v #
+theories/Math/CDomain.v #
+theories/Math/ThDomain.v #
 theories/Math/ThN.v #
+theories/Math/ThPoset.v #
+theories/Math/Topology.v #
 theories/Index/Index.v #
+theories/Prelude/LEM.v #
 theories/Prelude/Notations.v #
 theories/Prelude/Prelude.v #
 theories/Prelude/SfLib.v #
