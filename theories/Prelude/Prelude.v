@@ -220,17 +220,27 @@ Class isAlternative (F : Type -> Type) : Type :=
   ; alt {A : Type} : F A -> F A -> F A
   }.
 
+Class Similarity (A : Type) (B : Type) : Type :=
+  is_similar_to (x : A) (y : B) : Prop.
+
+#[global]
+Instance arrow_liftSimilarity {I : Type} {A : Type} {B : Type} `(SIMILARITY : Similarity A B) : Similarity (I -> A) (I -> B) :=
+  fun f : I -> A => fun g : I -> B => forall i : I, is_similar_to (f i) (g i).
+
 End B.
 
 Infix "×" := B.prod (at level 40, left associativity) : type_scope.
 Infix "+'" := B.sum1 (at level 50, left associativity) : type_scope.
 Infix "$" := B.dollar (at level 100, right associativity).
-Infix "∘" := B.compose.
+Infix "∘" := B.compose : program_scope.
 Notation isFunctor := B.isFunctor.
 Notation fmap := B.fmap.
 Notation isMonad := B.isMonad.
 Notation pure := B.pure.
 Notation bind := B.bind.
+Notation isAlternative := B.isAlternative.
+Notation Similarity := B.Similarity.
+Notation is_similar_to := B.is_similar_to.
 
 Section EQ_DEC.
 

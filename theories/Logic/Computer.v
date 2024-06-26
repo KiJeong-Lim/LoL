@@ -1,5 +1,19 @@
 Require Import LoL.Prelude.Prelude.
 
+Section PRIMITIVE_RECURSION.
+
+Inductive PrimRec : nat -> Set :=
+  | succFunc : PrimRec 1
+  | zeroFunc : PrimRec 0
+  | projFunc (n : nat) (m : nat) (LT : m < n) : PrimRec n
+  | composeFunc (n : nat) (m : nat) (g : PrimRecs n m) (h : PrimRec m) : PrimRec n
+  | primRecFunc (n : nat) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n)
+with PrimRecs : nat -> nat -> Set :=
+  | PRnil (n : nat) : PrimRecs n 0
+  | PRcons (n : nat) (m : nat) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
+
+End PRIMITIVE_RECURSION.
+
 Fixpoint first_nat (p : nat -> bool) (n : nat) : nat :=
   match n with
   | O => 0
