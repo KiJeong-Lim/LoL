@@ -69,7 +69,7 @@ Defined.
 
 Example nullary_mu_example1
   (f := fun n : nat => if Nat.ltb n 3 then 1 else 0)
-  (EXISTENCE := @ex_intro nat (fun n : nat => f n = 0) 4 eq_refl)
+  (EXISTENCE := @ex_intro nat (fun n : nat => f n = 0) 5 eq_refl)
   : proj1_sig (nullary_mu f EXISTENCE) = 3.
 Proof.
   reflexivity.

@@ -67,7 +67,7 @@ Next Obligation.
   cbn in *. eapply ID. eapply RETRACT_REFL.
 Qed.
 
-Corollary EXT (phi : UNIV -> BB)
+Corollary EXT_EQ (phi : UNIV -> BB)
   : forall t, (t ∈ { x | phi x }) = phi t.
 Proof.
   assert (ID : CONTAIN (BUILD phi) = phi) by exact (BUILD_SPEC.(id) phi).
@@ -101,7 +101,7 @@ Theorem PARADOX_OF_BERARDI
   : RUSSEL = NOT RUSSEL.
 Proof.
   change ((R ∈ { r | NOT (r ∈ r) }) = NOT (R ∈ R)).
-  apply EXT with (phi := fun r : UNIV => NOT (r ∈ r)).
+  eapply EXT_EQ with (phi := fun r : UNIV => NOT (r ∈ r)).
 Qed.
 
 Corollary PROOF_IRRELEVANCE
