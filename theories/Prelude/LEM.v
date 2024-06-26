@@ -28,7 +28,9 @@ Import RETRACT.
 #[local] Arguments incl2 {X} {A}.
 #[local] Arguments id2 {X} {A}.
 
-Inductive BB : Prop := trueBB | falseBB.
+Inductive BB : Prop :=
+  | trueBB : BB
+  | falseBB : BB.
 
 Let POW (P : Prop) : Prop := P -> BB.
 
@@ -51,7 +53,8 @@ Definition BUILD (phi : UNIV -> BB) : UNIV :=
 
 #[local] Notation "{ x | phi }" := (BUILD (fun x : UNIV => phi)).
 
-Definition CONTAIN (x : UNIV) : UNIV -> BB := x UNIV.
+Definition CONTAIN (x : UNIV) (z : UNIV) : BB :=
+  x UNIV z.
 
 #[local] Notation "z ∈ x" := (CONTAIN x z).
 
@@ -71,7 +74,8 @@ Proof.
   exact (fun t : UNIV => @f_equal (POW UNIV) BB (fun phi : POW UNIV => phi t) (CONTAIN (BUILD phi)) phi ID).
 Qed.
 
-Let NOT (b : BB) : BB := if axiom (b = trueBB) then falseBB else trueBB.
+Let NOT (b : BB) : BB :=
+  if axiom (b = trueBB) then falseBB else trueBB.
 
 Lemma NOT_trueBB_EQ_falseBB (b : BB)
   (b_EQ_trueBB : b = trueBB)
@@ -87,26 +91,28 @@ Proof.
   cbv. destruct (axiom (b = trueBB)); tauto.
 Qed.
 
-Let R : UNIV := { r | NOT (r ∈ r) }.
+Let R : UNIV :=
+  { r | NOT (r ∈ r) }.
 
-Let RUSSEL : BB := R ∈ R.
+Let RUSSEL : BB :=
+  R ∈ R.
 
 Theorem PARADOX_OF_BERARDI
   : RUSSEL = NOT RUSSEL.
 Proof.
   change ((R ∈ { r | NOT (r ∈ r) }) = NOT (R ∈ R)).
-  apply EXT with (phi := fun r: UNIV => NOT (r ∈ r)).
+  apply EXT with (phi := fun r : UNIV => NOT (r ∈ r)).
 Qed.
 
 Corollary PROOF_IRRELEVANCE
-  : forall P: Prop, forall p1: P, forall p2: P, p1 = p2.
+  : forall P : Prop, forall p1 : P, forall p2 : P, p1 = p2.
 Proof.
   assert (trueBB_EQ_falseBB: trueBB = falseBB).
   { pose proof (axiom (RUSSEL = trueBB)) as [b_EQ_trueBB | b_NE_trueBB].
     - rewrite <- b_EQ_trueBB. rewrite -> PARADOX_OF_BERARDI. now eapply NOT_trueBB_EQ_falseBB.
     - contradiction b_NE_trueBB. rewrite -> PARADOX_OF_BERARDI. now eapply NOT_falseBB_EQ_trueBB.
   }
-  i. exact (@f_equal BB P (fun b: BB => if b then p1 else p2) trueBB falseBB trueBB_EQ_falseBB).
+  i. exact (@f_equal BB P (fun b => if b then p1 else p2) trueBB falseBB trueBB_EQ_falseBB).
 Qed.
 
 End PROOF_IRRELEVANCE.
