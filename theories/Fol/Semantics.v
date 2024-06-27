@@ -1,6 +1,10 @@
 Require Import LoL.Prelude.Prelude.
+Require Import LoL.Math.ThN.
 Require Import LoL.Data.Vector.
 Require Import LoL.Fol.Syntax.
+
+#[local] Infix "\in" := E.elem.
+#[local] Infix "\subseteq" := E.isSubsetOf.
 
 #[local] Existing Instance V.vec_isSetoid.
 

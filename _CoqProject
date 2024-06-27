@@ -1,6 +1,7 @@
 -Q theories LoL #
 #
 theories/Data/Vector.v #
+theories/Fol/InferenceRules.v #
 theories/Fol/Semantics.v #
 theories/Fol/Syntax.v #
 theories/Logic/Computer.v #

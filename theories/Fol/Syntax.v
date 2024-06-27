@@ -4,6 +4,9 @@ Require Import LoL.Data.Vector.
 
 Section SYNTAX.
 
+#[local] Infix "\in" := E.elem.
+#[local] Infix "\subseteq" := E.isSubsetOf.
+
 Definition ivar : Set := nat.
 
 Definition rename : Set := ivar -> ivar.
@@ -476,6 +479,18 @@ Fixpoint is_free_in_frm (z : ivar) (p : frm) : bool :=
 Definition fvs_frms (Gamma: ensemble frm) : ensemble ivar :=
   E.unions (E.image (E.finite ∘ fvs_frm) Gamma).
 
+Definition is_not_free_in_trm (x : ivar) (t : trm) : Prop :=
+  is_free_in_trm x t = false.
+
+Definition is_not_free_in_trms {n : arity} (x : ivar) (ts : trms n) : Prop :=
+  is_free_in_trms x ts = false.
+
+Definition is_not_free_in_frm (x : ivar) (p : frm) : Prop :=
+  is_free_in_frm x p = false.
+
+Definition is_not_free_in_frms (x : ivar) (ps : ensemble frm) : Prop :=
+  forall p, p \in ps -> is_free_in_frm x p = false.
+
 End FREE_VARIABLES.
 
 Section SUBSTITUTION.
@@ -606,8 +621,8 @@ Lemma trm_eq_dec (t1 : trm L) (t2 : trm L)
 with trms_eq_dec n (ts1 : trms L n) (ts2 : trms L n)
   : {ts1 = ts2} + {ts1 <> ts2}.
 Proof with try first [now right; congruence | now left; congruence].
-  - pose proof nat_hasEqDec as ivar_hasEqDec.
-    red in ivar_hasEqDec, function_symbols_hasEqDec, constant_symbols_hasEqDec.
+  - pose proof Nat.eq_dec as ivar_hasEqDec.
+    red in function_symbols_hasEqDec, constant_symbols_hasEqDec.
     clear trm_eq_dec. trm_ind2 t1 t2...
     + pose proof (ivar_hasEqDec x x') as [? | ?]...
     + pose proof (function_symbols_hasEqDec f f') as [f_eq_f' | f_ne_f']...
@@ -634,7 +649,7 @@ Hypothesis relation_symbols_hasEqDec : hasEqDec L.(relation_symbols).
 Lemma frm_eq_dec (p : frm L) (p' : frm L)
   : {p = p'} + {p <> p'}.
 Proof with try first [now right; congruence | now left; congruence].
-  pose proof nat_hasEqDec as ivar_hasEqDec. red in ivar_hasEqDec. frm_ind2 p p'...
+  pose proof Nat.eq_dec as ivar_hasEqDec. frm_ind2 p p'...
   - pose proof (relation_symbols_hasEqDec r r') as [r_eq_r' | r_ne_r']...
     subst r'. pose proof (trms_eq_dec (L.(relation_arity_table) r) ts ts') as [EQ | NE]...
     right. intros CONTRA. eapply NE. inv CONTRA.

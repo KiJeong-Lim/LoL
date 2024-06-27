@@ -573,13 +573,13 @@ Module E.
 Definition t@{u} (A : Type@{u}) : Type@{u} := A -> Prop.
 
 #[universes(polymorphic=yes)]
-Definition In@{u} {A : Type@{u}} (x : A) (X : E.t@{u} A) : Prop := X x.
+Definition elem@{u} {A : Type@{u}} (x : A) (X : E.t@{u} A) : Prop := X x.
 
-#[local] Infix "\in" := E.In : type_scope.
+#[local] Infix "\in" := E.elem : type_scope.
 
 #[universes(polymorphic=yes)]
 Definition isSubsetOf@{u} {A : Type@{u}} (X1 : E.t@{u} A) (X2 : E.t@{u} A) : Prop :=
-  forall x : A, @E.In@{u} A x X1 -> @E.In@{u} A x X2.
+  forall x : A, @E.elem@{u} A x X1 -> @E.elem@{u} A x X2.
 
 #[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
 
@@ -961,10 +961,12 @@ Proof.
   intros x y x_eq_y. exact (proj1 (proj1 (leProp_PartialOrder x y) x_eq_y)).
 Defined.
 
-#[global] Hint Resolve eqProp_refl : datatypes.
-#[global] Hint Resolve eqProp_sym : datatypes.
-#[global] Hint Resolve eqProp_trans : datatypes.
-#[global] Hint Resolve leProp_refl : datatypes.
-#[global] Hint Resolve leProp_trans : datatypes.
-#[global] Hint Resolve leProp_antisymmetry : datatypes.
-#[global] Hint Resolve eqProp_implies_leProp : datatypes.
+Create HintDb domains.
+
+#[global] Hint Resolve eqProp_refl : domains.
+#[global] Hint Resolve eqProp_sym : domains.
+#[global] Hint Resolve eqProp_trans : domains.
+#[global] Hint Resolve leProp_refl : domains.
+#[global] Hint Resolve leProp_trans : domains.
+#[global] Hint Resolve leProp_antisymmetry : domains.
+#[global] Hint Resolve eqProp_implies_leProp : domains.

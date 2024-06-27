@@ -1,6 +1,6 @@
 Require Import LoL.Prelude.Prelude.
 
-#[local] Infix "\in" := E.In : type_scope.
+#[local] Infix "\in" := E.elem : type_scope.
 #[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
 
 Class hasTopology (A : Type) : Type :=
@@ -37,3 +37,9 @@ Proof.
   { rewrite E.ensemble_eq_unfold. intros x. autorewrite with datatypes. now firstorder. }
   rewrite EQ. eapply unions_isOpen. now firstorder.
 Qed.
+
+#[global] Hint Resolve full_isOpen : datatypes.
+#[global] Hint Resolve intersection_isOpen : datatypes.
+#[global] Hint Resolve unions_isOpen : datatypes.
+#[global] Hint Resolve empty_isOpen : datatypes.
+#[global] Hint Resolve isOpen_ext : datatypes.

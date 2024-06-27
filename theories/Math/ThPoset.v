@@ -3,7 +3,7 @@ Require Import LoL.Prelude.Notations.
 
 Section POSET_basic1.
 
-#[local] Infix "\in" := E.In : type_scope.
+#[local] Infix "\in" := E.elem : type_scope.
 #[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
 
 Lemma PreOrder_iff {A : Type} (R : A -> A -> Prop)
@@ -54,9 +54,9 @@ Class isDecidableTotalOrder (A : Type) `{POSET : isPoset A} : Type :=
   ; compare_GT_implies (lhs : A) (rhs : A) (H_gt : compare lhs rhs = Gt) : rhs =< lhs /\ ~ lhs == rhs
   }.
 
-#[global] Hint Resolve compare_LT_implies : datatypes.
-#[global] Hint Resolve compare_EQ_implies : datatypes.
-#[global] Hint Resolve compare_GT_implies : datatypes.
+#[global] Hint Resolve compare_LT_implies : domains.
+#[global] Hint Resolve compare_EQ_implies : domains.
+#[global] Hint Resolve compare_GT_implies : domains.
 
 Section LEXICOGRAPHICAL_ORDER.
 
