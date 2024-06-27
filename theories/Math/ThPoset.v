@@ -30,7 +30,7 @@ Definition fixedpoints_of `{SETOID : isSetoid D} (f : D -> D) : ensemble D :=
 Definition prefixedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
   fun x => x >= f x.
 
-Definition postfixpedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
+Definition postfixedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
   fun x => x =< f x.
 
 Definition upperbounds_of `{POSET : isPoset D} (X : ensemble D) : ensemble D :=

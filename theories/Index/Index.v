@@ -1,7 +1,7 @@
 Require LoL.Data.Vector.
-Require LoL.Fol.InferenceRules.
-Require LoL.Fol.Semantics.
-Require LoL.Fol.Syntax.
+Require LoL.FoL.InferenceRules.
+Require LoL.FoL.Semantics.
+Require LoL.FoL.Syntax.
 Require LoL.Logic.Computer.
 Require LoL.Math.CDomain.
 Require LoL.Math.ThDomain.

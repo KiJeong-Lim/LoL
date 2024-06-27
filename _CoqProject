@@ -1,9 +1,9 @@
 -Q theories LoL #
 #
 theories/Data/Vector.v #
-theories/Fol/InferenceRules.v #
-theories/Fol/Semantics.v #
-theories/Fol/Syntax.v #
+theories/FoL/InferenceRules.v #
+theories/FoL/Semantics.v #
+theories/FoL/Syntax.v #
 theories/Logic/Computer.v #
 theories/Math/CDomain.v #
 theories/Math/ThDomain.v #

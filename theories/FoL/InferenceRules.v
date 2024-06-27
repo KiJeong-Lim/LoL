@@ -2,8 +2,7 @@ Require Import LoL.Prelude.Prelude.
 Require Import LoL.Prelude.Notations.
 Require Import LoL.Math.ThN.
 Require Import LoL.Data.Vector.
-Require Import LoL.Fol.Syntax.
-Require Import LoL.Fol.Semantics.
+Require Import LoL.FoL.Syntax.
 
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
