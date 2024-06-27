@@ -26,7 +26,7 @@ Fixpoint eval_const {n : arity} (m : nat) {struct n} : naryFun n :=
   end.
 
 Fixpoint eval_proj {n : arity} {struct n} : Fin.t n -> naryFun n :=
-  match n as m return Fin.t m -> naryFun m with
+  match n with
   | O => Fin.case0
   | S n' => Fin.caseS (eval_const (n := n')) (B.const ∘ eval_proj (n := n'))
   end.
@@ -46,7 +46,7 @@ Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S
 Definition eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
   nat_rect (fun n : nat => forall m : nat, Vector.t (naryFun n) m -> naryFun m -> naryFun n) (@eval_vec) (fun n' : nat => fun IH => fun m : nat => fun xs : Vector.t (naryFun (S n')) m => fun f : naryFun m => fun x : nat => IH m (eval_vec_1 x xs) f) n m.
 
-Fixpoint eval_compose_2 {n : arity} : naryFun n -> naryFun (S n) -> naryFun n :=
+Fixpoint eval_compose_2 {n : arity} {struct n} : naryFun n -> naryFun (S n) -> naryFun n :=
   match n with
   | O => fun x : nat => fun f : nat -> nat => f x
   | S n' =>
