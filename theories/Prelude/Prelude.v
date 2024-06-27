@@ -900,7 +900,7 @@ Instance stateT_isMonadIter {S : Type} {M : Type -> Type} `{M_isMonad : isMonad 
 
 End MONAD.
 
-Module RETRACT.
+Module RETRACT. (* Reference: "https://coq.inria.fr/doc/v8.10/stdlib/Coq.Logic.Berardi.html" *)
 
 #[universes(template)]
 Record t (X : Type) (A : Type) : Type :=

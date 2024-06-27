@@ -14,7 +14,7 @@ Proof.
   - contradiction (H_NNP H_NP).
 Defined.
 
-Section PROOF_IRRELEVANCE.
+Section PROOF_IRRELEVANCE. (* Reference: "https://coq.inria.fr/doc/v8.10/stdlib/Coq.Logic.Berardi.html" *)
 
 Import RETRACT.
 
@@ -104,7 +104,7 @@ Proof.
   eapply EXT_EQ with (phi := fun r : UNIV => NOT (r ∈ r)).
 Qed.
 
-Corollary PROOF_IRRELEVANCE (* References: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Classical_Prop.html#proof_irrelevance" *)
+Corollary PROOF_IRRELEVANCE
   : forall P : Prop, forall p1 : P, forall p2 : P, p1 = p2.
 Proof.
   assert (trueBB_EQ_falseBB: trueBB = falseBB).

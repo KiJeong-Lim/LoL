@@ -2,6 +2,8 @@
 
 - This repository is my proof pool.
 
+- My environment is `WSL: Ubuntu-20.04`, `Windows 10`.
+
 ## Quick Start
 
 ```
@@ -19,11 +21,11 @@ compiled with OCaml 5.1.1
 
 ## References
 
-- [stdlib](https://coq.inria.fr/doc/v8.18/stdlib/)
+- [stdlib](https://coq.inria.fr/doc/v8.18/stdlib)
 
 - [sflib](https://github.com/snu-sf/sflib)
 
-- [stdpp](https://plv.mpi-sws.org/coqdoc/stdpp/)
+- [stdpp](https://plv.mpi-sws.org/coqdoc/stdpp)
 
 - [CoqGym/goedel](https://github.com/princeton-vl/CoqGym/tree/master/coq_projects/goedel)
 
