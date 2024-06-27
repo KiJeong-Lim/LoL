@@ -970,3 +970,78 @@ Create HintDb mathhints.
 #[global] Hint Resolve leProp_trans : mathhints.
 #[global] Hint Resolve leProp_antisymmetry : mathhints.
 #[global] Hint Resolve eqProp_implies_leProp : mathhints.
+
+Class MapSetoid1 {A : Type} {B : Type} `{A_isSetoid : isSetoid A} `{B_isSetoid : isSetoid B} (f : A -> B) : Prop :=
+  map_eqProp1 (x1 : A) (x2 : A) (x_EQ : x1 == x2) : f x1 == f x2.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} `{A_isSetoid : isSetoid A} `{B_isSetoid : isSetoid B} (f : A -> B)
+  `(MAP_SETOID : @MapSetoid1 A B A_isSetoid B_isSetoid f)
+  : f with signature (eqProp ==> eqProp)
+  as congruence_unary.
+Proof.
+  intros x1 x2 x_EQ. exact (map_eqProp1 x1 x2 x_EQ).
+Defined.
+
+Class MapSetoid2 {A : Type} {B : Type} {C : Type} `{A_isSetoid : isSetoid A} `{B_isSetoid : isSetoid B} `{C_isSetoid : isSetoid C} (f : A -> B -> C) : Prop :=
+  map_eqProp2 (x1 : A) (x2 : A) (y1 : B) (y2 : B) (x_EQ : x1 == x2) (y_EQ : y1 == y2) : f x1 y1 == f x2 y2.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} {C : Type} `{A_isSetoid : isSetoid A} `{B_isSetoid : isSetoid B} `{C_isSetoid : isSetoid C} (f : A -> B -> C)
+  `(MAP_SETOID : @MapSetoid2 A B C A_isSetoid B_isSetoid C_isSetoid f)
+  : f with signature (eqProp ==> eqProp ==> eqProp)
+  as congruence_binary.
+Proof.
+  intros x1 x2 x_EQ y1 y2 y_EQ. exact (map_eqProp2 x1 x2 y1 y2 x_EQ y_EQ).
+Defined.
+
+Class MapPoset1 {A : Type} {B : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} (f : A -> B) : Prop :=
+  map_leProp1 (x1 : A) (x2 : A) (x_LE : x1 =< x2) : f x1 =< f x2.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} (f : A -> B)
+  `(MAP_POSET : @MapPoset1 A B A_isPoset B_isPoset f)
+  : f with signature (leProp ==> leProp)
+  as monotonic_unary.
+Proof.
+  intros x1 x2 x_LE. exact (map_leProp1 x1 x2 x_LE).
+Defined.
+
+Class MapPoset2 {A : Type} {B : Type} {C : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} `{C_isPoset : isPoset C} (f : A -> B -> C) : Prop :=
+  map_leProp2 (x1 : A) (x2 : A) (y1 : B) (y2 : B) (x_LE : x1 =< x2) (y_LE : y1 =< y2) : f x1 y1 =< f x2 y2.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} {C : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} `{C_isPoset : isPoset C} (f : A -> B -> C)
+  `(MAP_POSET : @MapPoset2 A B C A_isPoset B_isPoset C_isPoset f)
+  : f with signature (leProp ==> leProp ==> leProp)
+  as monotonic_binary.
+Proof.
+  intros x1 x2 x_LE y1 y2 y_LE. exact (map_leProp2 x1 x2 y1 y2 x_LE y_LE).
+Defined.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} {C : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} `{C_isPoset : isPoset C} (f : A -> B -> C)
+  `(MAP_POSET : @MapPoset2 A B C A_isPoset B_isPoset C_isPoset f)
+  : f with signature (eqProp ==> leProp ==> leProp)
+  as monotonic_binary_eqProp_l.
+Proof.
+  intros x1 x2 x_EQ y1 y2 y_LE. exact (map_leProp2 x1 x2 y1 y2 (eqProp_implies_leProp A_isPoset x1 x2 x_EQ) y_LE).
+Defined.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} {C : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} `{C_isPoset : isPoset C} (f : A -> B -> C)
+  `(MAP_POSET : @MapPoset2 A B C A_isPoset B_isPoset C_isPoset f)
+  : f with signature (leProp ==> eqProp ==> leProp)
+  as monotonic_binary_eqProp_r.
+Proof.
+  intros x1 x2 x_LE y1 y2 y_EQ. exact (map_leProp2 x1 x2 y1 y2 x_LE (eqProp_implies_leProp B_isPoset y1 y2 y_EQ)).
+Defined.
+
+#[global]
+Add Parametric Morphism {A : Type} {B : Type} {C : Type} `{A_isPoset : isPoset A} `{B_isPoset : isPoset B} `{C_isPoset : isPoset C} (f : A -> B -> C)
+  `(MAP_POSET : @MapPoset2 A B C A_isPoset B_isPoset C_isPoset f)
+  : f with signature (eqProp ==> eqProp ==> leProp)
+  as monotonic_binary_eqProp_lr.
+Proof.
+  intros x1 x2 x_EQ y1 y2 y_EQ. exact (map_leProp2 x1 x2 y1 y2 (eqProp_implies_leProp A_isPoset x1 x2 x_EQ) (eqProp_implies_leProp B_isPoset y1 y2 y_EQ)).
+Defined.
