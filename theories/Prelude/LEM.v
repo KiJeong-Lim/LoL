@@ -14,7 +14,7 @@ Proof.
   - contradiction (H_NNP H_NP).
 Defined.
 
-Section PROOF_IRRELEVANCE. (* Reference: "https://coq.inria.fr/doc/v8.10/stdlib/Coq.Logic.Berardi.html" *)
+Section PROOF_IRRELEVANCE. (* Reference: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Berardi.html" *)
 
 Import RETRACT.
 

@@ -117,7 +117,7 @@ Definition eq_symmetry {A : Type} (x1 : A) (x2 : A) (x1_eq_x2 : x1 = x2) : x2 = 
 Definition eq_transitivity {A : Type} (x1 : A) (x2 : A) (x3 : A) (x1_eq_x2 : x1 = x2) (x2_eq_x3 : x2 = x3) : x1 = x3 :=
   @eq_ind A x2 (fun x : A => x1 = x) x1_eq_x2 x3 x2_eq_x3.
 
-Section EQ_EM_implies_EQ_PIRREL.
+Section EQ_EM_implies_EQ_PIRREL. (* Reference: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Eqdep_dec.html" *)
 
 Context {A : Type}.
 
@@ -187,7 +187,7 @@ Defined.
 
 End EQ_EM_implies_EQ_PIRREL.
 
-Section PROJ_T2_EQ.
+Section PROJ_T2_EQ. (* Reference: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Eqdep_dec.html" *)
 
 Context {A : Type} {B : A -> Type} (x : A).
 
@@ -303,7 +303,7 @@ Class isCountable (A : Type) : Type :=
     : decode (encode x) = Some x 
   }.
 
-Section SEARCH. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.countable.html#choice" *)
+Section SEARCH. (* Reference: "https://plv.mpi-sws.org/coqdoc/stdpp/stdpp.countable.html" *)
 
 Context {A : Type} `{COUNTABLE : isCountable A}.
 
@@ -900,7 +900,7 @@ Instance stateT_isMonadIter {S : Type} {M : Type -> Type} `{M_isMonad : isMonad 
 
 End MONAD.
 
-Module RETRACT. (* Reference: "https://coq.inria.fr/doc/v8.10/stdlib/Coq.Logic.Berardi.html" *)
+Module RETRACT. (* Reference: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Berardi.html" *)
 
 #[universes(template)]
 Record t (X : Type) (A : Type) : Type :=
