@@ -38,8 +38,7 @@ Proof.
   rewrite EQ. eapply unions_isOpen. now firstorder.
 Qed.
 
-#[global] Hint Resolve full_isOpen : datatypes.
-#[global] Hint Resolve intersection_isOpen : datatypes.
-#[global] Hint Resolve unions_isOpen : datatypes.
-#[global] Hint Resolve empty_isOpen : datatypes.
-#[global] Hint Resolve isOpen_ext : datatypes.
+#[global] Hint Resolve full_isOpen : mathhints.
+#[global] Hint Resolve intersection_isOpen : mathhints.
+#[global] Hint Resolve unions_isOpen : mathhints.
+#[global] Hint Resolve empty_isOpen : mathhints.

@@ -22,30 +22,36 @@ Qed.
 
 #[local] Notation "x >= y" := (y =< x) (only parsing) : type_scope.
 
-Context {D : Type} `{POSET : isPoset D}.
+Context {D : Type}.
 
-Definition fixedpoints_of (f : D -> D) : ensemble D :=
+Definition fixedpoints_of `{SETOID : isSetoid D} (f : D -> D) : ensemble D :=
   fun x => x == f x.
 
-Definition prefixedpoints_of (f : D -> D) : ensemble D :=
+Definition prefixedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
   fun x => x >= f x.
 
-Definition postfixpedpoints_of (f : D -> D) : ensemble D :=
+Definition postfixpedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
   fun x => x =< f x.
 
-Definition upperbounds_of (X : ensemble D) : ensemble D :=
+Definition upperbounds_of `{POSET : isPoset D} (X : ensemble D) : ensemble D :=
   fun u => forall x : D, forall IN : x \in X, x =< u.
 
-Definition lowerbounds_of (X: ensemble D) : ensemble D :=
+Definition lowerbounds_of `{POSET : isPoset D} (X: ensemble D) : ensemble D :=
   fun l => forall x : D, forall IN : x \in X, x >= l.
 
-Definition is_supremum_of (sup_X : D) (X : ensemble D) : Prop :=
+Definition is_supremum_of `{POSET : isPoset D} (sup_X : D) (X : ensemble D) : Prop :=
   forall u : D, sup_X =< u <-> u \in upperbounds_of X.
 
-Definition is_infimum_of (inf_X : D) (X : ensemble D) : Prop :=
+Definition is_infimum_of `{POSET : isPoset D} (inf_X : D) (X : ensemble D) : Prop :=
   forall l : D, inf_X >= l <-> l \in lowerbounds_of X.
 
 End POSET_basic1.
+
+#[global] Hint Unfold fixedpoints_of : mathhints.
+#[global] Hint Unfold prefixedpoints_of : mathhints.
+#[global] Hint Unfold postfixedpoints_of : mathhints.
+#[global] Hint Unfold upperbounds_of : mathhints.
+#[global] Hint Unfold lowerbounds_of : mathhints.
 
 Class isDecidableTotalOrder (A : Type) `{POSET : isPoset A} : Type :=
   { compare (lhs : A) (rhs : A) : comparison
@@ -54,9 +60,9 @@ Class isDecidableTotalOrder (A : Type) `{POSET : isPoset A} : Type :=
   ; compare_GT_implies (lhs : A) (rhs : A) (H_gt : compare lhs rhs = Gt) : rhs =< lhs /\ ~ lhs == rhs
   }.
 
-#[global] Hint Resolve compare_LT_implies : domains.
-#[global] Hint Resolve compare_EQ_implies : domains.
-#[global] Hint Resolve compare_GT_implies : domains.
+#[global] Hint Resolve compare_LT_implies : mathhints.
+#[global] Hint Resolve compare_EQ_implies : mathhints.
+#[global] Hint Resolve compare_GT_implies : mathhints.
 
 Section LEXICOGRAPHICAL_ORDER.
 

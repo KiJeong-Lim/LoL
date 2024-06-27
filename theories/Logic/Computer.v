@@ -34,13 +34,13 @@ Fixpoint eval_proj {n : arity} {struct n} : Fin.t n -> naryFun n :=
 Fixpoint eval_vec {n : arity} (xs : Vector.t nat n) {struct xs} : naryFun n -> nat :=
   match xs with
   | VNil => B.id
-  | VCons n' x xs' => fun f => eval_vec xs' (f x)
+  | VCons n' x xs' => fun f => eval_vec (n := n') xs' (f x)
   end.
 
 Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S n)) m) {struct xs} : Vector.t (naryFun n) m :=
   match xs with
   | VNil => VNil
-  | VCons m' f xs' => VCons m' (f x) (eval_vec_1 x xs')
+  | VCons m' f xs' => VCons m' (f x) (eval_vec_1 (n := n) (m := m') x xs')
   end.
 
 Definition eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
@@ -49,15 +49,13 @@ Definition eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> nary
 Fixpoint eval_compose_2 {n : arity} {struct n} : naryFun n -> naryFun (S n) -> naryFun n :=
   match n with
   | O => fun x : nat => fun f : nat -> nat => f x
-  | S n' =>
-    fun f : naryFun (S n') => fun g : naryFun (S (S n')) => fun a : nat =>
-    eval_compose_2 (n := n') (f a) (fun x : nat => g x a)
+  | S n' => fun f : naryFun (S n') => fun g : naryFun (S (S n')) => fun a : nat => eval_compose_2 (n := n') (f a) (fun x : nat => g x a)
   end.
 
 Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : arity) {struct a} : naryFun n :=
   match a with
   | O => g
-  | S a' => eval_compose_2 (eval_primRec g h a') (h a')
+  | S a' => eval_compose_2 (n := n) (eval_primRec (n := n) g h a') (h a')
   end.
 
 Inductive PrimRec : arity -> Set :=

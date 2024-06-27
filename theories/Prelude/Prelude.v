@@ -961,12 +961,12 @@ Proof.
   intros x y x_eq_y. exact (proj1 (proj1 (leProp_PartialOrder x y) x_eq_y)).
 Defined.
 
-Create HintDb domains.
+Create HintDb mathhints.
 
-#[global] Hint Resolve eqProp_refl : domains.
-#[global] Hint Resolve eqProp_sym : domains.
-#[global] Hint Resolve eqProp_trans : domains.
-#[global] Hint Resolve leProp_refl : domains.
-#[global] Hint Resolve leProp_trans : domains.
-#[global] Hint Resolve leProp_antisymmetry : domains.
-#[global] Hint Resolve eqProp_implies_leProp : domains.
+#[global] Hint Resolve eqProp_refl : mathhints.
+#[global] Hint Resolve eqProp_sym : mathhints.
+#[global] Hint Resolve eqProp_trans : mathhints.
+#[global] Hint Resolve leProp_refl : mathhints.
+#[global] Hint Resolve leProp_trans : mathhints.
+#[global] Hint Resolve leProp_antisymmetry : mathhints.
+#[global] Hint Resolve eqProp_implies_leProp : mathhints.

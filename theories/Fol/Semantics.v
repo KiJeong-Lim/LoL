@@ -6,6 +6,9 @@ Require Import LoL.Fol.Syntax.
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
 
+#[local] Close Scope list_scope.
+#[local] Open Scope vector_scope.
+
 #[local] Existing Instance V.vec_isSetoid.
 
 Class structureOf (L : language) : Type :=
@@ -25,15 +28,12 @@ Class structureOf (L : language) : Type :=
 
 Section SEMANTICS.
 
-#[local] Close Scope list_scope.
-#[local] Open Scope vector_scope.
-
 Context {L : language}.
 
 Definition upd_env {STRUCTURE : structureOf L} (y : ivar) (y_value : domain_of_discourse) (env : ivar -> domain_of_discourse) : ivar -> domain_of_discourse :=
-  fun z : ivar => if eq_dec z y then y_value else env z.
+  fun z : ivar => if Nat.eq_dec z y then y_value else env z.
 
-Variable STRUCTURE: structureOf L.
+Variable STRUCTURE : structureOf L.
 
 Fixpoint interpret_trm (env : ivar -> domain_of_discourse) (t : trm L) {struct t} : domain_of_discourse :=
   match t with
