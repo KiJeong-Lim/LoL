@@ -19,10 +19,12 @@ compiled with OCaml 5.1.1
 
 ## References
 
-1. [sflib](https://github.com/snu-sf/sflib)
+- [stdlib](https://coq.inria.fr/doc/v8.18/stdlib/)
 
-2. [stdpp](https://plv.mpi-sws.org/coqdoc/stdpp/)
+- [sflib](https://github.com/snu-sf/sflib)
 
-3. [CoqGym/goedel](https://github.com/princeton-vl/CoqGym/tree/master/coq_projects/goedel)
+- [stdpp](https://plv.mpi-sws.org/coqdoc/stdpp/)
 
-4. [formalmetatheory-stoughton](https://github.com/ernius/formalmetatheory-stoughton)
+- [CoqGym/goedel](https://github.com/princeton-vl/CoqGym/tree/master/coq_projects/goedel)
+
+- [formalmetatheory-stoughton](https://github.com/ernius/formalmetatheory-stoughton)

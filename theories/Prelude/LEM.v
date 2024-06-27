@@ -1,7 +1,7 @@
 Require Import LoL.Prelude.Prelude.
 Require Import LoL.Prelude.Notations.
 
-Module __LEM.
+Module __LEM. (* Reference: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Classical_Prop.html" *)
 
 Axiom axiom : forall P : Prop, P \/ ~ P.
 
@@ -104,7 +104,7 @@ Proof.
   eapply EXT_EQ with (phi := fun r : UNIV => NOT (r ∈ r)).
 Qed.
 
-Corollary PROOF_IRRELEVANCE
+Corollary PROOF_IRRELEVANCE (* References: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Classical_Prop.html#proof_irrelevance" *)
   : forall P : Prop, forall p1 : P, forall p2 : P, p1 = p2.
 Proof.
   assert (trueBB_EQ_falseBB: trueBB = falseBB).
