@@ -16,3 +16,13 @@ make -j4 -k
 The Coq Proof Assistant, version 8.18.0
 compiled with OCaml 5.1.1
 ```
+
+## references
+
+- [https://github.com/snu-sf/sflib](https://github.com/snu-sf/sflib)
+
+- [https://plv.mpi-sws.org/coqdoc/stdpp/](https://plv.mpi-sws.org/coqdoc/stdpp/)
+
+- [https://github.com/princeton-vl/CoqGym/tree/master/coq_projects/goedel](https://github.com/princeton-vl/CoqGym/tree/master/coq_projects/goedel)
+
+- [https://github.com/ernius/formalmetatheory-stoughton](https://github.com/ernius/formalmetatheory-stoughton)

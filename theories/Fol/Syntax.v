@@ -493,7 +493,7 @@ Definition is_not_free_in_frms (x : ivar) (ps : ensemble frm) : Prop :=
 
 End FREE_VARIABLES.
 
-Section SUBSTITUTION.
+Section SUBSTITUTION. (* Reference: "https://github.com/ernius/formalmetatheory-stoughton/blob/master/Substitution.lagda", "https://github.com/ernius/formalmetatheory-stoughton/blob/master/SubstitutionLemmas.lagda" *)
 
 Definition last_ivar_trm (t : trm) : ivar :=
   maxs (fvs_trm t).
@@ -549,7 +549,7 @@ Section SINGLE_SUBSTITUTION.
 
 End SINGLE_SUBSTITUTION.
 
-Section ALPHA.
+Section ALPHA. (* Reference: "https://github.com/ernius/formalmetatheory-stoughton/blob/master/Alpha.lagda" *)
 
 Inductive alpha_equiv : frm -> frm -> Prop :=
   | alpha_Rel_frm R ts ts'
