@@ -71,8 +71,8 @@ with PrimRecs : arity -> nat -> Set :=
 Fixpoint runPrimRec {n : arity} (f : PrimRec n) {struct f} : naryFun n :=
   match f with
   | PR_succ => S
-  | PR_zero => 0
-  | PR_proj n i => eval_proj i
+  | PR_zero => O
+  | PR_proj n i => eval_proj (n := n) i
   | PR_compose n m g h => eval_compose (n := n) (m := m) (runPrimRecs g) (runPrimRec h)
   | PR_primRec n g h => eval_primRec (n := n) (runPrimRec g) (runPrimRec h)
   end
@@ -81,6 +81,29 @@ with runPrimRecs {n : arity} {m : arity} (fs : PrimRecs n m) {struct fs} : Vecto
   | PRs_nil n' => VNil
   | PRs_cons n' m' f fs' => VCons m' (runPrimRec f) (runPrimRecs fs')
   end.
+
+Lemma runPrimRec_unfold (n : arity) (f : PrimRec n) :
+  runPrimRec f =
+  match f with
+  | PR_succ => S
+  | PR_zero => O
+  | PR_proj n i => eval_proj i
+  | PR_compose n m g h => eval_compose (runPrimRecs g) (runPrimRec h)
+  | PR_primRec n g h => eval_primRec (runPrimRec g) (runPrimRec h)
+  end.
+Proof.
+  destruct f; reflexivity.
+Defined.
+
+Lemma runPrimRecs_unfold (n : arity) (m : arity) (fs : PrimRecs n m) :
+  runPrimRecs fs =
+  match fs with
+  | PRs_nil n' => VNil
+  | PRs_cons n' m' f fs' => VCons m' (runPrimRec f) (runPrimRecs fs')
+  end.
+Proof.
+  destruct fs; reflexivity.
+Defined.
 
 End PRIMITIVE_RECURSION.
 

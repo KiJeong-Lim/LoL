@@ -5,7 +5,7 @@ Module __LEM. (* Reference: "https://coq.inria.fr/doc/v8.18/stdlib/Coq.Logic.Cla
 
 Axiom axiom : forall P : Prop, P \/ ~ P.
 
-Lemma NNPP (P: Prop)
+Lemma NNPP (P : Prop)
   (H_NNP : ~ ~ P)
   : P.
 Proof.

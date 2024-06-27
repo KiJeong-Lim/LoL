@@ -33,7 +33,7 @@ with trms : arity -> Set :=
   | S_trms (n : arity) (t : trm) (ts : trms n) : trms (S n).
 
 Inductive frm : Set :=
-  | Rel_frm (r : L.(relation_symbols)) (ts : trms (L.(relation_arity_table) r)) : frm
+  | Rel_frm (R : L.(relation_symbols)) (ts : trms (L.(relation_arity_table) R)) : frm
   | Eqn_frm (t1 : trm) (t2 : trm) : frm
   | Neg_frm (p1 : frm) : frm
   | Imp_frm (p1 : frm) (p2 : frm) : frm
@@ -504,10 +504,11 @@ Fixpoint last_ivar_trms {n : nat} (ts : trms n) : ivar :=
   | S_trms n t ts => max (last_ivar_trm t) (last_ivar_trms (n := n) ts)
   end.
 
-Definition last_ivar_frm (p: frm) : ivar :=
+Definition last_ivar_frm (p : frm) : ivar :=
   maxs (fvs_frm p).
 
-Definition subst : Set := ivar -> trm.
+Definition subst : Set :=
+  ivar -> trm.
 
 Definition chi_frm (s : subst) (p : frm) : ivar :=
   1 + maxs (List.map (last_ivar_trm ∘ s) (fvs_frm p)).
@@ -527,7 +528,7 @@ Fixpoint subst_trm (s : subst) (t : trm) : trm :=
   | Fun_trm f ts => Fun_trm f (subst_trms s ts)
   | Con_trm c => Con_trm c
   end
-with subst_trms {n: nat} (s : subst) (ts : trms n) : trms n :=
+with subst_trms {n : arity} (s : subst) (ts : trms n) : trms n :=
   match ts with
   | O_trms => O_trms
   | S_trms n t ts => S_trms n (subst_trm s t) (subst_trms (n := n) s ts) 
@@ -575,6 +576,21 @@ Inductive alpha_equiv : frm -> frm -> Prop :=
 
 End ALPHA.
 
+Definition Bot_frm : frm :=
+  All_frm 0 (Neg_frm (Eqn_frm (Var_trm 0) (Var_trm 0))).
+
+Definition Con_frm (p1 : frm) (p2 : frm) : frm :=
+  Neg_frm (Imp_frm p1 (Neg_frm p2)).
+
+Definition Dis_frm (p1 : frm) (p2 : frm) : frm :=
+  Neg_frm (Con_frm (Neg_frm p1) (Neg_frm p2)).
+
+Definition Iff_frm (p1 : frm) (p2 : frm) : frm :=
+  Con_frm (Imp_frm p1 p2) (Imp_frm p2 p1).
+
+Definition Exs_frm (y : ivar) (p1 : frm) : frm :=
+  Neg_frm (All_frm y (Neg_frm p1)).
+
 End SYNTAX.
 
 #[global] Arguments trm : clear implicits.
@@ -592,7 +608,7 @@ Tactic Notation "trms_ind" ident( ts ) :=
 
 #[global]
 Tactic Notation "frm_ind" ident( p ) :=
-  induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1].
+  induction p as [R ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1].
 
 #[global]
 Tactic Notation "trm_ind2" ident( t ) ident( t' ) :=
@@ -605,8 +621,8 @@ Tactic Notation "trms_ind2" ident( ts ) ident( ts' ) :=
 #[global]
 Tactic Notation "frm_ind2" ident( p ) ident( p' ) :=
   revert p';
-  induction p as [r ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1];
-  intros [r' ts' | t1' t2' | p1' | p1' p2' | y' p1'].
+  induction p as [R ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1];
+  intros [R' ts' | t1' t2' | p1' | p1' p2' | y' p1'].
 
 Section EQ_DEC.
 
@@ -650,10 +666,10 @@ Lemma frm_eq_dec (p : frm L) (p' : frm L)
   : {p = p'} + {p <> p'}.
 Proof with try first [now right; congruence | now left; congruence].
   pose proof Nat.eq_dec as ivar_hasEqDec. frm_ind2 p p'...
-  - pose proof (relation_symbols_hasEqDec r r') as [r_eq_r' | r_ne_r']...
-    subst r'. pose proof (trms_eq_dec (L.(relation_arity_table) r) ts ts') as [EQ | NE]...
+  - pose proof (relation_symbols_hasEqDec R R') as [R_eq_R' | R_ne_R']...
+    subst R'. pose proof (trms_eq_dec (L.(relation_arity_table) R) ts ts') as [EQ | NE]...
     right. intros CONTRA. eapply NE. inv CONTRA.
-    apply @projT2_eq_fromEqDec with (B := fun r : relation_symbols L => trms L (L.(relation_arity_table) r)) in H0.
+    apply @projT2_eq_fromEqDec with (B := fun R : relation_symbols L => trms L (L.(relation_arity_table) R)) in H0.
     + exact H0.
     + exact relation_symbols_hasEqDec.
   - pose proof (trm_eq_dec t1 t1') as [? | ?]; pose proof (trm_eq_dec t2 t2') as [? | ?]...

@@ -2,6 +2,7 @@
 #
 theories/Data/Vector.v #
 theories/FoL/InferenceRules.v #
+theories/FoL/MetaTh.v #
 theories/FoL/Semantics.v #
 theories/FoL/Syntax.v #
 theories/Logic/Computer.v #

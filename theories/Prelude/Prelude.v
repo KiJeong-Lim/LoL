@@ -14,6 +14,7 @@ Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
 
 Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
+Ltac done' := first [congruence | SfLib.done | now SfLib.done; congruence].
 
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
@@ -721,6 +722,24 @@ Qed.
 
 #[global] Hint Rewrite @in_finite_iff : datatypes.
 
+Inductive insert {A : Type} (x1 : A) (X2 : E.t A) : E.t A :=
+  | In_head x
+    (H_eq : x = x1)
+    : x \in insert x1 X2
+  | In_tail x
+    (H_in : x \in X2)
+    : x \in insert x1 X2.
+
+#[global] Hint Constructors insert : datatypes.
+
+Lemma in_insert_iff {A : Type} (x1 : A) (X2 : E.t A)
+  : forall z : A, z \in insert x1 X2 <-> (z = x1 \/ z \in X2).
+Proof.
+  intros z; split; [intros [? | ?] | intros [? | ?]]; eauto with *.
+Qed.
+
+#[global] Hint Rewrite @in_insert_iff : datatypes.
+
 #[global]
 Instance ensemble_isMonad : isMonad E.t :=
   { pure {A} (x : A) := singleton x
@@ -793,6 +812,7 @@ Notation ensemble := E.t.
 #[global] Hint Resolve E.in_image_iff : datatypes.
 #[global] Hint Resolve E.in_preimage_iff : datatypes.
 #[global] Hint Resolve E.in_finite_iff : datatypes.
+#[global] Hint Resolve E.in_insert_iff : datatypes.
 #[global] Hint Resolve E.ensemble_liftM2_spec : datatypes.
 #[global] Hint Resolve E.ensemble_fmap_spec : datatypes.
 #[global] Hint Resolve E.in_full_iff : datatypes.
