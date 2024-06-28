@@ -210,16 +210,16 @@ with MuRecs : Arity -> Arity -> Set :=
 
 Let Value : Type := nat.
 
-(* "SEMANTICS"
-[MR_succ] succ(x) = S x.
-[MR_zero] zero() = 0.
-[MR_proj] proj_n(i)(x_1, ..., x_n) = x_i.
-[MR_compose] compose(f)(g_1, ..., g_m)(x_1, ..., x_n) = f(g_1(x_1, ..., x_n), ..., g_m(x_1, ..., x_n)).
-[MR_primRec] primRec(g, h)(O, x_1, ..., x_n) = g(x_1, ..., x_n).
-[MR_primRec] primRec(g, h)(S a, x_1, ..., x_n) = h(a, primRec(g, h)(a, x_1, ..., x_n), x_1, ..., x_n).
-[MR_mu] mu(g)(x_1, ..., x_n) = min X, if X is nonempty;
-[MR_mu] mu(g)(x_1, ..., x_n) = undefined, otherwise;
-  where X := { z : nat | g(z, x_1, ..., x_n) = 0 }.
+(* "THE SEMANTICS" : Eval_{n : nat} : MuRec n -> Vector.t nat n -> nat
+[MR_succ] Eval_{1}[ succ ](x) = S x.
+[MR_zero] Eval_{0}[ zero ]() = O.
+[MR_proj] Eval_{n}[ proj(i) ](x_1, ..., x_n) = x_i.
+[MR_compose] Eval_{n}[ compose(f, g_1, ..., g_m) ](x_1, ..., x_n) = Eval_{m}[ f ](Eval_{n}[ g_1 ](x_1, ..., x_n), ..., Eval_{n}[ g_m ](x_1, ..., x_n)).
+[MR_primRec] Eval_{n + 1}[ primRec(g, h) ](O, x_1, ..., x_n) = Eval_{n}[ g ](x_1, ..., x_n).
+[MR_primRec] Eval_{n + 1}[ primRec(g, h) ](S a, x_1, ..., x_n) = Eval_{n + 2}[ h ](a, Eval_{1 + n}[ primRec(g, h) ](a, x_1, ..., x_n), x_1, ..., x_n).
+[MR_mu] Eval_{n}[ mu(g) ](x_1, ..., x_n) = min X, if X is nonempty;
+[MR_mu] Eval_{n][ mu(g) ](x_1, ..., x_n) = undefined, otherwise;
+  where X := { z | Eval_{n + 1}[ g ](z, x_1, ..., x_n) = 0 }.
 *)
 
 Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Prop :=
