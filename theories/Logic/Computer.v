@@ -210,19 +210,30 @@ with MuRecs : Arity -> Arity -> Set :=
 
 Let Value : Type := nat.
 
+(*
+[MR_succ] succ(x) = S z
+[MR_zero] zero() = 0
+[MR_proj] proj_{n, i}(x_1, ..., x_n) = x_i
+[MR_compose] compose(f)(g_1, ..., g_m)(x_1, ..., x_n) = f(g_1(x_1, ..., x_n), ..., g_m(x_1, ..., x_n))
+[MR_primRec] primRec(g,h)(O, x_1, ..., x_n) = g(x_1, ..., x_n)
+[MR_primRec] primRec(g,h)(S a, x_1, ..., x_n) = h(a, primRec(g,h)(a, x_1, ..., x_n), x_1, ..., x_n)
+[MR_mu] mu(g)(x_1, ..., x_n) = min X if X is nonempty
+  where X := { z : nat | g(z, x_1, ..., x_n) = 0 }
+*)
+
 Fixpoint MuRecGraph {n : Arity} (f : MuRec n) {struct f} : Vector.t Value n -> Value -> Prop :=
   match f with
-  | MR_succ => fun xs : Vector.t Value 1 => fun z : Value => S (V.head xs) = z
-  | MR_zero => fun xs : Vector.t Value 0 => fun z : Value => O = z
-  | MR_proj n i => fun xs : Vector.t Value n => fun z : Value => xs !! i = z
-  | MR_compose n m g h => fun xs : Vector.t Value n => fun z : Value => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
-  | MR_primRec n g h => fun xs : Vector.t Value (S n) => nat_rect (fun _ => Value -> Prop) (fun z : Value => MuRecGraph g (V.tail xs) z) (fun m : Value => fun acc : Value -> Prop => fun z : Value => exists y, acc y /\ MuRecGraph h (m :: y :: V.tail xs) z) (V.head xs)
-  | MR_mu n g => fun xs : Vector.t Value n => fun z : Value => MuRecGraph g (z :: xs) 0 /\ (forall y, MuRecGraph g (y :: xs) 0 -> y >= z)
+  | MR_succ => fun xs => fun z => S (V.head xs) = z
+  | MR_zero => fun xs => fun z => O = z
+  | MR_proj n i => fun xs => fun z => xs !! i = z
+  | MR_compose n m g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
+  | MR_primRec n g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun m => fun acc => fun z => exists y, acc y /\ MuRecGraph h (m :: y :: V.tail xs) z) (V.head xs)
+  | MR_mu n g => fun xs => fun z => MuRecGraph g (z :: xs) 0 /\ (forall y, MuRecGraph g (y :: xs) 0 -> y >= z)
   end
 with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) {struct fs} : Vector.t Value n -> Vector.t Value m -> Prop :=
   match fs with
-  | MRs_nil n => fun xs : Vector.t Value n => fun z : Vector.t Value O => [] = z
-  | MRs_cons n m f fs => fun xs : Vector.t Value n => fun z : Vector.t Value (S m) => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
+  | MRs_nil n => fun xs => fun z => [] = z
+  | MRs_cons n m f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
   end.
 
 End MU_RECURSIVE.
