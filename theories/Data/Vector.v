@@ -51,14 +51,12 @@ Proof.
   ).
 Defined.
 
-#[local]
-Tactic Notation "introFZ" :=
+Ltac case0 :=
   let i := fresh "i" in
   intro i; pattern i; revert i;
   apply case0.
 
-#[local]
-Tactic Notation "introFS" ident( i' ) :=
+Ltac caseS i' :=
   let i := fresh "i" in
   intro i; pattern i; revert i;
   apply caseS; [ | intros i'].
@@ -67,7 +65,7 @@ Tactic Notation "introFS" ident( i' ) :=
 Instance Fin_hasEqDec {n : nat}
   : hasEqDec (Fin.t n).
 Proof.
-  red. induction n as [ | n IH]; [introFZ | introFS i1'; introFS i2'].
+  red. induction n as [ | n IH]; [Fin.case0 | Fin.caseS i1'; Fin.caseS i2'].
   - left; reflexivity.
   - right; congruence.
   - right; congruence.
@@ -88,25 +86,13 @@ Defined.
 Fixpoint to_nat {n : nat} (i : Fin.t n) {struct i} : nat :=
   match i with
   | @FZ n' => O
-  | @FS n' i' => S (to_nat i')
+  | @FS n' i' => S (@to_nat n' i')
   end.
 
 End Fin.
 
 Notation FZ := Fin.FZ.
 Notation FS := Fin.FS.
-
-#[global]
-Tactic Notation "introFZ" :=
-  let i := fresh "i" in
-  intro i; pattern i; revert i;
-  apply Fin.case0.
-
-#[global]
-Tactic Notation "introFS" ident( i' ) :=
-  let i := fresh "i" in
-  intro i; pattern i; revert i;
-  apply Fin.caseS; [ | intros i'].
 
 #[global] Declare Scope vec_scope.
 
@@ -119,6 +105,8 @@ Inductive t (A : Type) : nat -> Type :=
 
 #[global] Arguments VNil {A}.
 #[global] Arguments VCons {A} (n) (x) (xs).
+
+#[global] Delimit Scope vec_scope with t.
 
 End Vector.
 
@@ -237,7 +225,9 @@ Tactic Notation "introVCons" ident( x' ) ident( xs' ) :=
 
 Lemma nth_unfold {A : Type} {n : nat} (xs : Vector.t A n) (i : Fin.t n) :
   xs !! i = (match i in Fin.t m return Vector.t A m -> A with FZ => fun v => head v | FS i' => fun v => tail v !! i' end) xs.
-Proof. revert i; destruct xs as [ | n' x' xs']; [introFZ | introFS i']; reflexivity. Qed.
+Proof.
+  revert i; destruct xs as [ | n' x' xs']; [Fin.case0 | Fin.caseS i']; reflexivity.
+Qed.
 
 Theorem vec_ext_eq {A : Type} {n : nat} (lhs : Vector.t A n) (rhs : Vector.t A n)
   : lhs = rhs <-> forall i, lhs !! i = rhs !! i.
@@ -263,8 +253,8 @@ Lemma map_spec {A : Type} {B : Type} {n : nat} (f : A -> B) (xs : Vector.t A n)
   : forall i : Fin.t n, f (xs !! i) = map f xs !! i.
 Proof.
   induction xs as [ | n x xs IH].
-  - introFZ.
-  - introFS i.
+  - Fin.case0.
+  - Fin.caseS i.
     + reflexivity.
     + exact (IH i).
 Qed.
@@ -278,7 +268,7 @@ Fixpoint replicate {A : Type} {n : nat} {struct n} : A -> Vector.t A n :=
 Lemma replicate_spec {A : Type} {n : nat} (x: A)
   : forall i : Fin.t n, x = replicate x !! i.
 Proof.
-  induction n; [introFZ | introFS i]; simpl; eauto.
+  induction n; [Fin.case0 | Fin.caseS i]; simpl; eauto.
 Qed.
 
 Fixpoint diagonal {A : Type} {n : nat} {struct n} : Vector.t (Vector.t A n) n -> Vector.t A n :=
@@ -291,8 +281,8 @@ Lemma diagonal_spec {A : Type} {n : nat} (xss: Vector.t (Vector.t A n) n)
   : forall i : Fin.t n, xss !! i !! i = diagonal xss !! i.
 Proof.
   revert xss; induction n as [ | n IH].
-  - introVNil; introFZ.
-  - introVCons xs xss; introFS i; simpl.
+  - introVNil; Fin.case0.
+  - introVCons xs xss; Fin.caseS i; simpl.
     + now rewrite nth_unfold.
     + now rewrite nth_unfold; rewrite <- IH with (i := i); rewrite map_spec with (f := tail) (xs := xss) (i := i).
 Qed.
