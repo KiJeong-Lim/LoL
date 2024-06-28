@@ -210,15 +210,16 @@ with MuRecs : Arity -> Arity -> Set :=
 
 Let Value : Type := nat.
 
-(*
-[MR_succ] succ(x) = S z
-[MR_zero] zero() = 0
-[MR_proj] proj_{n, i}(x_1, ..., x_n) = x_i
-[MR_compose] compose(f)(g_1, ..., g_m)(x_1, ..., x_n) = f(g_1(x_1, ..., x_n), ..., g_m(x_1, ..., x_n))
-[MR_primRec] primRec(g,h)(O, x_1, ..., x_n) = g(x_1, ..., x_n)
-[MR_primRec] primRec(g,h)(S a, x_1, ..., x_n) = h(a, primRec(g,h)(a, x_1, ..., x_n), x_1, ..., x_n)
-[MR_mu] mu(g)(x_1, ..., x_n) = min X if X is nonempty
-  where X := { z : nat | g(z, x_1, ..., x_n) = 0 }
+(* "SEMANTICS"
+[MR_succ] succ(x) = S x.
+[MR_zero] zero() = 0.
+[MR_proj] proj_{n, i}(x_1, ..., x_n) = x_i.
+[MR_compose] compose(f)(g_1, ..., g_m)(x_1, ..., x_n) = f(g_1(x_1, ..., x_n), ..., g_m(x_1, ..., x_n)).
+[MR_primRec] primRec(g, h)(O, x_1, ..., x_n) = g(x_1, ..., x_n).
+[MR_primRec] primRec(g, h)(S a, x_1, ..., x_n) = h(a, primRec(g, h)(a, x_1, ..., x_n), x_1, ..., x_n).
+[MR_mu] mu(g)(x_1, ..., x_n) = min X, if X is nonempty;
+[MR_mu] mu(g)(x_1, ..., x_n) = undefined, otherwise;
+  where X := { z : nat | g(z, x_1, ..., x_n) = 0 }.
 *)
 
 Fixpoint MuRecGraph {n : Arity} (f : MuRec n) {struct f} : Vector.t Value n -> Value -> Prop :=
