@@ -216,7 +216,7 @@ Let Value : Type := nat.
 [MR_proj] Eval_{n}[ proj(i) ](x_1, ..., x_n) = x_i.
 [MR_compose] Eval_{n}[ compose(g_1, ..., g_m, h) ](x_1, ..., x_n) = Eval_{m}[ h ](Eval_{n}[ g_1 ](x_1, ..., x_n), ..., Eval_{n}[ g_m ](x_1, ..., x_n)).
 [MR_primRec] Eval_{n + 1}[ primRec(g, h) ](O, x_1, ..., x_n) = Eval_{n}[ g ](x_1, ..., x_n).
-[MR_primRec] Eval_{n + 1}[ primRec(g, h) ](S a, x_1, ..., x_n) = Eval_{n + 2}[ h ](a, Eval_{1 + n}[ primRec(g, h) ](a, x_1, ..., x_n), x_1, ..., x_n).
+[MR_primRec] Eval_{n + 1}[ primRec(g, h) ](S a, x_1, ..., x_n) = Eval_{n + 2}[ h ](a, Eval_{n + 1}[ primRec(g, h) ](a, x_1, ..., x_n), x_1, ..., x_n).
 [MR_mu] Eval_{n}[ mu(g) ](x_1, ..., x_n) = min X, if X is nonempty;
 [MR_mu] Eval_{n][ mu(g) ](x_1, ..., x_n) = undefined, otherwise;
   where X := { z | Eval_{n + 1}[ g ](z, x_1, ..., x_n) = 0 }.
