@@ -210,7 +210,7 @@ with MuRecs : Arity -> Arity -> Set :=
 
 Let Value : Type := nat.
 
-(* "THE SEMANTICS" : Eval_{n : Arity} : MuRec n -> Vector.t Value n -> Value
+(* "THE SEMANTICS" : Eval_{n : Arity} : MuRec n -> Vector.t Value n -> Value.
 [MR_succ] Eval_{1}[ succ ](x) = S x.
 [MR_zero] Eval_{0}[ zero ]() = O.
 [MR_proj] Eval_{n}[ proj(i) ](x_1, ..., x_n) = x_i.
@@ -228,7 +228,7 @@ Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Pro
   | MR_zero => fun xs => fun z => O = z
   | MR_proj n i => fun xs => fun z => xs !! i = z
   | MR_compose n m g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
-  | MR_primRec n g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun m => fun acc => fun z => exists y, acc y /\ MuRecGraph h (m :: y :: V.tail xs) z) (V.head xs)
+  | MR_primRec n g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
   | MR_mu n g => fun xs => fun z => MuRecGraph g (z :: xs) 0 /\ (forall y, MuRecGraph g (y :: xs) 0 -> y >= z)
   end
 with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n -> Vector.t Value m -> Prop :=
