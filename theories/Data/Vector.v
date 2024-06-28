@@ -130,9 +130,9 @@ Notation " x :: xs " := (@Vector.VCons _ _ x xs) : vec_scope.
 Notation VNil := Vector.VNil.
 Notation VCons := Vector.VCons.
 
-Module V.
-
 #[local] Open Scope vec_scope.
+
+Module V.
 
 Section Accessories.
 
@@ -221,7 +221,7 @@ Fixpoint nth {n : nat} (xs : vec n) {struct xs} : Fin.t n -> A :=
 
 End Accessories.
 
-Infix " !! " := nth (left associativity, at level 25).
+#[local] Infix " !! " := nth (left associativity, at level 25).
 
 #[local]
 Tactic Notation "introVNil" :=
@@ -324,7 +324,8 @@ Proof.
       now apply f_equal with (f := tail) in H_contradiction.
 Defined.
 
-Definition vec (n : nat) (A : Type) : Type := Vector.t A n.
+Definition vec (n : nat) (A : Type) : Type :=
+  Vector.t A n.
 
 #[local]
 Instance vec_isMonad {n : nat} : isMonad (vec n) :=
@@ -366,11 +367,15 @@ Fixpoint foldr {A : Type} {B : Type} {n : nat} (f : A -> B -> B) (z : B) (xs : V
 
 Lemma head_unfold {A : Type} (n : nat) (x : A) (xs : Vector.t A n)
   : head (x :: xs) = x.
-Proof. reflexivity. Defined.
+Proof.
+  reflexivity.
+  Defined.
 
 Lemma tail_unfold {A : Type} (n : nat) (x : A) (xs : Vector.t A n)
   : tail (x :: xs) = xs.
-Proof. reflexivity. Defined.
+Proof.
+  reflexivity.
+Defined.
 
 Fixpoint gen_nat_vec (n : nat) (seed : nat) : Vector.t nat n :=
   match n with
@@ -406,3 +411,5 @@ Tactic Notation "introVCons" ident( x' ) ident( xs' ) :=
   let xs := fresh "xs" in
   intro xs; pattern xs; revert xs;
   apply V.caseS; intros x' xs'.
+
+Infix "!!" := V.nth (left associativity, at level 25).

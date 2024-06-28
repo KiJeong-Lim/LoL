@@ -52,21 +52,39 @@ Fixpoint eval_compose_2 {n : arity} {struct n} : naryFun n -> naryFun (S n) -> n
   | S n' => fun f : naryFun (S n') => fun g : naryFun (S (S n')) => fun a : nat => eval_compose_2 (n := n') (f a) (fun x : nat => g x a)
   end.
 
-Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : arity) {struct a} : naryFun n :=
+Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : nat) {struct a} : naryFun n :=
   match a with
   | O => g
   | S a' => eval_compose_2 (n := n) (eval_primRec (n := n) g h a') (h a')
   end.
 
+Example eval_primRec_example1
+  (g := fun m : nat => m)
+  (h := fun n : nat => fun acc : nat => fun m : nat => S acc)
+  (add := @eval_primRec 1 g h)
+  : add 2 3 = 5.
+Proof.
+  reflexivity.
+Qed.
+
+Example eval_primRec_example2
+  (g := fun m : nat => 0)
+  (h := fun n : nat => fun acc : nat => fun m : nat => m + acc)
+  (mult := @eval_primRec 1 g h)
+  : mult 2 3 = 6.
+Proof.
+  reflexivity.
+Qed.
+
 Inductive PrimRec : arity -> Set :=
   | PR_succ : PrimRec 1
   | PR_zero : PrimRec 0
-  | PR_proj (n : nat) (i : Fin.t n) : PrimRec n
-  | PR_compose (n : nat) (m : nat) (g : PrimRecs n m) (h : PrimRec m) : PrimRec n
-  | PR_primRec (n : nat) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n)
-with PrimRecs : arity -> nat -> Set :=
-  | PRs_nil (n : nat) : PrimRecs n 0
-  | PRs_cons (n : nat) (m : nat) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
+  | PR_proj (n : arity) (i : Fin.t n) : PrimRec n
+  | PR_compose (n : arity) (m : arity) (g : PrimRecs n m) (h : PrimRec m) : PrimRec n
+  | PR_primRec (n : arity) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n)
+with PrimRecs : arity -> arity -> Set :=
+  | PRs_nil (n : arity) : PrimRecs n 0
+  | PRs_cons (n : arity) (m : arity) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
 
 Fixpoint runPrimRec {n : arity} (f : PrimRec n) {struct f} : naryFun n :=
   match f with
@@ -167,3 +185,27 @@ Example nullary_mu_example1
 Proof.
   reflexivity.
 Qed.
+
+Section MU_RECURSIVE.
+
+#[local] Close Scope list_scope.
+#[local] Open Scope vector_scope.
+
+#[local] Notation " [ ] " := (VNil).
+#[local] Notation " x :: xs " := (VCons _ x xs).
+#[local] Notation " [ x ] " := (VCons _ x VNil).
+
+Let arity : Set := nat.
+
+Inductive MuRec : arity -> Set :=
+  | MR_succ : MuRec 1
+  | MR_zero : MuRec 0
+  | MR_proj (n : arity) (i : Fin.t n) : MuRec n
+  | MR_compose (n : arity) (m : arity) (g : MuRecs n m) (h : MuRec m) : MuRec n
+  | MR_primRec (n : arity) (g : MuRec n) (h : MuRec (S (S n))) : MuRec (S n)
+  | MR_mu (n : arity) (g : MuRec (S n)) : MuRec n
+with MuRecs : arity -> arity -> Set :=
+  | MRs_nil (n : arity) : MuRecs n 0
+  | MRs_cons (n : arity) (m : arity) (f : MuRec n) (fs : MuRecs n m) : MuRecs n (S m).
+
+End MU_RECURSIVE.
