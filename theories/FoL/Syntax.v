@@ -430,8 +430,6 @@ End ENUMERATION.
 
 #[local] Open Scope program_scope.
 
-Section FREE_VARIABLES.
-
 Import ListNotations.
 
 Fixpoint fvs_trm (t : trm) : list ivar :=
@@ -455,6 +453,44 @@ Fixpoint fvs_frm (p : frm) : list ivar :=
   | All_frm y p1 => List.remove Nat.eq_dec y (fvs_frm p1)
   end.
 
+Lemma fvs_trm_unfold (t : trm) :
+  fvs_trm t =
+  match t with
+  | Var_trm x => [x]
+  | Fun_trm f ts => fvs_trms ts
+  | Con_trm c => []
+  end.
+Proof.
+  destruct t; reflexivity.
+Defined.
+
+Lemma fvs_trms_unfold (n : arity) (ts : trms n) :
+  fvs_trms ts =
+  match ts with
+  | O_trms => []
+  | S_trms n t ts => fvs_trm t ++ fvs_trms (n := n) ts
+  end.
+Proof.
+  destruct ts; reflexivity.
+Defined.
+
+Lemma fvs_frm_unfold (p : frm) :
+  fvs_frm p =
+  match p with
+  | Rel_frm r ts => fvs_trms ts
+  | Eqn_frm t1 t2 => fvs_trm t1 ++ fvs_trm t2
+  | Neg_frm p1 => fvs_frm p1
+  | Imp_frm p1 p2 => fvs_frm p1 ++ fvs_frm p2
+  | All_frm y p1 => List.remove Nat.eq_dec y (fvs_frm p1)
+  end.
+Proof.
+  destruct p; reflexivity.
+Defined.
+
+#[local] Hint Rewrite fvs_trm_unfold : core.
+#[local] Hint Rewrite fvs_trms_unfold : core.
+#[local] Hint Rewrite fvs_frm_unfold : core.
+
 Fixpoint is_free_in_trm (z : ivar) (t : trm) : bool :=
   match t with
   | Var_trm x => Nat.eqb x z
@@ -476,8 +512,43 @@ Fixpoint is_free_in_frm (z : ivar) (p : frm) : bool :=
   | All_frm y p1 => is_free_in_frm z p1 && negb (Nat.eqb z y)
   end.
 
-Definition fvs_frms (Gamma: ensemble frm) : ensemble ivar :=
-  E.unions (E.image (E.finite ∘ fvs_frm) Gamma).
+Lemma is_free_in_trm_unfold (z : ivar) (t : trm) :
+  is_free_in_trm z t =
+  match t with
+  | Var_trm x => Nat.eqb x z
+  | Fun_trm f ts => is_free_in_trms z ts
+  | Con_trm c => false
+  end.
+Proof.
+  destruct t; reflexivity.
+Defined.
+
+Lemma is_free_in_trms_unfold (n : arity) (z : ivar) (ts : trms n) :
+  is_free_in_trms z ts =
+  match ts with
+  | O_trms => false
+  | S_trms _ t ts => is_free_in_trm z t || is_free_in_trms z ts
+  end.
+Proof.
+  destruct ts; reflexivity.
+Defined.
+
+Lemma is_free_in_frm_unfold (z : ivar) (p : frm) :
+  is_free_in_frm z p =
+  match p with
+  | Rel_frm R ts => is_free_in_trms z ts
+  | Eqn_frm t1 t2 => is_free_in_trm z t1 || is_free_in_trm z t2
+  | Neg_frm p1 => is_free_in_frm z p1
+  | Imp_frm p1 p2 => is_free_in_frm z p1 || is_free_in_frm z p2
+  | All_frm y p1 => is_free_in_frm z p1 && negb (Nat.eqb z y)
+  end.
+Proof.
+  destruct p; reflexivity.
+Defined.
+
+#[local] Hint Rewrite is_free_in_trm_unfold : core.
+#[local] Hint Rewrite is_free_in_trms_unfold : core.
+#[local] Hint Rewrite is_free_in_frm_unfold : core.
 
 Definition is_not_free_in_trm (x : ivar) (t : trm) : Prop :=
   is_free_in_trm x t = false.
@@ -491,7 +562,8 @@ Definition is_not_free_in_frm (x : ivar) (p : frm) : Prop :=
 Definition is_not_free_in_frms (x : ivar) (ps : ensemble frm) : Prop :=
   forall p, p \in ps -> is_free_in_frm x p = false.
 
-End FREE_VARIABLES.
+Definition fvs_frms (Gamma : ensemble frm) : ensemble ivar :=
+  E.unions (E.image (E.finite ∘ fvs_frm) Gamma).
 
 Section SUBSTITUTION. (* Reference: "https://github.com/ernius/formalmetatheory-stoughton/blob/master/Substitution.lagda", "https://github.com/ernius/formalmetatheory-stoughton/blob/master/SubstitutionLemmas.lagda" *)
 
