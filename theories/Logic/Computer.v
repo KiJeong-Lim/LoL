@@ -325,45 +325,45 @@ Proof.
   pose proof (LEFT := @MuRecsGraph_complete). pose proof (RIGHT := @MuRecsGraph_sound). now firstorder.
 Qed.
 
-Fixpoint MuRecGraph_unique_value (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (z' : Value) (SPEC : MuRecSpec n f xs z) (CALL : MuRecGraph f xs z') {struct SPEC}
+Fixpoint MuRec_isPartialFunction_aux (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (z' : Value) (SPEC : MuRecSpec n f xs z) (CALL : MuRecGraph f xs z') {struct SPEC}
   : z = z'
-with MuRecsGraph_unique_value (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m) (z' : Vector.t Value m) (SPEC : MuRecsSpec n m fs xs z) (CALL' : MuRecsGraph fs xs z') {struct SPEC}
+with MuRecs_isPartialFunction_aux (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m) (z' : Vector.t Value m) (SPEC : MuRecsSpec n m fs xs z) (CALL' : MuRecsGraph fs xs z') {struct SPEC}
   : z = z'.
 Proof.
   - destruct SPEC.
     + exact CALL.
     + exact CALL.
     + exact CALL.
-    + simpl in CALL. eapply MuRecGraph_unique_value.
+    + simpl in CALL. eapply MuRec_isPartialFunction_aux.
       * exact SPEC.
       * destruct CALL as (ys'&CALLs&CALL).
         assert (claim : ys = ys').
-        { eapply MuRecsGraph_unique_value; [exact g_spec | exact CALLs]. }
+        { eapply MuRecs_isPartialFunction_aux; [exact g_spec | exact CALLs]. }
         subst ys'. exact CALL.
-    + simpl in CALL. unfold V.tail in CALL; simpl in CALL. eapply MuRecGraph_unique_value.
+    + simpl in CALL. unfold V.tail in CALL; simpl in CALL. eapply MuRec_isPartialFunction_aux.
       * eapply SPEC.
       * exact CALL.
     + simpl in CALL. destruct CALL as (y&ACC&CALL). unfold V.tail in ACC, CALL; simpl in ACC, CALL.
       assert (claim : acc = y).
-      { eapply MuRecGraph_unique_value.
+      { eapply MuRec_isPartialFunction_aux.
         - exact SPEC1.
         - exact ACC. 
       }
-      subst y. eapply MuRecGraph_unique_value.
+      subst y. eapply MuRec_isPartialFunction_aux.
       * eapply SPEC2.
       * exact CALL.
     + simpl in CALL. destruct CALL as [MIN' CALL].
       assert (NOT_LT : ~ z < z').
       { intros LT. pose proof (MIN' z LT) as (p&p_gt_0&CALL').
         enough (WTS : 0 = p) by lia.
-        eapply MuRecGraph_unique_value.
+        eapply MuRec_isPartialFunction_aux.
         - exact SPEC.
         - exact CALL'.
       }
       assert (NOT_LT' : ~ z' < z).
       { intros LT. pose proof (MIN z' LT) as (p&p_gt_0&CALL').
         enough (WTS : p = 0) by lia.
-        eapply MuRecGraph_unique_value. 
+        eapply MuRec_isPartialFunction_aux. 
         - exact CALL'.
         - exact CALL.
       }
@@ -372,8 +372,8 @@ Proof.
     + revert z' CALL'. introVNil. i. reflexivity.
     + revert z' CALL'. introVCons y' ys'. i. simpl in CALL'.
       destruct CALL' as (y''&ys''&CALL''&CALLs''&EQ). rewrite <- EQ. eapply f_equal2.
-      * eapply MuRecGraph_unique_value; [exact f_spec | exact CALL''].
-      * eapply MuRecsGraph_unique_value; [exact SPEC | exact CALLs''].
+      * eapply MuRec_isPartialFunction_aux; [exact f_spec | exact CALL''].
+      * eapply MuRecs_isPartialFunction_aux; [exact SPEC | exact CALLs''].
 Qed.
 
 Theorem MuRec_isPartialFunction (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (z' : Value)
@@ -381,7 +381,7 @@ Theorem MuRec_isPartialFunction (n : Arity) (f : MuRec n) (xs : Vector.t Value n
   (SPEC' : MuRecSpec n f xs z')
   : z = z'.
 Proof.
-  eapply MuRecGraph_unique_value; [exact SPEC | rewrite MuRecGraph_correct; exact SPEC'].
+  eapply MuRec_isPartialFunction_aux; [exact SPEC | rewrite MuRecGraph_correct; exact SPEC'].
 Qed.
 
 Theorem MuRecs_isPartialFunction (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m) (z' : Vector.t Value m)
@@ -389,7 +389,7 @@ Theorem MuRecs_isPartialFunction (n : Arity) (m : Arity) (fs : MuRecs n m) (xs :
   (SPEC' : MuRecsSpec n m fs xs z')
   : z = z'.
 Proof.
-  eapply MuRecsGraph_unique_value; [exact SPEC | rewrite MuRecsGraph_correct; exact SPEC'].
+  eapply MuRecs_isPartialFunction_aux; [exact SPEC | rewrite MuRecsGraph_correct; exact SPEC'].
 Qed.
 
 End MU_RECURSIVE.
