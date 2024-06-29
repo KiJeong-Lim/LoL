@@ -200,41 +200,29 @@ Let Arity : Set := nat.
 Inductive MuRec : Arity -> Set :=
   | MR_succ : MuRec 1
   | MR_zero : MuRec 0
-  | MR_proj (n : Arity) (i : Fin.t n) : MuRec n
-  | MR_compose (n : Arity) (m : Arity) (g : MuRecs n m) (h : MuRec m) : MuRec n
-  | MR_primRec (n : Arity) (g : MuRec n) (h : MuRec (S (S n))) : MuRec (S n)
-  | MR_mu (n : Arity) (g : MuRec (S n)) : MuRec n
+  | MR_proj {n : Arity} (i : Fin.t n) : MuRec n
+  | MR_compose {n : Arity} {m : Arity} (g : MuRecs n m) (h : MuRec m) : MuRec n
+  | MR_primRec {n : Arity} (g : MuRec n) (h : MuRec (S (S n))) : MuRec (S n)
+  | MR_mu {n : Arity} (g : MuRec (S n)) : MuRec n
 with MuRecs : Arity -> Arity -> Set :=
-  | MRs_nil (n : Arity) : MuRecs n 0
-  | MRs_cons (n : Arity) (m : Arity) (f : MuRec n) (fs : MuRecs n m) : MuRecs n (S m).
+  | MRs_nil {n : Arity} : MuRecs n 0
+  | MRs_cons {n : Arity} {m : Arity} (f : MuRec n) (fs : MuRecs n m) : MuRecs n (S m).
 
 Let Value : Type := nat.
-
-(* "THE SEMANTICS" : Eval_{n : Arity} : MuRec n -> Vector.t Value n -> Value.
-[MR_succ] Eval_{1}[ succ ](x) = S x.
-[MR_zero] Eval_{0}[ zero ]() = O.
-[MR_proj] Eval_{n}[ proj(i) ](x_1, ..., x_n) = x_i.
-[MR_compose] Eval_{n}[ compose(g_1, ..., g_m, h) ](x_1, ..., x_n) = Eval_{m}[ h ](Eval_{n}[ g_1 ](x_1, ..., x_n), ..., Eval_{n}[ g_m ](x_1, ..., x_n)).
-[MR_primRec] Eval_{n + 1}[ primRec(g, h) ](O, x_1, ..., x_n) = Eval_{n}[ g ](x_1, ..., x_n).
-[MR_primRec] Eval_{n + 1}[ primRec(g, h) ](S a, x_1, ..., x_n) = Eval_{n + 2}[ h ](a, Eval_{n + 1}[ primRec(g, h) ](a, x_1, ..., x_n), x_1, ..., x_n).
-[MR_mu] Eval_{n}[ mu(g) ](x_1, ..., x_n) = min X, if X is nonempty;
-[MR_mu] Eval_{n][ mu(g) ](x_1, ..., x_n) = undefined, otherwise;
-  where X := { z | Eval_{n + 1}[ g ](z, x_1, ..., x_n) = 0 }.
-*)
 
 Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Prop :=
   match f with
   | MR_succ => fun xs => fun z => S (V.head xs) = z
   | MR_zero => fun xs => fun z => O = z
-  | MR_proj n i => fun xs => fun z => xs !! i = z
-  | MR_compose n m g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
-  | MR_primRec n g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
-  | MR_mu n g => fun xs => fun z => MuRecGraph g (z :: xs) 0 /\ (forall y,y < z -> exists p, p > 0 /\ MuRecGraph g (y :: xs) p) (* corrected by "Soon-Won Moon" *)
+  | MR_proj i => fun xs => fun z => xs !! i = z
+  | MR_compose g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
+  | MR_primRec g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
+  | MR_mu g => fun xs => fun z => (forall y, y < z -> exists p, p > 0 /\ MuRecGraph g (y :: xs) p) /\ MuRecGraph g (z :: xs) 0 (* corrected by "Soon-Won Moon" *)
   end
 with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n -> Vector.t Value m -> Prop :=
   match fs with
-  | MRs_nil n => fun xs => fun z => [] = z
-  | MRs_cons n m f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
+  | MRs_nil => fun xs => fun z => [] = z
+  | MRs_cons f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
   end.
 
 End MU_RECURSIVE.
