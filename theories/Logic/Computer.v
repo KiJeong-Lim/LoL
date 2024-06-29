@@ -210,21 +210,6 @@ with MuRecs : Arity -> Arity -> Set :=
 
 Let Value : Type := nat.
 
-Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Prop :=
-  match f with
-  | MR_succ => fun xs => fun z => S (V.head xs) = z
-  | MR_zero => fun xs => fun z => O = z
-  | MR_proj i => fun xs => fun z => xs !! i = z
-  | MR_compose g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
-  | MR_primRec g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
-  | MR_mu g => fun xs => fun z => (forall y, y < z -> exists p, p > 0 /\ MuRecGraph g (y :: xs) p) /\ MuRecGraph g (z :: xs) 0 (* corrected by "Soon-Won Moon" *)
-  end
-with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n -> Vector.t Value m -> Prop :=
-  match fs with
-  | MRs_nil => fun xs => fun z => [] = z
-  | MRs_cons f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
-  end.
-
 Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> Prop :=
   | MR_succ_spec x
     : MuRecSpec 1 (MR_succ) [x] (S x)
@@ -242,7 +227,7 @@ Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> 
   | MR_primRec_spec_S n g h xs z a acc
     (ACC : MuRecSpec (S n) (MR_primRec g h) (a :: xs) acc)
     (h_spec : MuRecSpec (S (S n)) h (a :: acc :: xs) z)
-    : MuRecSpec (S n) (MR_primRec g h) (S a :: xs) z  (* corrected by "Soon-Won Moon" *)
+    : MuRecSpec (S n) (MR_primRec g h) (S a :: xs) z  (* corrected by "SoonWon Moon" *)
   | MR_mu_spec n g xs z
     (g_spec : MuRecSpec (S n) g (z :: xs) 0)
     (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (y :: xs) p)
@@ -254,6 +239,21 @@ with MuRecsSpec : forall n : Arity, forall m : Arity, MuRecs n m -> Vector.t Val
     (f_spec : MuRecSpec n f xs y)
     (fs_spec : MuRecsSpec n m fs xs ys)
     : MuRecsSpec n (S m) (MRs_cons f fs) xs (y :: ys).
+
+Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Prop :=
+  match f with
+  | MR_succ => fun xs => fun z => S (V.head xs) = z
+  | MR_zero => fun xs => fun z => O = z
+  | MR_proj i => fun xs => fun z => xs !! i = z
+  | MR_compose g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
+  | MR_primRec g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
+  | MR_mu g => fun xs => fun z => (forall y, y < z -> exists p, p > 0 /\ MuRecGraph g (y :: xs) p) /\ MuRecGraph g (z :: xs) 0 (* corrected by "SoonWon Moon" *)
+  end
+with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n -> Vector.t Value m -> Prop :=
+  match fs with
+  | MRs_nil => fun xs => fun z => [] = z
+  | MRs_cons f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
+  end.
 
 Fixpoint MuRecGraph_sound (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (CALL : MuRecGraph f xs z) {struct f}
   : MuRecSpec n f xs z
