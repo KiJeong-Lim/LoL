@@ -271,8 +271,7 @@ Proof.
       * eapply IHf. exact CALL.
     + simpl in CALL. revert xs CALL. introVCons a xs. revert z IHf1 IHf2 xs. induction a as [ | a ACC]; i.
       * simpl in CALL. unfold V.tail in CALL. simpl in CALL. econs 5. eapply IHf1. exact CALL.
-      * simpl in CALL. destruct CALL as [y [CALL IH]]. unfold V.tail in CALL. simpl in CALL. unfold V.tail in IH. simpl in IH.
-        econs 6.
+      * simpl in CALL. destruct CALL as [y [CALL IH]]. unfold V.tail in CALL. simpl in CALL. unfold V.tail in IH. simpl in IH. econs 6.
         { eapply ACC with (z := y).
           - i. eapply MuRecGraph_sound. exact CALL0.
           - i. eapply MuRecGraph_sound. exact CALL0.
@@ -316,6 +315,18 @@ Proof.
     + exists y, ys. split. 
       * eapply MuRecGraph_complete. exact f_spec.
       * split. exact IHSPEC. reflexivity.
+Qed.
+
+Theorem MuRecGraph_correct (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value)
+  : MuRecGraph f xs z <-> MuRecSpec n f xs z.
+Proof.
+  pose proof (LEFT := @MuRecGraph_complete). pose proof (RIGHT := @MuRecGraph_sound). now firstorder.
+Qed.
+
+Theorem MuRecsGraph_correct (n : Arity) (m : Arity) (f : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m)
+  : MuRecsGraph f xs z <-> MuRecsSpec n m f xs z.
+Proof.
+  pose proof (LEFT := @MuRecsGraph_complete). pose proof (RIGHT := @MuRecsGraph_sound). now firstorder.
 Qed.
 
 End MU_RECURSIVE.
