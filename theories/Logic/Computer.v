@@ -87,6 +87,54 @@ with PrimRecs : arity -> arity -> Set :=
   | PRs_nil (n : arity) : PrimRecs n 0
   | PRs_cons (n : arity) (m : arity) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
 
+(* [Which one is better?]
+Inductive PrimRec : arity -> Set :=
+  | PR_succ : PrimRec 1
+  | PR_zero : PrimRec 0
+  | PR_proj (n : arity) (i : Fin.t n) : PrimRec n
+  | PR_compose (n : arity) (m : arity) (g : Vector.t (PrimRec n) m) (h : PrimRec m) : PrimRec n
+  | PR_primRec (n : arity) (g : PrimRec n) (h : PrimRec (S (S n))) : PrimRec (S n).
+
+#[local] Close Scope list_scope.
+#[local] Open Scope vector_scope.
+
+#[local] Notation " [ ] " := (VNil).
+#[local] Notation " x :: xs " := (VCons _ x xs).
+#[local] Notation " [ x ] " := (VCons _ x VNil).
+
+Definition PrimRec_properRect
+  (P : forall n : arity, PrimRec n -> Type)
+  (Ps : forall n : arity, forall m : arity, Vector.t (PrimRec n) m -> Type)
+  (P_succ : P 1 PR_succ)
+  (P_zero : P 0 PR_zero)
+  (P_proj : forall n : arity, forall i : Fin.t n, P n (PR_proj n i))
+  (P_compose : forall n : arity, forall m : arity, forall g : Vector.t (PrimRec n) m, forall h : PrimRec m, Ps n m g -> P m h -> P n (PR_compose n m g h))
+  (P_primRec : forall n : arity, forall g : PrimRec n, forall h : PrimRec (S (S n)), P n g -> P (S (S n)) h -> P (S n) (PR_primRec n g h))
+  (Ps_nil : forall n : arity, Ps n 0 [])
+  (Ps_cons : forall n : arity, forall m : arity, forall f : PrimRec n, forall fs : Vector.t (PrimRec n) m, P n f -> Ps n m fs -> Ps n (S m) (f :: fs))
+  : forall n : arity, forall f : PrimRec n, P n f.
+Proof.
+  refine (
+    fix go (n : arity) (f : PrimRec n) {struct f} : P n f :=
+    match f with
+    | PR_succ => P_succ
+    | PR_zero => P_zero
+    | PR_proj n i => P_proj n i
+    | PR_compose n m g h => P_compose n m g h _ (go m h)
+    | PR_primRec n g h => P_primRec n g h (go n g) (go (S (S n)) h)
+    end
+  ).
+  pose proof (gos :=
+    fix gos (n : arity) (m : arity) (fs : Vector.t (PrimRec n) m) {struct fs} : Ps n m fs :=
+    match fs with
+    | @Vector.VNil _ => Ps_nil n
+    | @Vector.VCons _ m f fs => Ps_cons n m f fs (go n f) (gos n m fs)
+    end
+  ).
+  exact (gos n m g).
+Defined.
+*)
+
 Fixpoint runPrimRec {n : arity} (f : PrimRec n) {struct f} : naryFun n :=
   match f with
   | PR_succ => S
