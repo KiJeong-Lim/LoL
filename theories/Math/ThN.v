@@ -451,3 +451,10 @@ Proof.
 Qed.
 
 End section_for_maxs.
+
+Lemma eq_by_lt_ext (x : nat) (y : nat)
+  (LT_EXT : forall z, z < x <-> z < y)
+  : x = y.
+Proof.
+  pose proof (LT_EXT x); pose proof (LT_EXT y); lia.
+Qed.
