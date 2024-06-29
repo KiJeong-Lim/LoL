@@ -45,7 +45,7 @@ Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S
   end.
 
 Fixpoint eval_compose {n : arity} {m : arity} {struct n} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
-  match n as n return Vector.t (naryFun n) m -> naryFun m -> naryFun n with
+  match n with
   | O => fun xs => eval_vec xs
   | S n' => fun xs => fun f => fun x => eval_compose (eval_vec_1 x xs) f
   end.
