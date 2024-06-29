@@ -44,8 +44,11 @@ Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S
   | VCons m' f xs' => VCons m' (f x) (eval_vec_1 (n := n) (m := m') x xs')
   end.
 
-Definition eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
-  nat_rect (fun n : nat => forall m : nat, Vector.t (naryFun n) m -> naryFun m -> naryFun n) (@eval_vec) (fun n' : nat => fun IH => fun m : nat => fun xs : Vector.t (naryFun (S n')) m => fun f : naryFun m => fun x : nat => IH m (eval_vec_1 x xs) f) n m.
+Fixpoint eval_compose {n : arity} {m : arity} {struct n} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
+  match n as n return Vector.t (naryFun n) m -> naryFun m -> naryFun n with
+  | O => fun xs => eval_vec xs
+  | S n' => fun xs => fun f => fun x => eval_compose (eval_vec_1 x xs) f
+  end.
 
 Fixpoint eval_compose_2 {n : arity} {struct n} : naryFun n -> naryFun (S n) -> naryFun n :=
   match n with
@@ -87,7 +90,7 @@ with PrimRecs : arity -> arity -> Set :=
   | PRs_nil (n : arity) : PrimRecs n 0
   | PRs_cons (n : arity) (m : arity) (f : PrimRec n) (fs : PrimRecs n m) : PrimRecs n (S m).
 
-(* [Which one is better?]
+(* ["Which one is better?"]
 Inductive PrimRec : arity -> Set :=
   | PR_succ : PrimRec 1
   | PR_zero : PrimRec 0
@@ -172,15 +175,15 @@ Proof.
   destruct fs; reflexivity.
 Defined.
 
-Section PrimRec_case.
+Section PrimRecs_case.
 
 Let cast (x : nat) (n : nat) (m : nat) (EQ : n = m) : PrimRecs x n -> PrimRecs x m :=
   match EQ with
   | eq_refl => fun xs => xs
   end.
 
-Lemma PrimRec_case0 (phi : forall x, PrimRecs x O -> Type)
-  (phi_nil : forall x, phi x (PRs_nil x))
+Lemma PrimRecs_case0 (phi : forall x, PrimRecs x O -> Type)
+  (phi_nil : forall n, phi n (PRs_nil n))
   : forall x, forall fs, phi x fs.
 Proof.
   refine (fun x : nat =>
@@ -198,9 +201,9 @@ Proof.
   - inversion H_eq.
 Qed.
 
-Lemma PrimRec_caseS {n' : nat} (phi : forall x, PrimRecs x (S n') -> Type)
-  (phi_cons: forall x, forall t', forall ts', phi x (PRs_cons x n' t' ts'))
-  : forall x, forall ts, phi x ts.
+Lemma PrimRecs_caseS {n' : nat} (phi : forall x, PrimRecs x (S n') -> Type)
+  (phi_cons: forall n, forall f', forall fs', phi n (PRs_cons n n' f' fs'))
+  : forall x, forall fs, phi x fs.
 Proof.
   refine (fun x : nat =>
     let claim1 (fs : PrimRecs x (S n')) : forall H_eq : S n' = S n', phi x (cast x (S n') (S n') H_eq fs) :=
@@ -218,7 +221,7 @@ Proof.
     exact (phi_cons x x' xs').
 Qed.
 
-End PrimRec_case.
+End PrimRecs_case.
 
 #[local] Close Scope list_scope.
 #[local] Open Scope vector_scope.
@@ -329,35 +332,15 @@ Proof.
   pose proof (LEFT := @PrimRecsGraph_complete). pose proof (RIGHT := @PrimRecsGraph_sound). now firstorder.
 Qed.
 
-(* Fixpoint PrimRecSpec_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat) (SPEC : PrimRecSpec n f xs z) {struct SPEC}
+Lemma PrimRecSpec_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat)
+  (SPEC : PrimRecSpec n f xs z)
   : eval_vec xs (runPrimRec f) = z
-with PrimRecsSpec_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m) (SPEC : PrimRecsSpec n m fs xs z) {struct SPEC}
+with PrimRecsSpec_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m)
+  (SPEC : PrimRecsSpec n m fs xs z)
   : forall i, eval_vec xs (runPrimRecs fs !! i) = z !! i.
 Proof.
-  - destruct SPEC; simpl.
-    + reflexivity.
-    + reflexivity.
-    + clear PrimRecSpec_sound PrimRecsSpec_sound. revert i. induction xs as [ | n x xs IH]; simpl.
-      * Fin.case0.
-      * Fin.caseS i.
-        { simpl. clear IH. revert xs. induction n as [ | n IH].
-          - introVNil. reflexivity.
-          - introVCons x' xs'. eapply IH.
-        }
-        { simpl. unfold B.compose. unfold B.const. eapply IH. }
-    + pose proof (PrimRecsSpec_sound n m g xs ys g_spec) as claim1.
-      pose proof (PrimRecSpec_sound m h ys z SPEC) as claim2.
-      rewrite <- claim2. clear claim2. revert n g h xs ys z g_spec SPEC claim1. induction m as [ | m IH]; simpl.
-      * intros n g. pattern n, g. revert n g. apply PrimRec_case0. i.
-        revert ys g_spec SPEC claim1. introVNil. simpl. i. clear claim1.
-        inv g_spec. apply projT2_eq_fromEqDec in H0. subst xs0. clear z SPEC.
-        revert h xs. induction x as [ | x IH]; simpl; i.
-        { unfold B.id. revert xs. introVNil. simpl. reflexivity. }
-        { revert xs. introVCons x' xs'. simpl. eapply IH. }
-      * i. revert ys g_spec SPEC claim1. introVCons y ys. i. simpl.
-        pose proof (claim1 FZ) as claim3. simpl in claim3.
-        assert (claim4 : )
-Qed. *)
+  (* TOO HARD!!! *)
+Abort.
 
 End PRIMITIVE_RECURSION.
 
