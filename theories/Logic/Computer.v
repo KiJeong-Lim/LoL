@@ -225,4 +225,34 @@ with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n ->
   | MRs_cons f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
   end.
 
+Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> Prop :=
+  | MR_succ_spec x
+    : MuRecSpec 1 (MR_succ) [x] (S x)
+  | MR_zero_spec
+    : MuRecSpec 0 (MR_zero) [] (O)
+  | MR_proj_spec n xs i
+    : MuRecSpec n (MR_proj i) xs (xs !! i)
+  | MR_compose_spec n m g h xs ys z
+    (g_spec : MuRecsSpec n m g xs ys)
+    (h_spec : MuRecSpec m h ys z)
+    : MuRecSpec n (MR_compose g h) xs z
+  | MR_primRec_spec_O n g h xs z
+    (g_spec : MuRecSpec n g xs z)
+    : MuRecSpec (S n) (MR_primRec g h) (O :: xs) z
+  | MR_primRec_spec_S n g h xs z a acc
+    (ACC : MuRecSpec (S n) (MR_primRec g h) (a :: xs) acc)
+    (h_spec : MuRecSpec (S (S n)) h (a :: acc :: xs) z)
+    : MuRecSpec (S n) (MR_primRec g h) (O :: xs) z
+  | MR_mu_spec n g xs z
+    (g_spec : MuRecSpec (S n) g (z :: xs) 0)
+    (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (y :: xs) p)
+    : MuRecSpec n (MR_mu g) xs z
+with MuRecsSpec : forall n : Arity, forall m : Arity, MuRecs n m -> Vector.t Value n -> Vector.t Value m -> Prop :=
+  | MRs_nil_spec n xs
+    : MuRecsSpec n (O) (MRs_nil) xs []
+  | MRs_cons_spec n m xs y ys f fs
+    (f_spec : MuRecSpec n f xs y)
+    (fs_spec : MuRecsSpec n m fs xs ys)
+    : MuRecsSpec n (S m) (MRs_cons f fs) xs (y :: ys).
+
 End MU_RECURSIVE.

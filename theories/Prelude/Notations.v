@@ -1,9 +1,10 @@
 Require Import LoL.Prelude.Prelude.
 
-Reserved Infix "∈" (at level 70, no associativity).
+Reserved Infix "∈" (no associativity, at level 70).
 Reserved Notation "'\['  dom '→' cod  '\]'".
-Reserved Infix "`compare`" (at level 40, no associativity).
-Reserved Infix "⊢" (at level 70, no associativity).
+Reserved Infix "`compare`" (no associativity, at level 40).
+Reserved Infix "⊢" (no associativity, at level 70).
+Reserved Infix "!!" (left associativity, at level 25).
 
 Module MonadNotations.
 

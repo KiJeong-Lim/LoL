@@ -1,4 +1,5 @@
 Require Import LoL.Prelude.Prelude.
+Require Import LoL.Prelude.Notations.
 Require Import LoL.Math.ThN.
 
 Module Fin.
@@ -209,7 +210,7 @@ Fixpoint nth {n : nat} (xs : vec n) {struct xs} : Fin.t n -> A :=
 
 End Accessories.
 
-#[local] Infix " !! " := nth (left associativity, at level 25).
+#[local] Infix " !! " := nth.
 
 #[local]
 Tactic Notation "introVNil" :=
@@ -402,4 +403,4 @@ Tactic Notation "introVCons" ident( x' ) ident( xs' ) :=
   intro xs; pattern xs; revert xs;
   apply V.caseS; intros x' xs'.
 
-Infix "!!" := V.nth (left associativity, at level 25).
+Infix "!!" := V.nth.
