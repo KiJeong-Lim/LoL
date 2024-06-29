@@ -124,6 +124,193 @@ Proof.
   destruct fs; reflexivity.
 Defined.
 
+Section PrimRec_case.
+
+Let cast (x : nat) (n : nat) (m : nat) (EQ : n = m) : PrimRecs x n -> PrimRecs x m :=
+  match EQ with
+  | eq_refl => fun xs => xs
+  end.
+
+Lemma PrimRec_case0 (phi : forall x, PrimRecs x O -> Type)
+  (phi_nil : forall x, phi x (PRs_nil x))
+  : forall x, forall fs, phi x fs.
+Proof.
+  refine (fun x : nat =>
+    let claim1 (fs : PrimRecs x O) : forall H_eq : O = O, phi x (cast x O O H_eq fs) :=
+      match fs in PrimRecs x m return forall H_eq : m = O, phi x (cast x m O H_eq fs) with
+      | PRs_nil x => fun H_eq : O = O => _
+      | PRs_cons x n f' fs' => fun H_eq : S n = O => _
+      end
+    in _
+  ).
+  { intros fs. exact (claim1 fs eq_refl). }
+  Unshelve.
+  - rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
+    exact (phi_nil x).
+  - inversion H_eq.
+Qed.
+
+Lemma PrimRec_caseS {n' : nat} (phi : forall x, PrimRecs x (S n') -> Type)
+  (phi_cons: forall x, forall t', forall ts', phi x (PRs_cons x n' t' ts'))
+  : forall x, forall ts, phi x ts.
+Proof.
+  refine (fun x : nat =>
+    let claim1 (fs : PrimRecs x (S n')) : forall H_eq : S n' = S n', phi x (cast x (S n') (S n') H_eq fs) :=
+      match fs in PrimRecs x m return forall H_eq : m = S n', phi x (cast x m (S n') H_eq fs) with
+      | PRs_nil x => fun H_eq: O = S n' => _
+      | PRs_cons x n x' xs' => fun H_eq: S n = S n' => _
+      end
+    in _
+  ).
+  { intros fs. exact (claim1 fs eq_refl). }
+  Unshelve.
+  - inversion H_eq.
+  - pose proof (f_equal Nat.pred H_eq) as n_eq_n'. simpl in n_eq_n'. subst n'.
+    rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
+    exact (phi_cons x x' xs').
+Qed.
+
+End PrimRec_case.
+
+#[local] Close Scope list_scope.
+#[local] Open Scope vector_scope.
+
+#[local] Notation " [ ] " := (VNil).
+#[local] Notation " x :: xs " := (VCons _ x xs).
+#[local] Notation " [ x ] " := (VCons _ x VNil).
+
+Inductive PrimRecSpec : forall n : arity, PrimRec n -> Vector.t nat n -> nat -> Prop :=
+  | PR_succ_spec x
+    : PrimRecSpec 1 (PR_succ) [x] (S x)
+  | PR_zero_spec
+    : PrimRecSpec 0 (PR_zero) [] (O)
+  | PR_proj_spec n xs i
+    : PrimRecSpec n (PR_proj n i) xs (xs !! i)
+  | PR_compose_spec n m g h xs ys z
+    (g_spec : PrimRecsSpec n m g xs ys)
+    (h_spec : PrimRecSpec m h ys z)
+    : PrimRecSpec n (PR_compose n m g h) xs z
+  | PR_primRec_spec_O n g h xs z
+    (g_spec : PrimRecSpec n g xs z)
+    : PrimRecSpec (S n) (PR_primRec n g h) (O :: xs) z
+  | PR_primRec_spec_S n g h xs z a acc
+    (ACC : PrimRecSpec (S n) (PR_primRec n g h) (a :: xs) acc)
+    (h_spec : PrimRecSpec (S (S n)) h (a :: acc :: xs) z)
+    : PrimRecSpec (S n) (PR_primRec n g h) (S a :: xs) z
+with PrimRecsSpec : forall n : arity, forall m : arity, PrimRecs n m -> Vector.t nat n -> Vector.t nat m -> Prop :=
+  | PRs_nil_spec n xs
+    : PrimRecsSpec n (O) (PRs_nil n) xs []
+  | PRs_cons_spec n m xs y ys f fs
+    (f_spec : PrimRecSpec n f xs y)
+    (fs_spec : PrimRecsSpec n m fs xs ys)
+    : PrimRecsSpec n (S m) (PRs_cons n m f fs) xs (y :: ys).
+
+Fixpoint PrimRecGraph {n : arity} (f : PrimRec n) : Vector.t nat n -> nat -> Prop :=
+  match f with
+  | PR_succ => fun xs => fun z => S (V.head xs) = z
+  | PR_zero => fun xs => fun z => O = z
+  | PR_proj n i => fun xs => fun z => xs !! i = z
+  | PR_compose n m g h => fun xs => fun z => exists ys, PrimRecsGraph g xs ys /\ PrimRecGraph h ys z
+  | PR_primRec n g h => fun xs => nat_rect _ (fun z => PrimRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ PrimRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
+  end
+with PrimRecsGraph {n : arity} {m : arity} (fs : PrimRecs n m) : Vector.t nat n -> Vector.t nat m -> Prop :=
+  match fs with
+  | PRs_nil n => fun xs => fun z => [] = z
+  | PRs_cons n m f fs => fun xs => fun z => exists y, exists ys, PrimRecGraph f xs y /\ PrimRecsGraph fs xs ys /\ y :: ys = z
+  end.
+
+Fixpoint PrimRecGraph_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat) (CALL : PrimRecGraph f xs z) {struct f}
+  : PrimRecSpec n f xs z
+with PrimRecsGraph_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m) (CALL : PrimRecsGraph fs xs z) {struct fs}
+  : PrimRecsSpec n m fs xs z.
+Proof.
+  - destruct f.
+    + r in CALL. subst z. revert xs. introVCons x xs. revert xs. introVNil. cbv. econs 1.
+    + r in CALL. subst z. revert xs. introVNil. econs 2.
+    + r in CALL. subst z. econs 3.
+    + simpl in CALL. destruct CALL as (ys&CALLs&CALL). econs 4.
+      * eapply PrimRecsGraph_sound. exact CALLs.
+      * eapply PrimRecGraph_sound. exact CALL.
+    + simpl in CALL. revert xs CALL. introVCons a xs. revert z xs. induction a as [ | a ACC]; i.
+      * simpl in CALL. unfold V.tail in CALL. simpl in CALL. econs 5.
+        eapply PrimRecGraph_sound. exact CALL.
+      * simpl in CALL. destruct CALL as [y [CALL IH]]. unfold V.tail in CALL. simpl in CALL. unfold V.tail in IH. simpl in IH. econs 6.
+        { eapply ACC with (z := y). exact CALL. }
+        { eapply PrimRecGraph_sound. exact IH. }
+  - destruct fs.
+    + simpl in CALL. subst z. econs 1.
+    + simpl in CALL. destruct CALL as [y [ys [CALL [CALLs ?]]]]. subst z. econs 2.
+      * eapply PrimRecGraph_sound. exact CALL.
+      * eapply PrimRecsGraph_sound. exact CALLs.
+Qed.
+
+Fixpoint PrimRecGraph_complete (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat) (SPEC : PrimRecSpec n f xs z) {struct SPEC}
+  : PrimRecGraph f xs z
+with PrimRecsGraph_complete (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m) (SPEC : PrimRecsSpec n m fs xs z) {struct SPEC}
+  : PrimRecsGraph fs xs z.
+Proof.
+  - destruct SPEC; simpl.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+    + exists ys. split.
+      * eapply PrimRecsGraph_complete. exact g_spec.
+      * eapply PrimRecGraph_complete. exact SPEC.
+    + eapply PrimRecGraph_complete. exact SPEC.
+    + exists acc. unfold V.tail. simpl. split.
+      * apply PrimRecGraph_complete in SPEC1. exact SPEC1.
+      * apply PrimRecGraph_complete in SPEC2. exact SPEC2.
+  - destruct SPEC; simpl.
+    + reflexivity.
+    + exists y, ys. split. 
+      * eapply PrimRecGraph_complete. exact f_spec.
+      * split.
+        { eapply PrimRecsGraph_complete. exact SPEC. }
+        { reflexivity. }
+Qed.
+
+Theorem PrimRecGraph_correct (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat)
+  : PrimRecGraph f xs z <-> PrimRecSpec n f xs z.
+Proof.
+  pose proof (LEFT := @PrimRecGraph_complete). pose proof (RIGHT := @PrimRecGraph_sound). now firstorder.
+Qed.
+
+Theorem PrimRecsGraph_correct (n : arity) (m : arity) (f : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m)
+  : PrimRecsGraph f xs z <-> PrimRecsSpec n m f xs z.
+Proof.
+  pose proof (LEFT := @PrimRecsGraph_complete). pose proof (RIGHT := @PrimRecsGraph_sound). now firstorder.
+Qed.
+
+(* Fixpoint PrimRecSpec_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat) (SPEC : PrimRecSpec n f xs z) {struct SPEC}
+  : eval_vec xs (runPrimRec f) = z
+with PrimRecsSpec_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m) (SPEC : PrimRecsSpec n m fs xs z) {struct SPEC}
+  : forall i, eval_vec xs (runPrimRecs fs !! i) = z !! i.
+Proof.
+  - destruct SPEC; simpl.
+    + reflexivity.
+    + reflexivity.
+    + clear PrimRecSpec_sound PrimRecsSpec_sound. revert i. induction xs as [ | n x xs IH]; simpl.
+      * Fin.case0.
+      * Fin.caseS i.
+        { simpl. clear IH. revert xs. induction n as [ | n IH].
+          - introVNil. reflexivity.
+          - introVCons x' xs'. eapply IH.
+        }
+        { simpl. unfold B.compose. unfold B.const. eapply IH. }
+    + pose proof (PrimRecsSpec_sound n m g xs ys g_spec) as claim1.
+      pose proof (PrimRecSpec_sound m h ys z SPEC) as claim2.
+      rewrite <- claim2. clear claim2. revert n g h xs ys z g_spec SPEC claim1. induction m as [ | m IH]; simpl.
+      * intros n g. pattern n, g. revert n g. apply PrimRec_case0. i.
+        revert ys g_spec SPEC claim1. introVNil. simpl. i. clear claim1.
+        inv g_spec. apply projT2_eq_fromEqDec in H0. subst xs0. clear z SPEC.
+        revert h xs. induction x as [ | x IH]; simpl; i.
+        { unfold B.id. revert xs. introVNil. simpl. reflexivity. }
+        { revert xs. introVCons x' xs'. simpl. eapply IH. }
+      * i. revert ys g_spec SPEC claim1. introVCons y ys. i. simpl.
+        pose proof (claim1 FZ) as claim3. simpl in claim3.
+        assert (claim4 : )
+Qed. *)
+
 End PRIMITIVE_RECURSION.
 
 Fixpoint first_nat (p : nat -> bool) (n : nat) : nat :=
