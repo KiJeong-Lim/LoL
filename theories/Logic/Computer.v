@@ -332,14 +332,10 @@ Proof.
   pose proof (LEFT := @PrimRecsGraph_complete). pose proof (RIGHT := @PrimRecsGraph_sound). now firstorder.
 Qed.
 
-Lemma PrimRecSpec_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat)
-  (SPEC : PrimRecSpec n f xs z)
-  : eval_vec xs (runPrimRec f) = z
-with PrimRecsSpec_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m)
-  (SPEC : PrimRecsSpec n m fs xs z)
-  : forall i, eval_vec xs (runPrimRecs fs !! i) = z !! i.
-Proof.
-  (* TOO HARD!!! *)
+Fixpoint PrimRecSpec_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) {struct f}
+  : PrimRecSpec n f xs (eval_vec xs (runPrimRec f))
+with PrimRecsSpec_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) {struct fs}
+  : PrimRecsSpec n m fs xs (V.zipWith eval_vec (V.replicate xs) (runPrimRecs fs)).
 Abort.
 
 End PRIMITIVE_RECURSION.
