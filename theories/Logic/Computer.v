@@ -135,7 +135,7 @@ Theorem first_nat_spec (p : nat -> bool) (n : nat)
   (WITNESS : p n = true)
   (m := first_nat p n)
   : p m = true /\ ⟪ MIN : forall i, p i = true -> i >= m ⟫.
-Proof with eauto.
+Proof with eauto. (* This proof is assisted by "Clare Jang". *)
   assert (claim1 : forall x, p x = true -> p (first_nat p x) = true).
   { induction x as [ | x IH]... simpl. destruct (p (first_nat p x)) as [ | ] eqn: ?... }
   unnw. split... intros i p_i_eq_true.
@@ -229,7 +229,7 @@ Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Pro
   | MR_proj n i => fun xs => fun z => xs !! i = z
   | MR_compose n m g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
   | MR_primRec n g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
-  | MR_mu n g => fun xs => fun z => MuRecGraph g (z :: xs) 0 /\ (forall y, MuRecGraph g (y :: xs) 0 -> y >= z)
+  | MR_mu n g => fun xs => fun z => MuRecGraph g (z :: xs) 0 /\ (forall y,y < z -> exists p, p > 0 /\ MuRecGraph g (y :: xs) p) (* corrected by "Soon-Won Moon" *)
   end
 with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n -> Vector.t Value m -> Prop :=
   match fs with

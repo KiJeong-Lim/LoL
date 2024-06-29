@@ -30,3 +30,9 @@ compiled with OCaml 5.1.1
 4. [CoqGym/goedel](https://github.com/princeton-vl/CoqGym/tree/master/coq_projects/goedel)
 
 5. [formalmetatheory-stoughton](https://github.com/ernius/formalmetatheory-stoughton)
+
+## Thanks To
+
+- [SoonWon Moon](https://github.com/damhiya)
+
+- [Clare Jang](https://github.com/Ailrun)
