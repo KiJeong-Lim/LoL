@@ -242,7 +242,7 @@ Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> 
   | MR_primRec_spec_S n g h xs z a acc
     (ACC : MuRecSpec (S n) (MR_primRec g h) (a :: xs) acc)
     (h_spec : MuRecSpec (S (S n)) h (a :: acc :: xs) z)
-    : MuRecSpec (S n) (MR_primRec g h) (O :: xs) z
+    : MuRecSpec (S n) (MR_primRec g h) (S a :: xs) z  (* corrected by "Soon-Won Moon" *)
   | MR_mu_spec n g xs z
     (g_spec : MuRecSpec (S n) g (z :: xs) 0)
     (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (y :: xs) p)
@@ -254,5 +254,68 @@ with MuRecsSpec : forall n : Arity, forall m : Arity, MuRecs n m -> Vector.t Val
     (f_spec : MuRecSpec n f xs y)
     (fs_spec : MuRecsSpec n m fs xs ys)
     : MuRecsSpec n (S m) (MRs_cons f fs) xs (y :: ys).
+
+Lemma MuRecGraph_sound (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value)
+  (CALL : MuRecGraph f xs z)
+  : MuRecSpec n f xs z
+with MuRecsGraph_sound (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m)
+  (CALL : MuRecsGraph fs xs z)
+  : MuRecsSpec n m fs xs z.
+Proof.
+  - induction f.
+    + r in CALL. subst z. revert xs. introVCons x xs. revert xs. introVNil. cbv. econs 1.
+    + r in CALL. subst z. revert xs. introVNil. econs 2.
+    + r in CALL. subst z. econs 3.
+    + simpl in CALL. destruct CALL as (ys&CALLs&CALL). econs 4.
+      * eapply MuRecsGraph_sound. exact CALLs.
+      * eapply IHf. exact CALL.
+    + simpl in CALL. revert xs CALL. introVCons a xs. revert z IHf1 IHf2 xs. induction a as [ | a ACC]; i.
+      * simpl in CALL. unfold V.tail in CALL. simpl in CALL. econs 5. eapply IHf1. exact CALL.
+      * simpl in CALL. destruct CALL as [y [CALL IH]]. unfold V.tail in CALL. simpl in CALL. unfold V.tail in IH. simpl in IH.
+        econs 6.
+        { eapply ACC with (z := y).
+          - i. eapply MuRecGraph_sound. exact CALL0.
+          - i. eapply MuRecGraph_sound. exact CALL0.
+          - exact CALL.
+        }
+        { eapply IHf2. exact IH. }
+    + simpl in CALL. destruct CALL as [g_spec MIN]. econs 7.
+      * eapply MuRecGraph_sound. exact MIN.
+      * i. pose proof (g_spec y H) as [p [p_gt_0 CALL]]. exists p. split. exact p_gt_0. eapply MuRecGraph_sound. exact CALL.
+  - induction fs.
+    + simpl in CALL. subst z. econs 1.
+    + simpl in CALL. destruct CALL as [y [ys [CALL [CALLs ?]]]]. subst z. econs 2.
+      * eapply MuRecGraph_sound. exact CALL.
+      * eapply IHfs. exact CALLs.
+Qed.
+
+Lemma MuRecGraph_complete (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value)
+  (SPEC : MuRecSpec n f xs z)
+  : MuRecGraph f xs z
+with MuRecsGraph_complete (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m)
+  (SPEC : MuRecsSpec n m fs xs z)
+  : MuRecsGraph fs xs z.
+Proof.
+  - induction SPEC; simpl.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+    + exists ys. split.
+      * eapply MuRecsGraph_complete. exact g_spec.
+      * eapply IHSPEC.
+    + exact IHSPEC.
+    + exists acc. unfold V.tail. simpl. split.
+      * exact IHSPEC1.
+      * exact IHSPEC2.
+    + split.
+      * i. pose proof (MIN y H) as [p [p_gt_0 SPEC']].
+        exists p. split. exact p_gt_0. eapply MuRecGraph_complete. exact SPEC'.
+      * exact IHSPEC.
+  - induction SPEC; simpl.
+    + reflexivity.
+    + exists y, ys. split. 
+      * eapply MuRecGraph_complete. exact f_spec.
+      * split. exact IHSPEC. reflexivity.
+Qed.
 
 End MU_RECURSIVE.
