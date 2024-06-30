@@ -69,13 +69,13 @@ Section PRIMITIVE_RECURSION. (* Reference: "https://github.com/princeton-vl/CoqG
 
 Let arity : Set := nat.
 
-Fixpoint naryFun (n : arity) : Type :=
+Fixpoint naryFun (n : arity) :=
   match n with
   | O => nat
   | S n' => nat -> naryFun n'
   end.
 
-Fixpoint naryRel (n : arity) : Type :=
+Fixpoint naryRel (n : arity) :=
   match n with
   | O => Prop
   | S n' => nat -> naryRel n'
@@ -325,12 +325,12 @@ with PrimRecsGraph {n : arity} {m : arity} (fs : PrimRecs n m) : Vector.t nat n 
   | PRs_cons n m f fs => fun xs => fun z => exists y, exists ys, PrimRecGraph f xs y /\ PrimRecsGraph fs xs ys /\ y :: ys = z
   end.
 
-Fixpoint PrimRecGraph_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat) (CALL : PrimRecGraph f xs z) {struct f}
-  : PrimRecSpec n f xs z
-with PrimRecsGraph_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m) (CALL : PrimRecsGraph fs xs z) {struct fs}
-  : PrimRecsSpec n m fs xs z.
+Fixpoint PrimRecGraph_sound (n : arity) (f : PrimRec n) {struct f}
+  : forall xs, forall z, PrimRecGraph f xs z -> PrimRecSpec n f xs z
+with PrimRecsGraph_sound (n : arity) (m : arity) (fs : PrimRecs n m) {struct fs}
+  : forall xs, forall z, PrimRecsGraph fs xs z -> PrimRecsSpec n m fs xs z.
 Proof.
-  - destruct f.
+  - destruct f; intros xs z CALL.
     + r in CALL. subst z. revert xs. introVCons x xs. revert xs. introVNil. cbv. econs 1.
     + r in CALL. subst z. revert xs. introVNil. econs 2.
     + r in CALL. subst z. econs 3.
@@ -343,7 +343,7 @@ Proof.
       * simpl in CALL. destruct CALL as [y [CALL IH]]. unfold V.tail in CALL. simpl in CALL. unfold V.tail in IH. simpl in IH. econs 6.
         { eapply ACC with (z := y). exact CALL. }
         { eapply PrimRecGraph_sound. exact IH. }
-  - destruct fs.
+  - destruct fs; intros xs z CALL.
     + simpl in CALL. subst z. econs 1.
     + simpl in CALL. destruct CALL as [y [ys [CALL [CALLs ?]]]]. subst z. econs 2.
       * eapply PrimRecGraph_sound. exact CALL.
@@ -465,7 +465,7 @@ with MuRecs : Arity -> Arity -> Set :=
   | MRs_nil {n : Arity} : MuRecs n 0
   | MRs_cons {n : Arity} {m : Arity} (f : MuRec n) (fs : MuRecs n m) : MuRecs n (S m).
 
-Let Value : Type := nat.
+Let Value := nat.
 
 Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> Prop :=
   | MR_succ_spec x
@@ -512,12 +512,12 @@ with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n ->
   | MRs_cons f fs => fun xs => fun z => exists y, exists ys, MuRecGraph f xs y /\ MuRecsGraph fs xs ys /\ y :: ys = z
   end.
 
-Fixpoint MuRecGraph_sound (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (CALL : MuRecGraph f xs z) {struct f}
-  : MuRecSpec n f xs z
-with MuRecsGraph_sound (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m) (CALL : MuRecsGraph fs xs z) {struct fs}
-  : MuRecsSpec n m fs xs z.
+Fixpoint MuRecGraph_sound (n : Arity) (f : MuRec n) {struct f}
+  : forall xs, forall z, MuRecGraph f xs z -> MuRecSpec n f xs z
+with MuRecsGraph_sound (n : Arity) (m : Arity) (fs : MuRecs n m) {struct fs}
+  : forall xs, forall z, MuRecsGraph fs xs z -> MuRecsSpec n m fs xs z.
 Proof.
-  - destruct f.
+  - destruct f; intros xs z CALL.
     + r in CALL. subst z. revert xs. introVCons x xs. revert xs. introVNil. cbv. econs 1.
     + r in CALL. subst z. revert xs. introVNil. econs 2.
     + r in CALL. subst z. econs 3.
@@ -533,7 +533,7 @@ Proof.
     + simpl in CALL. destruct CALL as [g_spec MIN]. econs 7.
       * eapply MuRecGraph_sound. exact MIN.
       * intros y y_lt_z. pose proof (g_spec y y_lt_z) as [p [p_gt_0 CALL]]. exists p. split. exact p_gt_0. eapply MuRecGraph_sound. exact CALL.
-  - destruct fs.
+  - destruct fs; intros xs z CALL.
     + simpl in CALL. subst z. econs 1.
     + simpl in CALL. destruct CALL as [y [ys [CALL [CALLs ?]]]]. subst z. econs 2.
       * eapply MuRecGraph_sound. exact CALL.
@@ -581,12 +581,12 @@ Proof.
   pose proof (LEFT := @MuRecsGraph_complete). pose proof (RIGHT := @MuRecsGraph_sound). now firstorder.
 Qed.
 
-Fixpoint MuRec_isPartialFunction_aux (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (z' : Value) (SPEC : MuRecSpec n f xs z) (CALL : MuRecGraph f xs z') {struct SPEC}
-  : z = z'
-with MuRecs_isPartialFunction_aux (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m) (z' : Vector.t Value m) (SPEC : MuRecsSpec n m fs xs z) (CALL' : MuRecsGraph fs xs z') {struct SPEC}
-  : z = z'.
+Fixpoint MuRec_isPartialFunction_aux (n : Arity) (f : MuRec n) (xs : Vector.t Value n) (z : Value) (SPEC : MuRecSpec n f xs z) {struct SPEC}
+  : forall z', MuRecGraph f xs z' -> z = z'
+with MuRecs_isPartialFunction_aux (n : Arity) (m : Arity) (fs : MuRecs n m) (xs : Vector.t Value n) (z : Vector.t Value m) (SPEC : MuRecsSpec n m fs xs z) {struct SPEC}
+  : forall z', MuRecsGraph fs xs z' -> z = z'.
 Proof.
-  - destruct SPEC.
+  - destruct SPEC; intros z' CALL.
     + exact CALL.
     + exact CALL.
     + exact CALL.
@@ -624,7 +624,7 @@ Proof.
         - exact CALL.
       }
       lia.
-  - destruct SPEC.
+  - destruct SPEC; intros z' CALL'.
     + revert z' CALL'. introVNil. i. reflexivity.
     + revert z' CALL'. introVCons y' ys'. i. simpl in CALL'.
       destruct CALL' as (y''&ys''&CALL''&CALLs''&EQ). rewrite <- EQ. eapply f_equal2.
