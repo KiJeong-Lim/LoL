@@ -345,12 +345,6 @@ Proof.
   pose proof (LEFT := @PrimRecsGraph_complete). pose proof (RIGHT := @PrimRecsGraph_sound). now firstorder.
 Qed.
 
-Fixpoint PrimRecSpec_good (n : arity) (f : PrimRec n) {struct f}
-  : forall xs, forall z, eval_vec xs (runPrimRec f) = z -> PrimRecSpec n f xs z
-with PrimRecsSpec_good (n : arity) (m : arity) (fs : PrimRecs n m) {struct fs}
-  : forall xs, forall z, (forall i, eval_vec xs (runPrimRecs fs !! i) = z !! i) -> PrimRecsSpec n m fs xs z.
-Abort.
-
 End PRIMITIVE_RECURSION.
 
 Section MU_RECURSIVE.
