@@ -111,11 +111,41 @@ Fixpoint eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> naryFu
   | S n' => fun xs => fun f => fun x => eval_compose (eval_vec_1 x xs) f
   end.
 
+Lemma eval_compose_spec (n : arity) (m : arity) (gs : Vector.t (naryFun n) m) (h : naryFun m) (xs : Vector.t nat n) (ys : Vector.t nat m) (z : nat)
+  (gs_spec : V.map (eval_vec xs) gs = ys)
+  (h_spec : eval_vec ys h = z)
+  : eval_vec xs (eval_compose gs h) = z.
+Proof.
+  revert m gs h xs ys z gs_spec h_spec. induction n as [ | n IH]; simpl.
+  - intros m gs h. introVNil. simpl. i.
+    assert (claim1 : ys = gs).
+    { rewrite <- gs_spec. clear ys z h gs_spec h_spec. induction gs as [ | n g gs IH]; simpl; trivial; f_equal; eauto. }
+    subst gs. clear gs_spec. exact h_spec.
+  - intros m gs h. introVCons x xs. simpl. i.
+    assert (claim2 : V.map (eval_vec xs) (eval_vec_1 x gs) = ys).
+    { rewrite <- gs_spec. clear ys gs_spec h_spec. clear z h IH. revert x xs. induction gs as [ | m g gs IH]; simpl.
+      - reflexivity.
+      - intros x xs. f_equal. eapply IH.
+    }
+    pose proof (claim3 := IH m (eval_vec_1 x gs) h xs ys z claim2 h_spec). congruence.
+Qed.
+
 Fixpoint eval_compose_2 {n : arity} : naryFun n -> naryFun (S n) -> naryFun n :=
   match n with
   | O => fun x => fun f => f x
   | S n' => fun f => fun g => fun a => eval_compose_2 (f a) (fun x => g x a)
   end.
+
+Lemma eval_compose_2_spec (n : arity) (g : naryFun n) (h : naryFun (S n)) (xs : Vector.t nat n) (a : nat) (z : nat)
+  (g_spec : eval_vec xs g = a)
+  (h_spec : eval_vec (a :: xs) h = z)
+  : eval_vec xs (eval_compose_2 g h) = z.
+Proof.
+  revert g h xs a z g_spec h_spec. induction n as [ | n IH]; simpl.
+  - intros g h. introVNil. simpl. i. cbv in *. congruence.
+  - intros g h. introVCons x xs. simpl. i.
+    exact (IH (g x) (fun y => h y x) xs a z g_spec h_spec).
+Qed.
 
 Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : nat) : naryFun n :=
   match a with
@@ -343,6 +373,75 @@ Theorem PrimRecsGraph_correct (n : arity) (m : arity) (f : PrimRecs n m) (xs : V
   : PrimRecsGraph f xs z <-> PrimRecsSpec n m f xs z.
 Proof.
   pose proof (LEFT := @PrimRecsGraph_complete). pose proof (RIGHT := @PrimRecsGraph_sound). now firstorder.
+Qed.
+
+Fixpoint PrimRecSpec_sound (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat) (SPEC : PrimRecSpec n f xs z) {struct SPEC}
+  : eval_vec xs (runPrimRec f) = z
+with PrimRecsSpec_sound (n : arity) (m : arity) (fs : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m) (SPEC : PrimRecsSpec n m fs xs z) {struct SPEC}
+  : V.map (eval_vec xs) (runPrimRecs fs) = z.
+Proof.
+  - destruct SPEC.
+    + reflexivity.
+    + reflexivity.
+    + simpl. revert xs i. induction xs as [ | n x xs IH].
+      * Fin.case0.
+      * Fin.caseS i.
+        { simpl. clear IH. revert xs. induction n as [ | n IH].
+          - introVNil. reflexivity.
+          - introVCons x' xs'. simpl. unfold B.const. eapply IH.
+        }
+        { simpl. eapply IH. }
+    + simpl. eapply eval_compose_spec.
+      * eapply PrimRecsSpec_sound. exact g_spec.
+      * eapply PrimRecSpec_sound. exact SPEC.
+    + simpl. eapply PrimRecSpec_sound. exact SPEC.
+    + simpl. eapply eval_compose_2_spec.
+      * apply PrimRecSpec_sound in SPEC1. simpl in SPEC1. exact SPEC1.
+      * apply PrimRecSpec_sound in SPEC2. simpl in SPEC2. simpl. exact SPEC2.
+  - destruct SPEC.
+    + reflexivity.
+    + simpl. eapply f_equal2.
+      * eapply PrimRecSpec_sound. exact f_spec.
+      * eapply PrimRecsSpec_sound. exact SPEC.
+Qed.
+
+Fixpoint PrimRecSpec_complete (n : arity) (f : PrimRec n) {struct f}
+  : forall xs, PrimRecSpec n f xs (eval_vec xs (runPrimRec f))
+with PrimRecsSpec_complete (n : arity) (m : arity) (fs : PrimRecs n m) {struct fs}
+  : forall xs, PrimRecsSpec n m fs xs (V.map (eval_vec xs) (runPrimRecs fs)).
+Proof.
+  - destruct f; simpl.
+    + introVCons x xs. revert xs. introVNil. simpl. econs 1.
+    + introVNil. econs 2.
+    + i. enough (claim : (eval_vec xs (eval_proj i)) = xs !! i) by now rewrite claim; econs 3.
+      revert i. induction xs as [ | n x xs IH].
+      * Fin.case0.
+      * Fin.caseS i.
+        { simpl. clear IH. revert xs. induction n as [ | n IH].
+          - introVNil. reflexivity.
+          - introVCons x' xs'. simpl. unfold B.const. eapply IH.
+        }
+        { simpl. eapply IH. }
+    + i. econs 4.
+      * eapply PrimRecsSpec_complete.
+      * erewrite eval_compose_spec.
+        { eapply PrimRecSpec_complete. }
+        { reflexivity. }
+        { reflexivity. }
+    + introVCons a xs. simpl. revert a xs. induction a as [ | a IH].
+      * simpl. i. econs 5. eapply PrimRecSpec_complete.
+      * simpl. i. econs 6. 
+        { eapply IH. }
+        { erewrite eval_compose_2_spec.
+          { eapply PrimRecSpec_complete. }
+          { reflexivity. }
+          { reflexivity. }
+        }
+  - destruct fs; simpl.
+    + i. econs 1.
+    + i. econs 2.
+      * eapply PrimRecSpec_complete.
+      * eapply PrimRecsSpec_complete.
 Qed.
 
 End PRIMITIVE_RECURSION.
