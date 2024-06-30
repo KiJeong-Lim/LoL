@@ -78,7 +78,7 @@ Proof.
     in _
   ).
   { intros xs. exact (claim1 xs eq_refl). }
-  Unshelve.
+Unshelve.
   - inversion H_eq.
   - pose proof (f_equal Nat.pred H_eq) as n_eq_n'. simpl in n_eq_n'. subst n'.
     rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
@@ -431,6 +431,32 @@ Instance frms_isEnumerable : isEnumerable frm :=
 
 End ENUMERATION.
 
+#[local]
+Tactic Notation "trm_ind" ident( t ) :=
+  induction t as [x | f ts | c].
+
+#[local]
+Tactic Notation "trms_ind" ident( ts ) :=
+  induction ts as [ | n t ts IH].
+
+#[local]
+Tactic Notation "frm_ind" ident( p ) :=
+  induction p as [R ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1].
+
+#[local]
+Tactic Notation "trm_ind2" ident( t ) ident( t' ) :=
+  revert t'; induction t as [x | f ts | c]; intros [x' | f' ts' | c'].
+
+#[local]
+Tactic Notation "trms_ind2" ident( ts ) ident( ts' ) :=
+  revert ts'; induction ts as [ | n t ts IH]; [intros ts'; pattern ts'; revert ts'; apply trms_case0 | intros ts'; pattern ts'; revert ts'; apply trms_caseS; intros t' ts'].
+
+#[local]
+Tactic Notation "frm_ind2" ident( p ) ident( p' ) :=
+  revert p';
+  induction p as [R ts | t1 t2 | p1 IH1 | p1 IH1 p2 IH2 | y p1 IH1];
+  intros [R' ts' | t1' t2' | p1' | p1' p2' | y' p1'].
+
 #[local] Open Scope program_scope.
 
 Import ListNotations.
@@ -453,7 +479,7 @@ Fixpoint fvs_frm (p : frm) : list ivar :=
   | Eqn_frm t1 t2 => fvs_trm t1 ++ fvs_trm t2
   | Neg_frm p1 => fvs_frm p1
   | Imp_frm p1 p2 => fvs_frm p1 ++ fvs_frm p2
-  | All_frm y p1 => List.remove Nat.eq_dec y (fvs_frm p1)
+  | All_frm y p1 => List.remove eq_dec y (fvs_frm p1)
   end.
 
 Lemma fvs_trm_unfold (t : trm) :
@@ -552,6 +578,31 @@ Defined.
 #[local] Hint Rewrite is_free_in_trm_unfold : core.
 #[local] Hint Rewrite is_free_in_trms_unfold : core.
 #[local] Hint Rewrite is_free_in_frm_unfold : core.
+
+Lemma fv_is_free_in_trm (t : trm)
+  : forall z, In z (fvs_trm t) <-> is_free_in_trm z t = true
+with fv_is_free_in_trms n (ts : trms n)
+  : forall z, In z (fvs_trms ts) <-> is_free_in_trms z ts = true.
+Proof.
+  - trm_ind t. simpl; i.
+    + rewrite Nat.eqb_eq. done.
+    + split.
+      * intros H_IN. eapply fv_is_free_in_trms. done.
+      * intros FREE. eapply fv_is_free_in_trms. done.
+    + done.
+  - trms_ind ts; simpl; i.
+    + done.
+    + rewrite in_app_iff. rewrite orb_true_iff. rewrite IH. done.
+Qed.
+
+Lemma fv_is_free_in_frm (p : frm)
+  : forall z, In z (fvs_frm p) <-> is_free_in_frm z p = true.
+Proof.
+  frm_ind p; simpl; i; (try rewrite in_app_iff); (try rewrite orb_true_iff); try now firstorder.
+  - rewrite fv_is_free_in_trms; done.
+  - do 2 rewrite fv_is_free_in_trm; done.
+  - rewrite andb_true_iff. rewrite negb_true_iff. rewrite Nat.eqb_neq. rewrite L.in_remove_iff. done.
+Qed.
 
 Definition is_not_free_in_trm (x : ivar) (t : trm) : Prop :=
   is_free_in_trm x t = false.

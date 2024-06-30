@@ -229,6 +229,7 @@ Instance listLexicographicalOrder : isPoset (list A) :=
   }.
 
 #[local] Obligation Tactic := cbn; unfold lex_le, lex_eq; ii.
+
 #[global, program] Instance listLexicographicalOrder_liftsDecidableTotalOrder : isDecidableTotalOrder (list A) :=
   { compare := lex_compare }.
 Next Obligation.
@@ -271,25 +272,25 @@ Proof with eauto with *.
 Qed.
 
 Lemma nat_compare_eq (x : nat) (y : nat)
-  (hyp_lt: nat_compare x y = Eq)
+  (hyp_eq : nat_compare x y = Eq)
   : x = y.
 Proof with eauto with *.
-  revert x y hyp_lt. induction x as [ | x IH], y as [ | y]; simpl; ii.
+  revert x y hyp_eq. induction x as [ | x IH], y as [ | y]; simpl; ii.
   - reflexivity.
-  - inversion hyp_lt.
-  - inversion hyp_lt.
-  - pose proof (IH y hyp_lt) as x_eq_y...
+  - inversion hyp_eq.
+  - inversion hyp_eq.
+  - pose proof (IH y hyp_eq) as x_eq_y...
 Qed.
 
 Lemma nat_compare_gt (x : nat) (y : nat)
-  (hyp_lt : nat_compare x y = Gt)
+  (hyp_gt : nat_compare x y = Gt)
   : y <= x /\ x <> y.
 Proof with eauto with *.
-  cbn. revert x y hyp_lt. induction x as [ | x IH], y as [ | y]; simpl; ii.
-  - inversion hyp_lt.
-  - inversion hyp_lt.
+  cbn. revert x y hyp_gt. induction x as [ | x IH], y as [ | y]; simpl; ii.
+  - inversion hyp_gt.
+  - inversion hyp_gt.
   - split...
-  - pose proof (IH y hyp_lt) as [y_le_x x_ne_y]...
+  - pose proof (IH y hyp_gt) as [y_le_x x_ne_y]...
 Qed.
 
 #[local]

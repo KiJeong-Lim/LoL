@@ -14,7 +14,7 @@ Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
 
 Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
-Ltac done' := first [congruence | SfLib.done | now SfLib.done; congruence].
+Ltac done := first [congruence | simpl in *; congruence | lia | now firstorder; first [lia | eauto with *]].
 
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).
@@ -1065,3 +1065,95 @@ Add Parametric Morphism {A : Type} {B : Type} {C : Type} `{A_isPoset : isPoset A
 Proof.
   intros x1 x2 x_EQ y1 y2 y_EQ. exact (map_leProp2 x1 x2 y1 y2 (eqProp_implies_leProp A_isPoset x1 x2 x_EQ) (eqProp_implies_leProp B_isPoset y1 y2 y_EQ)).
 Defined.
+
+Module L.
+
+Include Coq.Lists.List.
+
+Lemma in_remove_iff {A : Type} `(EQ_DEC : hasEqDec A) (x1 : A) (xs2 : list A)
+  : forall z, In z (remove Prelude.eq_dec x1 xs2) <-> (In z xs2 /\ z <> x1).
+Proof.
+  i; split.
+  { intros H_IN. eapply in_remove. exact H_IN. }
+  { intros [H_IN H_NE]. eapply in_in_remove; [exact H_NE | exact H_IN]. }
+Qed.
+
+Lemma rev_inj {A : Type} (xs1 : list A) (xs2 : list A)
+  (rev_EQ : rev xs1 = rev xs2)
+  : xs1 = xs2.
+Proof.
+  rewrite <- rev_involutive with (l := xs1).
+  rewrite <- rev_involutive with (l := xs2).
+  now f_equal.
+Qed.
+
+Lemma list_rev_dual {A : Type} (phi : list A -> Prop)
+  (H_rev : forall n, phi (List.rev n))
+  : forall n, phi n.
+Proof.
+  intros n. induction n as [ | d n _] using @List.rev_ind.
+  - eapply H_rev with (n := []%list).
+  - rewrite <- List.rev_involutive with (l := n).
+    eapply H_rev with (n := (d :: List.rev n)%list).
+Qed.
+
+Lemma list_rev_rect {A : Type} (P : list A -> Type)
+  (NIL : P [])
+  (TAIL : forall x, forall xs, P xs -> P (xs ++ [x]))
+  : forall xs, P xs.
+Proof.
+  intros xs'. rewrite <- rev_involutive with (l := xs').
+  generalize (rev xs') as xs. clear xs'.
+  induction xs as [ | x xs IH]; simpl.
+  - exact NIL.
+  - eapply TAIL. exact IH.
+Qed.
+
+Lemma last_cons {A : Type} (x0 : A) (x1 : A) (xs : list A)
+  : last (x0 :: xs) x1 = last xs x0.
+Proof.
+  symmetry. revert x0 x1. induction xs as [ | x xs IH]; simpl; i.
+  - reflexivity.
+  - destruct xs as [ | x' xs'].
+    + reflexivity.
+    + erewrite IH with (x1 := x1). reflexivity.
+Qed.
+
+Fixpoint mk_edge_seq {V : Type} (v : V) (vs : list V) : list (V * V) :=
+  match vs with
+  | [] => []
+  | v' :: vs' => (v, v') :: mk_edge_seq v' vs'
+  end.
+
+Lemma mk_edge_seq_last {V : Type} (v0 : V) (v' : V) (vs : list V)
+  : mk_edge_seq v0 (vs ++ [v']) = mk_edge_seq v0 vs ++ [(last vs v0, v')].
+Proof.
+  revert v0 v'. induction vs as [ | v vs IH]; i.
+  - simpl. reflexivity.
+  - erewrite -> last_cons. simpl. f_equal. eauto.
+Qed.
+
+Lemma in_mk_edge_seq_inv {V : Type} (v0 : V) (v1 : V) (vs : list V)
+  (IN : In (v0, v1) (mk_edge_seq v1 vs))
+  : In v1 vs.
+Proof.
+  revert v0 v1 IN. induction vs as [ | v vs IH] using List.rev_ind; simpl; i.
+  - exact IN.
+  - rewrite in_app_iff. rewrite mk_edge_seq_last in IN.
+    rewrite in_app_iff in IN. destruct IN as [IN | [EQ | []]].
+    + left. eapply IH; exact IN.
+    + inv EQ. right. repeat constructor.
+Qed.
+
+Lemma no_dup_mk_edge_seq {V : Type} (v : V) (vs : list V)
+  (NO_DUP : NoDup vs)
+  : NoDup (mk_edge_seq v vs).
+Proof.
+  revert v. induction NO_DUP as [ | v vs NOT_IN NO_DUP IH].
+  - econstructor 1.
+  - simpl. econstructor 2.
+    + intros CONTRA. apply in_mk_edge_seq_inv in CONTRA. contradiction.
+    + eapply IH.
+Qed.
+
+End L.
