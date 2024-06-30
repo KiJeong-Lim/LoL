@@ -147,7 +147,7 @@ Proof.
     in _
   ).
   { intros xs. exact (claim1 xs eq_refl). }
-  Unshelve.
+Unshelve.
   - rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
     exact (phiVNil).
   - inversion H_eq.
@@ -166,7 +166,7 @@ Proof.
     in _
   ).
   { intros xs. exact (claim1 xs eq_refl). }
-  Unshelve.
+Unshelve.
   - inversion H_eq.
   - pose proof (f_equal pred H_eq) as n_eq_n'. simpl in n_eq_n'. subst n'.
     rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).

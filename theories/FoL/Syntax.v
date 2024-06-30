@@ -59,7 +59,7 @@ Proof.
     in _
   ).
   { intros xs. exact (claim1 xs eq_refl). }
-  Unshelve.
+Unshelve.
   - rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).
     exact (phi_nil).
   - inversion H_eq.
@@ -273,7 +273,8 @@ Proof.
   epose proof (gen_trm_spec t (trm_depth t) _) as [seed H_EQ].
   exists (cpInv (trm_depth t) seed). unfold enum_trm. destruct (cp (cpInv (trm_depth t) seed)) as [x y] eqn: H_OBS.
   rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. simpl. done.
-  Unshelve. reflexivity.
+Unshelve.
+  reflexivity.
 Qed.
 
 Theorem enum_trms_spec (n : arity) (ts : trms n)
@@ -282,7 +283,8 @@ Proof.
   epose proof (gen_trms_spec n ts (trms_depth ts) _) as [seed H_EQ].
   exists (cpInv (trms_depth ts) seed). unfold enum_trms. destruct (cp (cpInv (trms_depth ts) seed)) as [x y] eqn: H_OBS.
   rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. simpl. done.
-  Unshelve. reflexivity.
+Unshelve.
+  reflexivity.
 Qed.
 
 #[local]
@@ -417,7 +419,8 @@ Proof.
   epose proof (gen_frm_spec p (frm_depth p) _) as [seed H_EQ].
   exists (cpInv (frm_depth p) seed). unfold enum_frm. destruct (cp (cpInv (frm_depth p) seed)) as [x y] eqn: H_OBS.
   rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. simpl. done.
-  Unshelve. reflexivity.
+Unshelve.
+  reflexivity.
 Qed.
 
 #[local]

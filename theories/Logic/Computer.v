@@ -81,46 +81,46 @@ Fixpoint naryRel (n : arity) : Type :=
   | S n' => nat -> naryRel n'
   end.
 
-Fixpoint eval_const {n : arity} (m : nat) {struct n} : naryFun n :=
+Fixpoint eval_const {n : arity} (m : nat) : naryFun n :=
   match n with
   | O => m
-  | S n' => B.const (eval_const (n := n') m)
+  | S n' => B.const (eval_const m)
   end.
 
-Fixpoint eval_proj {n : arity} {struct n} : Fin.t n -> naryFun n :=
-  match n with
-  | O => Fin.case0
-  | S n' => Fin.caseS (eval_const (n := n')) (B.const ∘ eval_proj (n := n'))
+Fixpoint eval_proj {n : arity} (i : Fin.t n) : naryFun n :=
+  match i with
+  | FZ => eval_const
+  | FS i' => B.const (eval_proj i')
   end.
 
-Fixpoint eval_vec {n : arity} (xs : Vector.t nat n) {struct xs} : naryFun n -> nat :=
+Fixpoint eval_vec {n : arity} (xs : Vector.t nat n) : naryFun n -> nat :=
   match xs with
   | VNil => B.id
-  | VCons n' x xs' => fun f => eval_vec (n := n') xs' (f x)
+  | VCons n' x xs' => fun f => eval_vec xs' (f x)
   end.
 
-Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S n)) m) {struct xs} : Vector.t (naryFun n) m :=
+Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S n)) m) : Vector.t (naryFun n) m :=
   match xs with
   | VNil => VNil
-  | VCons m' f xs' => VCons m' (f x) (eval_vec_1 (n := n) (m := m') x xs')
+  | VCons m' f xs' => VCons m' (f x) (eval_vec_1 x xs')
   end.
 
-Fixpoint eval_compose {n : arity} {m : arity} {struct n} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
+Fixpoint eval_compose {n : arity} {m : arity} : Vector.t (naryFun n) m -> naryFun m -> naryFun n :=
   match n with
   | O => fun xs => eval_vec xs
   | S n' => fun xs => fun f => fun x => eval_compose (eval_vec_1 x xs) f
   end.
 
-Fixpoint eval_compose_2 {n : arity} {struct n} : naryFun n -> naryFun (S n) -> naryFun n :=
+Fixpoint eval_compose_2 {n : arity} : naryFun n -> naryFun (S n) -> naryFun n :=
   match n with
-  | O => fun x : nat => fun f : nat -> nat => f x
-  | S n' => fun f : naryFun (S n') => fun g : naryFun (S (S n')) => fun a : nat => eval_compose_2 (n := n') (f a) (fun x : nat => g x a)
+  | O => fun x => fun f => f x
+  | S n' => fun f => fun g => fun a => eval_compose_2 (f a) (fun x => g x a)
   end.
 
-Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : nat) {struct a} : naryFun n :=
+Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : nat) : naryFun n :=
   match a with
   | O => g
-  | S a' => eval_compose_2 (n := n) (eval_primRec (n := n) g h a') (h a')
+  | S a' => eval_compose_2 (eval_primRec g h a') (h a')
   end.
 
 Example eval_primRec_example1
@@ -238,7 +238,7 @@ Proof.
     in _
   ).
   { intros fs. exact (claim1 fs eq_refl). }
-  Unshelve.
+Unshelve.
   - inversion H_eq.
   - pose proof (f_equal Nat.pred H_eq) as n_eq_n'. simpl in n_eq_n'. subst n'.
     rewrite eq_pirrel_fromEqDec with (H_eq1 := H_eq) (H_eq2 := eq_refl).

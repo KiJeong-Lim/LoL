@@ -24,7 +24,7 @@ Proof.
     in _
   ).
   { eapply claim with (H_obs := eq_refl). }
-  Unshelve.
+Unshelve.
   - rewrite eq_pirrel_fromEqDec with (H_eq1 := H_obs) (H_eq2 := eq_refl). exact (phi_eq).
   - lia.
 Qed.
@@ -43,7 +43,7 @@ Proof.
     in _
   ).
   { eapply claim with (H_obs := eq_refl). }
-  Unshelve.
+Unshelve.
   - lia. 
   - intros H_obs. assert (m' = n) as H_eq by now apply f_equal with (f := pred) in H_obs. subst m'.
     rewrite eq_pirrel_fromEqDec with (H_eq1 := H_obs) (H_eq2 := eq_refl). exact (phi_lt H_le').
