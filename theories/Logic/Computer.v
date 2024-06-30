@@ -81,6 +81,12 @@ Fixpoint naryRel (n : arity) : Type :=
   | S n' => nat -> naryRel n'
   end.
 
+Fixpoint eval_vec {n : arity} (xs : Vector.t nat n) : naryFun n -> nat :=
+  match xs with
+  | VNil => B.id
+  | VCons n' x xs' => fun f => eval_vec xs' (f x)
+  end.
+
 Fixpoint eval_const {n : arity} (m : nat) : naryFun n :=
   match n with
   | O => m
@@ -93,11 +99,17 @@ Fixpoint eval_proj {n : arity} (i : Fin.t n) : naryFun n :=
   | FS i' => B.const (eval_proj i')
   end.
 
-Fixpoint eval_vec {n : arity} (xs : Vector.t nat n) : naryFun n -> nat :=
-  match xs with
-  | VNil => B.id
-  | VCons n' x xs' => fun f => eval_vec xs' (f x)
-  end.
+Lemma eval_proj_spec (n : arity) (i : Fin.t n) (xs : Vector.t nat n)
+  : eval_vec xs (eval_proj i) = xs !! i.
+Proof.
+  revert i. induction xs as [ | n x xs IH]; simpl.
+  - Fin.case0.
+  - Fin.caseS i.
+    + simpl. clear IH. revert x xs. induction n as [ | n IH]; simpl.
+      * intros x. introVNil. reflexivity.
+      * intros x. introVCons x' xs'. simpl. unfold B.const. eapply IH.
+    + eapply IH.
+Qed.
 
 Fixpoint eval_vec_1 {n : arity} {m : arity} (x : nat) (xs : Vector.t (naryFun (S n)) m) : Vector.t (naryFun n) m :=
   match xs with
@@ -144,7 +156,7 @@ Proof.
   revert g h xs a z g_spec h_spec. induction n as [ | n IH]; simpl.
   - intros g h. introVNil. simpl. i. cbv in *. congruence.
   - intros g h. introVCons x xs. simpl. i.
-    exact (IH (g x) (fun y => h y x) xs a z g_spec h_spec).
+    exact (IH (g x) (fun a => h a x) xs a z g_spec h_spec).
 Qed.
 
 Fixpoint eval_primRec {n : arity} (g : naryFun n) (h : naryFun (S (S n))) (a : nat) : naryFun n :=
@@ -383,14 +395,7 @@ Proof.
   - destruct SPEC.
     + reflexivity.
     + reflexivity.
-    + simpl. revert xs i. induction xs as [ | n x xs IH].
-      * Fin.case0.
-      * Fin.caseS i.
-        { simpl. clear IH. revert xs. induction n as [ | n IH].
-          - introVNil. reflexivity.
-          - introVCons x' xs'. simpl. unfold B.const. eapply IH.
-        }
-        { simpl. eapply IH. }
+    + eapply eval_proj_spec.
     + simpl. eapply eval_compose_spec.
       * eapply PrimRecsSpec_sound. exact g_spec.
       * eapply PrimRecSpec_sound. exact SPEC.
@@ -413,15 +418,7 @@ Proof.
   - destruct f; simpl.
     + introVCons x xs. revert xs. introVNil. simpl. econs 1.
     + introVNil. econs 2.
-    + i. enough (claim : (eval_vec xs (eval_proj i)) = xs !! i) by now rewrite claim; econs 3.
-      revert i. induction xs as [ | n x xs IH].
-      * Fin.case0.
-      * Fin.caseS i.
-        { simpl. clear IH. revert xs. induction n as [ | n IH].
-          - introVNil. reflexivity.
-          - introVCons x' xs'. simpl. unfold B.const. eapply IH.
-        }
-        { simpl. eapply IH. }
+    + i. erewrite eval_proj_spec. econs 3.
     + i. econs 4.
       * eapply PrimRecsSpec_complete.
       * erewrite eval_compose_spec.
@@ -433,9 +430,9 @@ Proof.
       * simpl. i. econs 6. 
         { eapply IH. }
         { erewrite eval_compose_2_spec.
-          { eapply PrimRecSpec_complete. }
-          { reflexivity. }
-          { reflexivity. }
+          - eapply PrimRecSpec_complete.
+          - reflexivity.
+          - reflexivity.
         }
   - destruct fs; simpl.
     + i. econs 1.
