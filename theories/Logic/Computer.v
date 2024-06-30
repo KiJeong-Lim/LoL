@@ -43,7 +43,7 @@ Defined.
 
 Definition nullary_mu (f : nat -> nat)
   (EXISTENCE : exists n : nat, f n = 0)
-  : { n : nat | f n = 0 /\ (forall i, f i = 0 -> i >= n) }.
+  : { n : nat | (forall i, i < n -> exists y, y > 0 /\ f i = y) /\ f n = 0 }.
 Proof.
   pose (p := fun n : nat => Nat.eqb (f n) 0).
   assert (EXISTENCE' : exists n : nat, p n = true).
@@ -51,8 +51,10 @@ Proof.
   pose proof (nat_search_lemma p EXISTENCE') as [n WITNESS].
   exists (first_nat p n). unnw. pose proof (first_nat_spec p n WITNESS) as claim.
   simpl in claim. unnw. destruct claim as [claim1 claim2]. split.
+  - intros i H_lt. specialize claim2 with (i := i). unfold p in claim2. rewrite Nat.eqb_eq in claim2. fold p in claim2. destruct (f i) as [ | y'].
+    + lia.
+    + exists (S y'). lia.
   - rewrite <- Nat.eqb_eq with (n := f (first_nat p n)) (m := 0). exact claim1.
-  - intros i f_i_eq_0. eapply claim2. unfold p. rewrite Nat.eqb_eq. exact f_i_eq_0.
 Defined.
 
 Example nullary_mu_example1

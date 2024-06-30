@@ -12,7 +12,7 @@ Proof.
   now firstorder.
 Qed.
 
-Lemma leProp_unfold {A : Type} `{A_isPoset : isPoset A} (x : A) (y : A)
+Lemma leProp_unfold {A : Type} `{POSET : isPoset A} (x : A) (y : A)
   : x =< y <-> (forall z, z =< x -> z =< y).
 Proof.
   exact (proj1 (PreOrder_iff leProp) leProp_PreOrder x y).
