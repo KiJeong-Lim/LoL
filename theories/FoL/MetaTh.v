@@ -9,3 +9,5 @@ Require Import LoL.FoL.InferenceRules.
 
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
+
+#[local] Infix "≡" := alpha_equiv.

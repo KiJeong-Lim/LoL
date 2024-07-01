@@ -7,6 +7,8 @@ Require Import LoL.FoL.Syntax.
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
 
+#[local] Infix "≡" := alpha_equiv.
+
 Module HPS.
 
 Section HILBERT_PROOF_SYSTEM.

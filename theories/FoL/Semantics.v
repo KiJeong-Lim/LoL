@@ -7,6 +7,8 @@ Require Import LoL.FoL.InferenceRules.
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
 
+#[local] Infix "≡" := alpha_equiv.
+
 #[local] Close Scope list_scope.
 #[local] Open Scope vector_scope.
 

@@ -650,4 +650,78 @@ Proof.
   eapply MuRecs_isPartialFunction_aux; [exact SPEC | rewrite MuRecsGraph_correct; exact SPEC'].
 Qed.
 
+Definition nary_mu (n : Arity) (f : naryFun (S n)) (xs : Vector.t Value n)
+  (EXISTENCE : exists z, eval_vec (V.snoc xs z) f = 0)
+  : { z : Value | (forall i, i < z -> exists y, y > 0 /\ eval_vec (V.snoc xs i) f = y) /\ eval_vec (V.snoc xs z) f = 0 }.
+Proof.
+  revert f EXISTENCE. induction xs as [ | n x xs IH].
+  - exact nullary_mu.
+  - simpl. i. exact (IH (f x) EXISTENCE).
+Defined.
+
+(* Fixpoint MuRecInterpreter (n : Arity) (f : MuRec n) {struct f}
+  : forall xs, (exists z, MuRecSpec n f xs z) -> { z : Value | MuRecSpec n f xs z }
+with MuRecsInterpreter (n : Arity) (m : Arity) (fs : MuRecs n m) {struct fs}
+  : forall xs, (exists z, MuRecsSpec n m fs xs z) -> { z : Vector.t Value m | MuRecsSpec n m fs xs z }.
+Proof.
+  - destruct f; simpl; intros xs EXISTENCE.
+    + clear EXISTENCE. revert xs. introVCons x xs. revert xs. introVNil. exists (S x). econs 1.
+    + clear EXISTENCE. revert xs. introVNil. exists O. econs 2.
+    + clear EXISTENCE. exists (xs !! i). econs 3.
+    + assert (claim1 : exists z : Vector.t Value m, MuRecsSpec n m g xs z).
+      { destruct EXISTENCE as [z SPEC]. rewrite <- MuRecGraph_correct in SPEC. simpl in SPEC.
+        destruct SPEC as (ys&CALLs&CALL). exists ys. rewrite <- MuRecsGraph_correct. exact CALLs.
+      }
+      pose proof (MuRecsInterpreter n m g xs claim1) as [ys ys_spec].
+      assert (claim2 : exists z : Value, MuRecSpec m f ys z).
+      { destruct EXISTENCE as [z SPEC]. rewrite <- MuRecGraph_correct in SPEC. simpl in SPEC.
+        destruct SPEC as (ys'&CALLs&CALL). exists z. rewrite <- MuRecGraph_correct. replace ys with ys'. exact CALL.
+        eapply MuRecs_isPartialFunction.
+        - rewrite <- MuRecsGraph_correct. exact CALLs.
+        - exact ys_spec.
+      }
+      pose proof (MuRecInterpreter m f ys claim2) as [z z_spec]. exists z.
+      rewrite <- MuRecGraph_correct. simpl. exists ys. split.
+      * rewrite MuRecsGraph_correct. exact ys_spec.
+      * rewrite MuRecGraph_correct. exact z_spec.
+    + revert xs EXISTENCE. introVCons a xs. revert xs. induction a as [ | a IH]; simpl; i.
+      * assert (claim1 : exists z : Value, MuRecSpec n f1 xs z).
+        { destruct EXISTENCE as [z SPEC]. rewrite <- MuRecGraph_correct in SPEC. simpl in SPEC.
+          unfold V.tail in SPEC. simpl in SPEC. exists z. rewrite <- MuRecGraph_correct. exact SPEC.
+        }
+        pose proof (MuRecInterpreter n f1 xs claim1) as [z z_spec]. exists z.
+        rewrite <- MuRecGraph_correct. simpl. unfold V.tail. simpl. rewrite MuRecGraph_correct. exact z_spec.
+      * assert (claim1 : exists z : Value, MuRecSpec (S n) (MR_primRec f1 f2) (VCons n a xs) z).
+        { destruct EXISTENCE as [z SPEC]. rewrite <- MuRecGraph_correct in SPEC. simpl in SPEC.
+          unfold V.tail, V.head in SPEC. simpl in SPEC. destruct SPEC as [acc [CALL CALL']]. exists acc. rewrite <- MuRecGraph_correct. simpl.
+          unfold V.tail, V.head. simpl. exact CALL.
+        }
+        pose proof (IH xs claim1) as [acc acc_spec].
+        assert (claim2 : exists z : Value, MuRecSpec (S (S n)) f2 (VCons (S n) a (VCons n acc xs)) z).
+        { destruct EXISTENCE as [z SPEC]. rewrite <- MuRecGraph_correct in SPEC. simpl in SPEC.
+          unfold V.tail, V.head in SPEC. simpl in SPEC. destruct SPEC as [acc' [CALL CALL']].
+          assert (EQ : acc = acc').
+          { eapply MuRec_isPartialFunction.
+            - exact acc_spec.
+            - rewrite <- MuRecGraph_correct.
+              simpl. unfold V.head, V.tail. simpl. exact CALL.
+          }
+          subst acc'. exists z. rewrite <- MuRecGraph_correct. exact CALL'.
+        }
+        pose proof (MuRecInterpreter (S (S n)) f2 (a :: acc :: xs) claim2) as [z z_spec].
+        exists z. econs 6. exact acc_spec. exact z_spec.
+    + pose (COUNTABLE := {| encode := id; decode := @Some nat; decode_encode (x : nat) := eq_refl |}). set (P := MuRecSpec n (MR_mu f) xs).
+      pose proof (@Acc_flip_search_step_P_0 nat COUNTABLE P EXISTENCE) as ACC.
+      assert (SEARCH : exists z, MuRecSpec n (MR_mu f) xs z /\ (forall x, x < z -> search_step P x (S x))).
+      { destruct EXISTENCE as [z z_spec]. exists z. split. exact z_spec.
+        rewrite <- MuRecGraph_correct in z_spec. simpl in z_spec.
+        destruct z_spec as [MIN z_spec]. intros y y_lt_z. pose proof (MIN y y_lt_z) as (p&p_gt_0&CALL).
+        eapply search_step_Some with (x := y). 2: reflexivity. unfold P. rewrite <- MuRecGraph_correct.
+        intros [MIN' y_spec]. enough (FALSE : p = 0) by lia. eapply MuRec_isPartialFunction.
+        - rewrite <- MuRecGraph_correct. exact CALL.
+        - rewrite <- MuRecGraph_correct. exact y_spec.
+      }
+      clear EXISTENCE. unfold P. 
+Qed. *)
+
 End MU_RECURSIVE.

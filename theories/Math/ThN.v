@@ -458,3 +458,140 @@ Lemma eq_by_lt_ext (x : nat) (y : nat)
 Proof.
   pose proof (LT_EXT x); pose proof (LT_EXT y); lia.
 Qed.
+
+#[local] Notation zero := O.
+#[local] Notation suc := S.
+
+Definition is_suc (n : nat) : Prop :=
+  match n with
+  | zero => False
+  | suc n' => True
+  end.
+
+Definition not_S_n_eq_0 {n : nat} (hyp_eq : S n = 0) : False :=
+  match hyp_eq in eq _ x return is_suc x with
+  | eq_refl => I
+  end.
+
+Definition suc_n_eq_zero_elim {A : Type} {n : nat} (hyp_eq : S n = 0) : A :=
+  False_rect A (not_S_n_eq_0 hyp_eq).
+
+Definition suc_n_eq_suc_m_elim {n : nat} {m : nat} (hyp_eq : S n = S m) : n = m :=
+  f_equal Nat.pred hyp_eq.
+
+Definition not_S_n_le_0 {n : nat} (hyp_le : S n <= 0) : False :=
+  match hyp_le in le _ x return is_suc x with
+  | le_n _ => I
+  | le_S _ m' hyp_lt' => I
+  end.
+
+Definition lt_elim_n_lt_0 {A : Type} {n : nat} (hyp_lt : n < 0) : A :=
+  False_rect A (not_S_n_le_0 hyp_lt).
+
+Definition suc_pred_n_eq_n_if_m_lt_n {n : nat} {m : nat} (hyp_lt : m < n) : S (pred n) = n :=
+  match hyp_lt in le _ x return S (pred x) = x with
+  | le_n _ => B.eq_reflexivity (S m)
+  | le_S _ n' hyp_lt' => B.eq_reflexivity (S n')
+  end.
+
+Fixpoint n_le_pred_m_if_n_lt_m {n : nat} {m : nat} (hyp_le : S n <= m) {struct hyp_le} : n <= pred m :=
+  match hyp_le in le _ x return n <= pred x with
+  | le_n _ => le_n n
+  | le_S _ m' hyp_le' => eq_ind (S (pred m')) (le n) (le_S n (pred m') (n_le_pred_m_if_n_lt_m hyp_le')) m' (suc_pred_n_eq_n_if_m_lt_n hyp_le')
+  end.
+
+Definition lt_elim_n_lt_S_m {n : nat} {m : nat} (hyp_lt : n < S m) : n <= m :=
+  n_le_pred_m_if_n_lt_m hyp_lt.
+
+Definition le_reflexivity {n1 : nat} : n1 <= n1 :=
+  le_n n1.
+
+Fixpoint le_transitivity {n1 : nat} {n2 : nat} {n3 : nat} (hyp1 : n1 <= n2) {struct hyp1} : n2 <= n3 -> n1 <= n3 :=
+  match hyp1 in le _ x return x <= n3 -> n1 <= n3 with
+  | le_n _ => fun hyp2 : n1 <= n3 => hyp2
+  | le_S _ n2' hyp1' => fun hyp2 : n2' < n3 => le_transitivity hyp1' (eq_ind (S (pred n3)) (fun x : nat => n2' <= x) (le_S n2' (pred n3) (n_le_pred_m_if_n_lt_m hyp2)) n3 (suc_pred_n_eq_n_if_m_lt_n hyp2))
+  end.
+
+Fixpoint le_antisymmetry {n1 : nat} {n2 : nat} {struct n1} : n1 <= n2 -> n1 >= n2 -> n1 = n2 :=
+  match n1 as x, n2 as y return x <= y -> y <= x -> x = y with
+  | O, O => fun hyp1 : O <= O => fun hyp2 : O <= O => B.eq_reflexivity 0
+  | O, S n2' => fun hyp1 : O <= S n2' => fun hyp2 : S n2' <= O => lt_elim_n_lt_0 hyp2
+  | S n1', O => fun hyp1 : S n1' <= O => fun hyp2 : O <= S n1' => lt_elim_n_lt_0 hyp1
+  | S n1', S n2' => fun hyp1 : n1' < S n2' => fun hyp2 : n2' < S n1' => f_equal S (le_antisymmetry (lt_elim_n_lt_S_m hyp1) (lt_elim_n_lt_S_m hyp2))
+  end.
+
+Fixpoint le_intro_S_n_le_S_m {n : nat} {m : nat} (hyp_LE : n <= m) {struct hyp_LE} : S n <= S m :=
+  match hyp_LE in le _ x return le (S n) (S x) with
+  | le_n _ => le_n (S n)
+  | le_S _ m' hyp_LE' => le_S (S n) (S m') (le_intro_S_n_le_S_m hyp_LE')
+  end.
+
+Fixpoint le_intro_0_le_n {n : nat} {struct n} : 0 <= n :=
+  match n with
+  | O => le_n O
+  | S n' => le_S O n' le_intro_0_le_n
+  end.
+
+Fixpoint not_n_lt_n (n : nat) {struct n} : ~ n < n :=
+  match n with
+  | O => lt_elim_n_lt_0
+  | S n' => fun hyp_lt : S n' < S n' => not_n_lt_n n' (lt_elim_n_lt_S_m hyp_lt)
+  end.
+
+Fixpoint n1_le_max_n1_n2 (n1 : nat) (n2 : nat) {struct n1} : n1 <= max n1 n2 :=
+  match n1 as n return n <= max n n2 with
+  | O => le_intro_0_le_n
+  | S n1' =>
+    match n2 as m return S n1' <= max (S n1') m with
+    | O => le_n (S n1')
+    | S n2' => le_intro_S_n_le_S_m (n1_le_max_n1_n2 n1' n2')
+    end
+  end.
+
+Fixpoint n2_le_max_n1_n2 (n1 : nat) (n2 : nat) {struct n1} : n2 <= max n1 n2 :=
+  match n1 as n return n2 <= max n n2 with
+  | O => le_n n2
+  | S n1' =>
+    match n2 as m return m <= max (S n1') m with
+    | O => le_intro_0_le_n
+    | S n2' => le_intro_S_n_le_S_m (n2_le_max_n1_n2 n1' n2')
+    end
+  end.
+
+Fixpoint le_intro_plus_l (n1 : nat) (n2 : nat) {struct n1} : n1 <= n1 + n2 :=
+  match n1 with
+  | O => le_intro_0_le_n
+  | S n1' => le_intro_S_n_le_S_m (le_intro_plus_l n1' n2)
+  end.
+
+Fixpoint le_intro_plus_r (n1 : nat) (n2 : nat) {struct n1} : n2 <= n1 + n2 :=
+  match n1 with
+  | O => le_reflexivity
+  | S n1' => le_transitivity (le_intro_plus_r n1' n2) (le_S (n1' + n2) (n1' + n2) le_reflexivity)
+  end.
+
+Definition le_elim_max_n1_n2_le_m (n1 : nat) (n2 : nat) (m : nat) (hyp_le : max n1 n2 <= m) : n1 <= m /\ n2 <= m :=
+  @conj _ _ (le_transitivity (n1_le_max_n1_n2 n1 n2) hyp_le) (le_transitivity (n2_le_max_n1_n2 n1 n2) hyp_le).
+
+Lemma le_unfold {n : nat} {m : nat} :
+  n <= m <->
+  match m with
+  | O => n = 0
+  | S m' => n = S m' \/ n <= m'
+  end.
+Proof.
+  split; destruct m as [ | m'].
+  - intros hyp_le.
+    exact (le_antisymmetry hyp_le le_intro_0_le_n).
+  - intros hyp_le.
+    exact (
+      match hyp_le in le _ x return n = x \/ n <= Nat.pred x with
+      | le_n _ => or_introl (B.eq_reflexivity n)
+      | le_S _ m' hyp_le' => or_intror hyp_le'
+      end
+    ).
+  - exact (eq_ind n (le n) (le_n n) 0).
+  - intros [hyp_eq | hyp_le].
+    + exact (eq_ind n (le n) (le_n n) (suc m') hyp_eq).
+    + exact (le_S n m' hyp_le).
+Qed.

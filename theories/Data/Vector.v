@@ -84,11 +84,80 @@ Proof.
       { reflexivity. }
 Defined.
 
-Fixpoint to_nat {n : nat} (i : Fin.t n) {struct i} : nat :=
-  match i with
-  | @FZ n' => O
-  | @FS n' i' => S (@to_nat n' i')
+Definition fin (n : nat) : Set := @sig nat (gt n).
+
+Fixpoint runFin {n : nat} (i : Fin.t n) {struct i} : fin n :=
+  match i in Fin.t x return @sig nat (gt x) with
+  | @FZ n' => @exist nat (gt (S n')) O (le_intro_S_n_le_S_m le_intro_0_le_n)
+  | @FS n' i' => @exist nat (gt (S n')) (S (proj1_sig (runFin i'))) (le_intro_S_n_le_S_m (proj2_sig (runFin i')))
   end.
+
+Fixpoint getFin {n : nat} (m : nat) {struct n} : m < n -> Fin.t n :=
+  match n as x return S m <= x -> Fin.t x with
+  | O => lt_elim_n_lt_0
+  | S n' =>
+    match m as y return S y <= S n' -> Fin.t (S n') with
+    | O => fun hyp_lt : O < S n' => FZ
+    | S m' => fun hyp_lt : S m' < S n' => FS (getFin m' (lt_elim_n_lt_S_m hyp_lt))
+    end
+  end.
+
+Lemma runFin_getFin_id {m : nat} {n : nat} (hyp_lt : m < n)
+  : runFin (getFin m hyp_lt) = exist (gt n) m hyp_lt.
+Proof.
+  revert n hyp_lt. induction m as [ | m IH]; intros [ | n'] hyp_lt; cbn in *.
+  - exact (lt_elim_n_lt_0 hyp_lt).
+  - eapply f_equal, le_pirrel.
+  - exact (lt_elim_n_lt_0 hyp_lt).
+  - rewrite IH; cbn. eapply f_equal, le_pirrel.
+Qed.
+
+Lemma getFin_runFin_id {n : nat} (i : Fin.t n)
+  : getFin (proj1_sig (runFin i)) (proj2_sig (runFin i)) = i.
+Proof.
+  induction i as [n' | n' i' IH].
+  - reflexivity.
+  - cbn. eapply f_equal. etransitivity; [eapply f_equal, le_pirrel | exact (IH)].
+Qed.
+
+Definition evalFin {n : nat} (i : Fin.t n) : nat :=
+  proj1_sig (runFin i).
+
+Lemma evalFin_unfold {n : nat} (i : Fin.t n) :
+  evalFin i =
+  match i with
+  | FZ => O
+  | FS i' => S (evalFin i')
+  end.
+Proof.
+  destruct i; reflexivity.
+Defined.
+
+Lemma evalFin_inj {n : nat} (i1 : Fin.t n) (i2 : Fin.t n)
+  (hyp_eq : evalFin i1 = evalFin i2)
+  : i1 = i2.
+Proof.
+  unfold evalFin in hyp_eq.
+  rewrite <- getFin_runFin_id with (i := i1).
+  rewrite <- getFin_runFin_id with (i := i2).
+  destruct (runFin i1) as [m1 hyp_lt1].
+  destruct (runFin i2) as [m2 hyp_lt2].
+  cbn in *. subst m1. eapply f_equal. eapply le_pirrel.
+Qed.
+
+Definition incrFin {m : nat} : forall n : nat, Fin.t m -> Fin.t (n + m) :=
+  fix incrFin_fix (n : nat) (i : Fin.t m) {struct n} : Fin.t (n + m) :=
+  match n as x return Fin.t (x + m) with
+  | O => i
+  | S n' => FS (incrFin_fix n' i)
+  end.
+
+Lemma incrFin_spec {m : nat} (n : nat) (i : Fin.t m)
+  : evalFin (incrFin n i) = n + evalFin i.
+Proof with eauto.
+  induction n as [ | n IH]; simpl...
+  rewrite evalFin_unfold. eapply f_equal...
+Qed.
 
 End Fin.
 
@@ -115,6 +184,7 @@ End Vector.
 
 Notation " [ ] " := (@Vector.VNil _) : vec_scope.
 Notation " x :: xs " := (@Vector.VCons _ _ x xs) : vec_scope.
+Notation " [ x ] " := (@Vector.VCons _ _ x (@Vector.VNil _)) : vec_scope.
 
 Notation VNil := Vector.VNil.
 Notation VCons := Vector.VCons.
@@ -388,6 +458,12 @@ Proof.
   - simpl. destruct (cp (cpInv x (gen_nat_vec_linv xs))) as [E_x E_xs] eqn: H_OBS.
     simpl. rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. congruence.
 Qed.
+
+Fixpoint snoc {A : Type} {n : nat} (xs : Vector.t A n) (x : A) {struct xs} : Vector.t A (S n) :=
+  match xs with
+  | [] => [x]
+  | x' :: xs' => x' :: snoc xs' x
+  end.
 
 End V.
 
