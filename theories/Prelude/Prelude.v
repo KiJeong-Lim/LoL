@@ -396,6 +396,16 @@ Proof.
     + contradiction NOT_ALL_TRUE. intros x. destruct (f x) as [ | ] eqn: H_OBS; now firstorder.
 Defined.
 
+Lemma dec_implies_can_find_if_exists (P : nat -> Prop)
+  (DEC : forall n, {P n} + {~ P n})
+  (EXISTENCE : exists x, P x)
+  : { x : nat | P x }.
+Proof.
+  pose (COUNTABLE := {| encode := B.id; decode := @Some nat; decode_encode (x : nat) := @eq_refl (option nat) (Some x) |}).
+  exists (@search_go nat COUNTABLE P DEC 0 (Acc_flip_search_step_P_0 P EXISTENCE)).
+  eapply search_go_correct.
+Defined.
+
 End COUNTABLE.
 
 Section ENUMERABLE.
