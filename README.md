@@ -4,6 +4,18 @@
 
 - My environment is `WSL: Ubuntu-20.04`, `Windows 10`.
 
+## Main Goals = `0 / 5`
+
+- [ ] Domain Theory (Complete Partial Order, Complete Lattice)
+
+- [ ] Set Theory (Aczel Tree, Ordinal)
+
+- [ ] Propositional Logic (Soundness, Completeness)
+
+- [ ] First-Order Logic (Soundness, Completeness)
+
+- [ ] The Godel's Incompleteness Theorem (1st Thm)
+
 ## Quick Start
 
 ```
@@ -19,6 +31,14 @@ The Coq Proof Assistant, version 8.18.0
 compiled with OCaml 5.1.1
 ```
 
+## Thanks To
+
+- [SoonWon Moon](https://github.com/damhiya)
+
+- [Clare Jang](https://github.com/Ailrun)
+
+- [Dominique Larchey-Wendling](https://github.com/DmxLarchey)
+
 ## References
 
 1. [stdlib](https://coq.inria.fr/doc/v8.18/stdlib)
@@ -32,23 +52,3 @@ compiled with OCaml 5.1.1
 5. [formalmetatheory-stoughton](https://github.com/ernius/formalmetatheory-stoughton)
 
 6. [Murec_Extraction](https://github.com/DmxLarchey/Murec_Extraction)
-
-## Thanks To
-
-- [SoonWon Moon](https://github.com/damhiya)
-
-- [Clare Jang](https://github.com/Ailrun)
-
-- [Dominique Larchey-Wendling](https://github.com/DmxLarchey)
-
-## Goals = `0 / 5`
-
-- [ ] Domain Theory (Complete Partial Order and Complete Lattice)
-
-- [ ] Set Theory (Aczel Tree and Ordinal)
-
-- [ ] Propositional Logic (The Soundness and Completeness Theorem)
-
-- [ ] First-Order Logic (The Soundness and Completeness Theorem)
-
-- [ ] The Godel's Incompleteness Theorem (1st thm)
