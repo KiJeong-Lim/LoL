@@ -814,9 +814,9 @@ Section EXTEND_LANGUAGE.
 
 Section SIMILARITY.
 
-Context (_function_symbols: Set) (_relation_symbols: Set) (_function_arity_table: _function_symbols -> nat) (_relation_arity_table: _relation_symbols -> nat).
+Context (_function_symbols : Set) (_relation_symbols : Set) (_function_arity_table : _function_symbols -> nat) (_relation_arity_table : _relation_symbols -> nat).
 
-Definition mkL_with_constant_symbols (_constant_symbols: Set) : language :=
+Definition mkL_with_constant_symbols (_constant_symbols : Set) : language :=
   {|
     function_symbols := _function_symbols;
     constant_symbols := _constant_symbols;
@@ -825,34 +825,34 @@ Definition mkL_with_constant_symbols (_constant_symbols: Set) : language :=
     relation_arity_table := _relation_arity_table;
   |}.
 
-Variable _constant_symbols: Set.
+Variable _constant_symbols : Set.
 
 Let L : language := mkL_with_constant_symbols _constant_symbols.
 
 Section GENERAL_CASE.
 
-Variable _constant_symbols': Set.
+Variable _constant_symbols' : Set.
 
 Let L' : language := mkL_with_constant_symbols _constant_symbols'.
 
-Hypothesis constant_symbols_similarity: Similarity _constant_symbols _constant_symbols'.
+Hypothesis constant_symbols_similarity : Similarity _constant_symbols _constant_symbols'.
 
 Inductive trm_similarity : Similarity (trm L) (trm L') :=
-| IVar_sim (x : ivar)
-  : @Var_trm L x =~= @Var_trm L' x
-| Func_sim (f : _function_symbols) (ts : trms L _) (ts' : trms L' _)
-  (ts_SIM : ts =~= ts')
-  : @Fun_trm L f ts =~= @Fun_trm L' f ts'
-| Cnst_sim (c : _constant_symbols) (c' : _constant_symbols')
-  (c_SIM : c =~= c')
-  : @Con_trm L c =~= @Con_trm L' c'
+  | IVar_sim (x : ivar)
+    : @Var_trm L x =~= @Var_trm L' x
+  | Func_sim (f : _function_symbols) (ts : trms L _) (ts' : trms L' _)
+    (ts_SIM : ts =~= ts')
+    : @Fun_trm L f ts =~= @Fun_trm L' f ts'
+  | Cnst_sim (c : _constant_symbols) (c' : _constant_symbols')
+    (c_SIM : c =~= c')
+    : @Con_trm L c =~= @Con_trm L' c'
 with trms_similarity : forall n, Similarity (trms L n) (trms L' n) :=
-| O_trms_sim
-  :@O_trms L =~= @O_trms L'
-| S_trms_sim (n : nat) (t : trm L) (t' : trm L') (ts : trms L n) (ts' : trms L' n)
-  (t_SIM : t =~= t')
-  (ts_SIM : ts =~= ts')
-  : @S_trms L n t ts =~= @S_trms L' n t' ts'.
+  | O_trms_sim
+    :@O_trms L =~= @O_trms L'
+  | S_trms_sim (n : nat) (t : trm L) (t' : trm L') (ts : trms L n) (ts' : trms L' n)
+    (t_SIM : t =~= t')
+    (ts_SIM : ts =~= ts')
+    : @S_trms L n t ts =~= @S_trms L' n t' ts'.
 
 #[local] Instance trm_similarity_instance : Similarity (trm L) (trm L') :=
   trm_similarity.
@@ -861,23 +861,23 @@ with trms_similarity : forall n, Similarity (trms L n) (trms L' n) :=
   @trms_similarity n.
 
 Inductive frm_similarity : Similarity (frm L) (frm L') :=
-| Rel_sim (R : _relation_symbols) (ts : trms L _) (ts' : trms L' _)
-  (ts_SIM : ts =~= ts')
-  : @Rel_frm L R ts =~= @Rel_frm L' R ts'
-| Eqn_sim (t1 : trm L) (t1' : trm L') (t2 : trm L) (t2' : trm L')
-  (t1_SIM : t1 =~= t1')
-  (t2_SIM : t2 =~= t2')
-  : @Eqn_frm L t1 t2 =~= @Eqn_frm L' t1' t2'
-| Neg_sim (p1 : frm L) (p1' : frm L')
-  (p1_SIM : p1 =~= p1')
-  : @Neg_frm L p1 =~= @Neg_frm L' p1'
-| Imp_sim (p1 : frm L) (p1' : frm L') (p2 : frm L) (p2' : frm L')
-  (p1_SIM : p1 =~= p1')
-  (p2_SIM : p2 =~= p2')
-  : @Imp_frm L p1 p2 =~= @Imp_frm L' p1' p2'
-| All_sim (y : ivar) (p1 : frm L) (p1' : frm L')
-  (p1_SIM : p1 =~= p1')
-  : @All_frm L y p1 =~= @All_frm L' y p1'.
+  | Rel_sim (R : _relation_symbols) (ts : trms L _) (ts' : trms L' _)
+    (ts_SIM : ts =~= ts')
+    : @Rel_frm L R ts =~= @Rel_frm L' R ts'
+  | Eqn_sim (t1 : trm L) (t1' : trm L') (t2 : trm L) (t2' : trm L')
+    (t1_SIM : t1 =~= t1')
+    (t2_SIM : t2 =~= t2')
+    : @Eqn_frm L t1 t2 =~= @Eqn_frm L' t1' t2'
+  | Neg_sim (p1 : frm L) (p1' : frm L')
+    (p1_SIM : p1 =~= p1')
+    : @Neg_frm L p1 =~= @Neg_frm L' p1'
+  | Imp_sim (p1 : frm L) (p1' : frm L') (p2 : frm L) (p2' : frm L')
+    (p1_SIM : p1 =~= p1')
+    (p2_SIM : p2 =~= p2')
+    : @Imp_frm L p1 p2 =~= @Imp_frm L' p1' p2'
+  | All_sim (y : ivar) (p1 : frm L) (p1' : frm L')
+    (p1_SIM : p1 =~= p1')
+    : @All_frm L y p1 =~= @All_frm L' y p1'.
 
 #[local] Instance frm_similarity_instance : Similarity (frm L) (frm L') := frm_similarity.
 
