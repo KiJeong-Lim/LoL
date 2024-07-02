@@ -4,13 +4,15 @@
 
 - My environment is `WSL: Ubuntu-20.04`, `Windows 10`.
 
-## Main Goals = `0 / 5`
+## Main Goals = `0 / 6`
 
 - [ ] Domain Theory (Complete Partial Order, Complete Lattice)
 
-- [ ] Set Theory (Aczel Tree, Ordinal)
+- [ ] Set Theory (Aczel Tree)
 
 - [ ] Propositional Logic (Soundness, Completeness)
+
+- [ ] Simply Typed Lambda Calculus (SN)
 
 - [ ] First-Order Logic (Soundness, Completeness)
 

@@ -808,13 +808,15 @@ Defined.
 
 End EQ_DEC.
 
-Section EXTEND_LANGUAGE.
+Section EXTEND_LANGUAGE_BY_ADDING_CONSTANTS.
 
 #[local] Infix "=~=" := is_similar_to : type_scope.
 
 Section SIMILARITY.
 
-Context (_function_symbols : Set) (_relation_symbols : Set) (_function_arity_table : _function_symbols -> nat) (_relation_arity_table : _relation_symbols -> nat).
+Let arity : Set := nat.
+
+Context (_function_symbols : Set) (_relation_symbols : Set) (_function_arity_table : _function_symbols -> arity) (_relation_arity_table : _relation_symbols -> arity).
 
 Definition mkL_with_constant_symbols (_constant_symbols : Set) : language :=
   {|
@@ -840,16 +842,16 @@ Hypothesis constant_symbols_similarity : Similarity _constant_symbols _constant_
 Inductive trm_similarity : Similarity (trm L) (trm L') :=
   | IVar_sim (x : ivar)
     : @Var_trm L x =~= @Var_trm L' x
-  | Func_sim (f : _function_symbols) (ts : trms L _) (ts' : trms L' _)
+  | Func_sim (f : _function_symbols) (ts : trms L (L.(function_arity_table) f)) (ts' : trms L' (L.(function_arity_table) f))
     (ts_SIM : ts =~= ts')
     : @Fun_trm L f ts =~= @Fun_trm L' f ts'
   | Cnst_sim (c : _constant_symbols) (c' : _constant_symbols')
     (c_SIM : c =~= c')
     : @Con_trm L c =~= @Con_trm L' c'
-with trms_similarity : forall n, Similarity (trms L n) (trms L' n) :=
+with trms_similarity : forall n : arity, Similarity (trms L n) (trms L' n) :=
   | O_trms_sim
-    :@O_trms L =~= @O_trms L'
-  | S_trms_sim (n : nat) (t : trm L) (t' : trm L') (ts : trms L n) (ts' : trms L' n)
+    : @O_trms L =~= @O_trms L'
+  | S_trms_sim (n : arity) (t : trm L) (t' : trm L') (ts : trms L n) (ts' : trms L' n)
     (t_SIM : t =~= t')
     (ts_SIM : ts =~= ts')
     : @S_trms L n t ts =~= @S_trms L' n t' ts'.
@@ -857,11 +859,11 @@ with trms_similarity : forall n, Similarity (trms L n) (trms L' n) :=
 #[local] Instance trm_similarity_instance : Similarity (trm L) (trm L') :=
   trm_similarity.
 
-#[local] Instance trms_similarity_instance (n : nat) : Similarity (trms L n) (trms L' n) :=
+#[local] Instance trms_similarity_instance (n : arity) : Similarity (trms L n) (trms L' n) :=
   @trms_similarity n.
 
 Inductive frm_similarity : Similarity (frm L) (frm L') :=
-  | Rel_sim (R : _relation_symbols) (ts : trms L _) (ts' : trms L' _)
+  | Rel_sim (R : _relation_symbols) (ts : trms L (L.(relation_arity_table) R)) (ts' : trms L' (L.(relation_arity_table) R))
     (ts_SIM : ts =~= ts')
     : @Rel_frm L R ts =~= @Rel_frm L' R ts'
   | Eqn_sim (t1 : trm L) (t1' : trm L') (t2 : trm L) (t2' : trm L')
@@ -957,4 +959,4 @@ Context {L : language} {constant_symbols' : Set}.
 
 End AUGMENTED_LANGUAGE.
 
-End EXTEND_LANGUAGE.
+End EXTEND_LANGUAGE_BY_ADDING_CONSTANTS.
