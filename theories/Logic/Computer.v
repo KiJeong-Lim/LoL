@@ -65,6 +65,175 @@ Proof.
   reflexivity.
 Qed.
 
+Section UNBOUNDED_MINIMIZATION. (* Reference: "https://github.com/DmxLarchey/Murec_Extraction/blob/murec_artifact/theories/standalone.v" *)
+
+#[local] Infix "\in" := E.elem : type_scope.
+#[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
+
+Section BETWEEN. (* Reference: "https://github.com/DmxLarchey/Murec_Extraction/blob/murec_artifact/theories/between.v" *)
+
+Variable P : nat -> Prop.
+
+Definition wBetween (n : nat) (m : nat) : Prop :=
+  forall i, n <= i -> i < m -> P i.
+
+Lemma wBetween_refl (n : nat)
+  : wBetween n n.
+Proof.
+  red. lia.
+Qed.
+
+Lemma wBetween_next (n : nat)
+  : forall m, wBetween n m -> P m -> wBetween n (S m).
+Proof.
+  ii. inv H2.
+  - trivial.
+  - eapply H; lia.
+Qed.
+
+Definition Between (n : nat) (m : nat) : Prop :=
+  n <= m /\ wBetween n m.
+
+Lemma Between_refl (n : nat)
+  : Between n n.
+Proof.
+  split. lia. eapply wBetween_refl.
+Qed.
+
+Lemma Between_next (n : nat)
+  : forall m, Between n m -> P m -> Between n (S m).
+Proof.
+  ii. destruct H. split.
+  - lia.
+  - eapply wBetween_next; trivial.
+Qed.
+
+End BETWEEN.
+
+Lemma Between_ind (P : nat -> Prop) (a : nat) (b : nat)
+  (H_Between : Between (fun n => P (S n) -> P n) a b)
+  : P b -> P a.
+Proof.
+  destruct H_Between as [a_le_b H_wBetween]. red in H_wBetween.
+  revert H_wBetween. induction a_le_b as [ | m LE IH].
+  - i. exact H.
+  - i. eapply IH.
+    + i. eapply H_wBetween.
+      * exact H0.
+      * exact (le_S (S i) m H1).
+      * exact H2.
+    + eapply H_wBetween.
+      * exact LE.
+      * exact (le_n (S m)).
+      * exact H.
+Defined.
+
+Variable F : nat -> nat -> Prop.
+
+Definition umin s y := F y 0 /\ Between (fun n => exists k, F n (S k)) s y.
+
+Definition umin' y :=  F y 0 /\ forall n, n < y -> exists k, F n (S k).
+
+Variable Ffun : forall x, forall y1, forall y2, F x y1 -> F x y2 -> y1 = y2.
+
+Variable f : forall x : nat, (exists y, F x y) -> { y : nat | F x y }.
+
+Let T n := exists k, F n k.
+
+Let P n := F n 0.
+
+Let Q n := exists k, F n (S k).
+
+Lemma PQ_absurd (n : nat)
+  : P n -> Q n -> False.
+Proof.
+  intros p (y & q). red in p. pose proof (Ffun n 0 (S y) p q) as H_false. inv H_false.
+Qed.
+
+Inductive Dumin (n : nat) : Prop :=
+  | Dumin_stop : T n -> P n -> Dumin n
+  | Dumin_next : T n -> Dumin (S n) -> Dumin n.
+
+#[local] Arguments Dumin_stop {_}.
+#[local] Arguments Dumin_next {_}.
+
+Definition Dumin_pi1 {n} (d : Dumin n) : T n :=
+  match d with
+  | Dumin_stop t _ => t
+  | Dumin_next t _ => t
+  end.
+
+Definition Dumin_pi2 {n} (d : Dumin n) : Q n -> Dumin (S n) :=
+  match d with
+  | Dumin_stop t p  => fun q => False_ind _ (PQ_absurd n p q)
+  | Dumin_next _ d' => fun _ => d'
+  end.
+
+Definition Pre_umin (s : nat) (n : nat) : Prop :=
+  n \in E.intersection (E.intersection T P) (Between T s).
+
+Definition Post_umin (s : nat) (n : nat) : Prop :=
+  n \in E.intersection (E.intersection T P) (Between (E.intersection T Q) s).
+
+Lemma Pre_umin_Dumin {s : nat}
+  (EXISTENCE : exists n, Pre_umin s n)
+  : Dumin s.
+Proof.
+  revert EXISTENCE. intros [n IN]. red in IN. autorewrite with datatypes in IN. des.
+  pose proof (Dumin_stop IN IN1). revert H. eapply Between_ind.
+  do 2 red in IN0. des. red. split. exact IN0. ii. eapply Dumin_next; trivial. eapply IN2; trivial.
+Qed.
+
+Fixpoint loop (s : nat) (n : nat) (d : Dumin n) (b : Between Q s n) {struct d} : { x : nat | umin s x }.
+Proof.
+  pose proof (f n (Dumin_pi1 d)) as [k H_k]. revert H_k. destruct k as [ | k']; i.
+  - exists n. split.
+    + exact H_k.
+    + exact b.
+  - eapply loop with (n := S n).
+    + eapply Dumin_pi2.
+      * exact d.
+      * red. exists k'. exact H_k.
+    + eapply Between_next.
+      * exact b.
+      * red. exists k'. exact H_k.
+Defined.
+
+Let linear_search (s : nat) : (exists x, Pre_umin s x) -> { x : nat | umin s x } :=
+  fun EXISTENCE => loop s s (Pre_umin_Dumin EXISTENCE) (Between_refl Q s).
+
+Lemma umin_incl_Pre_umin (s : nat)
+  : umin s \subseteq Pre_umin s.
+Proof.
+  intros n IN. red. red. do 2 red in IN. destruct IN as [F_n_0 H_Between]. autorewrite with datatypes. split. split.
+  - red. red. exists 0. exact F_n_0.
+  - red. red. exact F_n_0.
+  - destruct H_Between as [LE H_wBetween]. split; trivial. ii. red.
+    pose proof (H_wBetween i H H0) as [k H_k]. exists (S k). exact H_k.
+Qed.
+
+Definition compute_umin (s : nat)
+  (EXISTENCE : exists x, umin s x)
+  : { x : nat | umin s x }.
+Proof.
+  eapply linear_search. destruct EXISTENCE as [x H_x]. exists x. eapply umin_incl_Pre_umin. exact H_x.
+Defined.
+
+Lemma compute_umin'
+  (EXISTENCE : exists x, umin' x)
+  : { x : nat | umin' x }.
+Proof.
+  assert (claim1 : exists x : nat, umin 0 x).
+  { destruct EXISTENCE as [x H_x]. exists x. red. red in H_x. destruct H_x as [H_x H_wBetween].
+    split; trivial. split. lia. ii. eapply H_wBetween. exact H0.
+  }
+  apply compute_umin with (s := 0) in claim1. destruct claim1 as [x H_x].
+  exists x. red. red in H_x. destruct H_x as [H_x H_Between]. split; trivial.
+  ii. destruct H_Between as [_ H_wBetween]. red in H_wBetween. eapply H_wBetween; lia.
+Qed.
+
+End UNBOUNDED_MINIMIZATION.
+
 Section PRIMITIVE_RECURSION. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/primRec.v" *)
 
 #[local] Open Scope program_scope.
