@@ -228,8 +228,8 @@ Class Similarity (A : Type) (B : Type) : Type :=
   is_similar_to (x : A) (y : B) : Prop.
 
 #[global]
-Instance arrow_liftsSimilarity {I : Type} {A : Type} {B : Type} `(SIMILARITY : Similarity A B) : Similarity (I -> A) (I -> B) :=
-  fun f : I -> A => fun g : I -> B => forall i : I, is_similar_to (f i) (g i).
+Instance forall_liftsSimilarity {I : Type} {A : I -> Type} {B : I -> Type} (SIMILARITY : forall i, Similarity (A i) (B i)) : Similarity (forall i, A i) (forall i, B i) :=
+  fun f : forall i, A i => fun g : forall i, B i => forall i, is_similar_to (f i) (g i).
 
 End B.
 

@@ -2,10 +2,10 @@ Require Import LoL.Prelude.Prelude.
 Require Import LoL.Math.ThN.
 Require Import LoL.Data.Vector.
 
-Section SYNTAX.
-
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
+
+Section SYNTAX.
 
 Definition ivar : Set := nat.
 
@@ -807,3 +807,154 @@ Defined.
 #[global] Instance frm_hasEqDec : hasEqDec (frm L) := frm_eq_dec.
 
 End EQ_DEC.
+
+Section EXTEND_LANGUAGE.
+
+#[local] Infix "=~=" := is_similar_to : type_scope.
+
+Section SIMILARITY.
+
+Context (_function_symbols: Set) (_relation_symbols: Set) (_function_arity_table: _function_symbols -> nat) (_relation_arity_table: _relation_symbols -> nat).
+
+Definition mkL_with_constant_symbols (_constant_symbols: Set) : language :=
+  {|
+    function_symbols := _function_symbols;
+    constant_symbols := _constant_symbols;
+    relation_symbols := _relation_symbols;
+    function_arity_table := _function_arity_table;
+    relation_arity_table := _relation_arity_table;
+  |}.
+
+Variable _constant_symbols: Set.
+
+Let L : language := mkL_with_constant_symbols _constant_symbols.
+
+Section GENERAL_CASE.
+
+Variable _constant_symbols': Set.
+
+Let L' : language := mkL_with_constant_symbols _constant_symbols'.
+
+Hypothesis constant_symbols_similarity: Similarity _constant_symbols _constant_symbols'.
+
+Inductive trm_similarity : Similarity (trm L) (trm L') :=
+| IVar_sim (x : ivar)
+  : @Var_trm L x =~= @Var_trm L' x
+| Func_sim (f : _function_symbols) (ts : trms L _) (ts' : trms L' _)
+  (ts_SIM : ts =~= ts')
+  : @Fun_trm L f ts =~= @Fun_trm L' f ts'
+| Cnst_sim (c : _constant_symbols) (c' : _constant_symbols')
+  (c_SIM : c =~= c')
+  : @Con_trm L c =~= @Con_trm L' c'
+with trms_similarity : forall n, Similarity (trms L n) (trms L' n) :=
+| O_trms_sim
+  :@O_trms L =~= @O_trms L'
+| S_trms_sim (n : nat) (t : trm L) (t' : trm L') (ts : trms L n) (ts' : trms L' n)
+  (t_SIM : t =~= t')
+  (ts_SIM : ts =~= ts')
+  : @S_trms L n t ts =~= @S_trms L' n t' ts'.
+
+#[local] Instance trm_similarity_instance : Similarity (trm L) (trm L') :=
+  trm_similarity.
+
+#[local] Instance trms_similarity_instance (n : nat) : Similarity (trms L n) (trms L' n) :=
+  @trms_similarity n.
+
+Inductive frm_similarity : Similarity (frm L) (frm L') :=
+| Rel_sim (R : _relation_symbols) (ts : trms L _) (ts' : trms L' _)
+  (ts_SIM : ts =~= ts')
+  : @Rel_frm L R ts =~= @Rel_frm L' R ts'
+| Eqn_sim (t1 : trm L) (t1' : trm L') (t2 : trm L) (t2' : trm L')
+  (t1_SIM : t1 =~= t1')
+  (t2_SIM : t2 =~= t2')
+  : @Eqn_frm L t1 t2 =~= @Eqn_frm L' t1' t2'
+| Neg_sim (p1 : frm L) (p1' : frm L')
+  (p1_SIM : p1 =~= p1')
+  : @Neg_frm L p1 =~= @Neg_frm L' p1'
+| Imp_sim (p1 : frm L) (p1' : frm L') (p2 : frm L) (p2' : frm L')
+  (p1_SIM : p1 =~= p1')
+  (p2_SIM : p2 =~= p2')
+  : @Imp_frm L p1 p2 =~= @Imp_frm L' p1' p2'
+| All_sim (y : ivar) (p1 : frm L) (p1' : frm L')
+  (p1_SIM : p1 =~= p1')
+  : @All_frm L y p1 =~= @All_frm L' y p1'.
+
+#[local] Instance frm_similarity_instance : Similarity (frm L) (frm L') := frm_similarity.
+
+Variant frms_similarity (ps : ensemble (frm L)) (ps' : ensemble (frm L')) : Prop :=
+  | is_extend_sig_frms_of_intro
+    (BSIM : forall p' : frm L', forall IN : p' \in ps', exists p : frm L, p \in ps /\ p =~= p')
+    (FSIM : forall p : frm L, forall IN : p \in ps, exists p' : frm L', p' \in ps' /\ p =~= p')
+    : ps =~= ps'.
+
+#[local] Instance frms_similarity_instance : Similarity (ensemble (frm L)) (ensemble (frm L')) :=
+  frms_similarity.
+
+#[local] Instance subst_similarity_instance : Similarity (subst L) (subst L') :=
+  fun s : subst L => fun s' : subst L' => forall z : ivar, s z =~= s' z.
+
+Lemma fvs_trm_compat_similarity (t : trm L) (t' : trm L')
+  (t_SIM : t =~= t')
+  : fvs_trm t = fvs_trm t'
+with fvs_trms_compat_similarity n (ts : trms L n) (ts' : trms L' n)
+  (ts_SIM : ts =~= ts')
+  : fvs_trms ts = fvs_trms ts'.
+Proof with eauto with *.
+  - induction t_SIM.
+    + reflexivity.
+    + change (fvs_trms ts = fvs_trms ts'). eapply fvs_trms_compat_similarity. exact ts_SIM.
+    + reflexivity.
+  - induction ts_SIM.
+    + reflexivity.
+    + change (fvs_trm t ++ fvs_trms ts = fvs_trm t' ++ fvs_trms ts'). f_equal...
+Qed.
+
+Lemma fvs_frm_compat_similarity (p : frm L) (p' : frm L')
+  (p_SIM : p =~= p')
+  : fvs_frm p = fvs_frm p'.
+Proof with try done.
+  induction p_SIM; simpl...
+  - eapply fvs_trms_compat_similarity...
+  - f_equal; eapply fvs_trm_compat_similarity...
+Qed.
+
+End GENERAL_CASE.
+
+End SIMILARITY.
+
+Section AUGMENTED_LANGUAGE.
+
+Definition augmented_language (L : language) (constant_symbols' : Set) : language :=
+  {|
+    function_symbols := L.(function_symbols);
+    constant_symbols := L.(constant_symbols) + constant_symbols';
+    relation_symbols := L.(relation_symbols);
+    function_arity_table := L.(function_arity_table);
+    relation_arity_table := L.(relation_arity_table);
+  |}.
+
+Context {L : language} {constant_symbols' : Set}.
+
+#[local] Notation L' := (augmented_language L constant_symbols').
+
+#[local] Instance constant_symbols_similarity_instance_in_section_augmented_language : Similarity L.(constant_symbols) L'.(constant_symbols) :=
+  fun c : L.(constant_symbols) => fun c' : L.(constant_symbols) + constant_symbols' => inl c = c'.
+
+#[local] Instance trm_similarity_instance_in_section_augmented_language : Similarity (trm L) (trm L') :=
+  trm_similarity_instance L.(function_symbols) L.(relation_symbols) L.(function_arity_table) L.(relation_arity_table) L.(constant_symbols) L'.(constant_symbols) constant_symbols_similarity_instance_in_section_augmented_language.
+
+#[local] Instance trms_similarity_instance_in_section_augmented_language n : Similarity (trms L n) (trms L' n) :=
+  trms_similarity_instance L.(function_symbols) L.(relation_symbols) L.(function_arity_table) L.(relation_arity_table) L.(constant_symbols) L'.(constant_symbols) constant_symbols_similarity_instance_in_section_augmented_language n.
+
+#[local] Instance frm_similarity_instance_in_section_augmented_language : Similarity (frm L) (frm L') :=
+  frm_similarity_instance L.(function_symbols) L.(relation_symbols) L.(function_arity_table) L.(relation_arity_table) L.(constant_symbols) L'.(constant_symbols) constant_symbols_similarity_instance_in_section_augmented_language.
+
+#[local] Instance frms_similarity_instance_in_section_augmented_language : Similarity (ensemble (frm L)) (ensemble (frm L')) :=
+  frms_similarity_instance L.(function_symbols) L.(relation_symbols) L.(function_arity_table) L.(relation_arity_table) L.(constant_symbols) L'.(constant_symbols) constant_symbols_similarity_instance_in_section_augmented_language.
+
+#[local] Instance subst_similarity_instance_in_section_augmented_language : Similarity (subst L) (subst L') :=
+  subst_similarity_instance L.(function_symbols) L.(relation_symbols) L.(function_arity_table) L.(relation_arity_table) L.(constant_symbols) L'.(constant_symbols) constant_symbols_similarity_instance_in_section_augmented_language.
+
+End AUGMENTED_LANGUAGE.
+
+End EXTEND_LANGUAGE.
