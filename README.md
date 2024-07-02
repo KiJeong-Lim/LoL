@@ -40,3 +40,15 @@ compiled with OCaml 5.1.1
 - [Clare Jang](https://github.com/Ailrun)
 
 - [Dominique Larchey-Wendling](https://github.com/DmxLarchey)
+
+## Goals = `0 / 5`
+
+- [ ] Domain Theory (Complete Partial Order and Complete Lattice)
+
+- [ ] Set Theory (Aczel Tree and Ordinal)
+
+- [ ] Propositional Logic (The Soundness and Completeness Theorem)
+
+- [ ] First-Order Logic (The Soundness and Completeness Theorem)
+
+- [ ] The Godel's Incompleteness Theorem (1st thm)
