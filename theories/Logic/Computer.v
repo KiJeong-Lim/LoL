@@ -657,8 +657,8 @@ Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> 
     (h_spec : MuRecSpec (S (S n)) h (a :: acc :: xs) z)
     : MuRecSpec (S n) (MR_primRec g h) (S a :: xs) z  (* corrected by "SoonWon Moon" *)
   | MR_mu_spec n g xs z
-    (g_spec : MuRecSpec (S n) g (V.snoc xs z) 0)
-    (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (V.snoc xs y) p)
+    (g_spec : MuRecSpec (S n) g (z :: xs) 0)
+    (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (y :: xs) p)
     : MuRecSpec n (MR_mu g) xs z
 with MuRecsSpec : forall n : Arity, forall m : Arity, MuRecs n m -> Vector.t Value n -> Vector.t Value m -> Prop :=
   | MRs_nil_spec n xs
@@ -675,7 +675,7 @@ Fixpoint MuRecGraph {n : Arity} (f : MuRec n) : Vector.t Value n -> Value -> Pro
   | MR_proj i => fun xs => fun z => xs !! i = z
   | MR_compose g h => fun xs => fun z => exists ys, MuRecsGraph g xs ys /\ MuRecGraph h ys z
   | MR_primRec g h => fun xs => nat_rect _ (fun z => MuRecGraph g (V.tail xs) z) (fun a => fun ACC => fun z => exists y, ACC y /\ MuRecGraph h (a :: y :: V.tail xs) z) (V.head xs)
-  | MR_mu g => fun xs => fun z => (forall y, y < z -> exists p, p > 0 /\ MuRecGraph g (V.snoc xs y) p) /\ MuRecGraph g (V.snoc xs z) 0 (* corrected by "SoonWon Moon" *)
+  | MR_mu g => fun xs => fun z => (forall y, y < z -> exists p, p > 0 /\ MuRecGraph g (y :: xs) p) /\ MuRecGraph g (z :: xs) 0 (* corrected by "SoonWon Moon" *)
   end
 with MuRecsGraph {n : Arity} {m : Arity} (fs : MuRecs n m) : Vector.t Value n -> Vector.t Value m -> Prop :=
   match fs with
@@ -819,15 +819,6 @@ Proof.
   eapply MuRecs_isPartialFunction_aux; [exact SPEC | rewrite MuRecsGraph_correct; exact SPEC'].
 Qed.
 
-Definition nary_mu (n : Arity) (f : naryFun (S n)) (xs : Vector.t Value n)
-  (EXISTENCE : exists z, eval_vec (V.snoc xs z) f = 0)
-  : { z : Value | (forall i, i < z -> exists y, y > 0 /\ eval_vec (V.snoc xs i) f = y) /\ eval_vec (V.snoc xs z) f = 0 }.
-Proof.
-  revert f EXISTENCE. induction xs as [ | n x xs IH].
-  - exact nullary_mu.
-  - simpl. i. exact (IH (f x) EXISTENCE).
-Defined.
-
 Fixpoint MuRecInterpreter (n : Arity) (f : MuRec n) {struct f}
   : forall xs, (exists z, MuRecSpec n f xs z) -> { z : Value | MuRecSpec n f xs z }
 with MuRecsInterpreter (n : Arity) (m : Arity) (fs : MuRecs n m) {struct fs}
@@ -890,11 +881,11 @@ Proof.
         - rewrite <- MuRecGraph_correct. exact CALL.
         - rewrite <- MuRecGraph_correct. exact y_spec.
       }
-      clear EXISTENCE. unfold P. set (F := fun x : nat => fun y : nat => MuRecSpec (S n) f (V.snoc xs x) y).
+      clear EXISTENCE. unfold P. set (F := fun x : nat => fun y : nat => MuRecSpec (S n) f (x :: xs) y).
       assert (claim1 : forall x y1 y2 : nat, F x y1 -> F x y2 -> y1 = y2).
       { intros x y1 y2. unfold F. intros SPEC1 SPEC2. eapply MuRec_isPartialFunction. eapply SPEC1. eapply SPEC2. }
       assert (claim2 : forall x : nat, (exists y : nat, F x y) -> {y : nat | F x y}).
-      { unfold F. intros x EXISTENCE. exact (MuRecInterpreter (S n) f (V.snoc xs x) EXISTENCE). }
+      { unfold F. intros x EXISTENCE. exact (MuRecInterpreter (S n) f (x :: xs) EXISTENCE). }
       assert (claim3 : exists x : nat, umin' F x).
       { destruct SEARCH as [z [SEARCH STEP]]. exists z. red. unfold F. rewrite <- MuRecGraph_correct in SEARCH. simpl in SEARCH.
         destruct SEARCH as [SEARCH MIN]. split.
