@@ -107,7 +107,7 @@ Qed.
 Corollary PROOF_IRRELEVANCE
   : forall P : Prop, forall p1 : P, forall p2 : P, p1 = p2.
 Proof.
-  assert (trueBB_EQ_falseBB: trueBB = falseBB).
+  assert (trueBB_EQ_falseBB : trueBB = falseBB).
   { pose proof (axiom (RUSSEL = trueBB)) as [b_EQ_trueBB | b_NE_trueBB].
     - rewrite <- b_EQ_trueBB. rewrite -> PARADOX_OF_BERARDI. now eapply NOT_trueBB_EQ_falseBB.
     - contradiction b_NE_trueBB. rewrite -> PARADOX_OF_BERARDI. now eapply NOT_falseBB_EQ_trueBB.

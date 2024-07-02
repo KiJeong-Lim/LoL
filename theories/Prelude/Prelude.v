@@ -15,6 +15,9 @@ Require Export Coq.Setoids.Setoid.
 
 Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
 Ltac done := first [congruence | simpl in *; congruence | lia | now firstorder; first [lia | eauto with *]].
+Ltac obs_eqb n m :=
+  let H_OBS := fresh "H_OBS" in
+  destruct (Nat.eqb n m) as [ | ] eqn: H_OBS; [rewrite Nat.eqb_eq in H_OBS | rewrite Nat.eqb_neq in H_OBS].
 
 Reserved Infix "==" (no associativity, at level 70).
 Reserved Infix "=<" (no associativity, at level 70).

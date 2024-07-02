@@ -459,11 +459,68 @@ Proof.
     simpl. rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. congruence.
 Qed.
 
+Section WITH_LIST.
+
+Fixpoint to_list {A : Type} {n : nat} (xs : Vector.t A n) {struct xs} : list A :=
+  match xs with
+  | [] => L.nil
+  | x :: xs => L.cons x (to_list xs)
+  end.
+
+Lemma to_list_inj {A : Type} {n : nat} (xs1 : Vector.t A n) (xs2 : Vector.t A n)
+  (EXT_EQ : to_list xs1 = to_list xs2)
+  : xs1 = xs2.
+Proof.
+  revert xs1 xs2 EXT_EQ. induction xs1 as [ | n x1 xs1 IH].
+  - introVNil; simpl. i. reflexivity.
+  - introVCons x2 xs2; simpl. i. f_equal.
+    + apply f_equal with (f := L.hd x1) in EXT_EQ. exact EXT_EQ.
+    + apply f_equal with (f := @L.tl A) in EXT_EQ. eapply IH. exact EXT_EQ. 
+Qed.
+
+Fixpoint from_list {A : Type} (xs : list A) {struct xs} : Vector.t A (L.length xs) :=
+  match xs with
+  | L.nil => []
+  | L.cons x xs => x :: from_list xs
+  end.
+
+Lemma to_list_from_list {A : Type} (xs : list A)
+  : to_list (from_list xs) = xs.
+Proof.
+  induction xs as [ | x xs IH]; simpl.
+  - reflexivity.
+  - f_equal. exact IH.
+Qed.
+
+End WITH_LIST.
+
 Fixpoint snoc {A : Type} {n : nat} (xs : Vector.t A n) (x : A) {struct xs} : Vector.t A (S n) :=
   match xs with
   | [] => [x]
   | x' :: xs' => x' :: snoc xs' x
   end.
+
+Lemma to_list_snoc {A : Type} {n : nat} (xs : Vector.t A n) (x : A)
+  : to_list (snoc xs x) = L.app (to_list xs) (L.cons x L.nil).
+Proof.
+  revert x. induction xs as [ | n x' xs' IH]; simpl; i.
+  - reflexivity.
+  - f_equal. eapply IH.
+Qed.
+
+Fixpoint rev {A : Type} {n : nat} (xs : Vector.t A n) {struct xs} : Vector.t A n :=
+  match xs with
+  | [] => []
+  | x :: xs => snoc (rev xs) x
+  end.
+
+Lemma to_list_rev {A : Type} {n : nat} (xs : Vector.t A n)
+  : to_list (rev xs) = L.rev (to_list xs).
+Proof.
+  induction xs as [ | n x xs IH]; simpl.
+  - reflexivity.
+  - rewrite to_list_snoc. f_equal. exact IH.
+Qed.
 
 End V.
 
