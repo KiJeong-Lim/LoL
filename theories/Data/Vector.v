@@ -500,13 +500,6 @@ Inductive vec_heq (n : nat) (xs : Vector.t A n) : forall m, Vector.t A m -> Prop
 
 #[local] Notation " xs =~= xs' " := (vec_heq _ xs _ xs') : type_scope.
 
-Lemma vec_heq_if_eq (n : nat) (xs : Vector.t A n) (xs' : Vector.t A n)
-  (EQ : xs = xs')
-  : xs =~= xs'.
-Proof.
-  subst xs'. econs.
-Qed.
-
 Lemma len_eq_from_vec_heq (n : nat) (m : nat) (xs : Vector.t A n) (xs' : Vector.t A m)
   (HEQ : xs =~= xs')
   : n = m.
@@ -538,6 +531,36 @@ Proof.
   induction xs as [ | n x xs IH]; simpl.
   - econs.
   - destruct IH. rewrite to_list_from_list. econs.
+Qed.
+
+Lemma heq_refl (n1 : nat) (xs1 : Vector.t A n1)
+  : xs1 =~= xs1.
+Proof.
+  econs.
+Qed.
+
+Lemma heq_sym (n1 : nat) (n2 : nat) (xs1 : Vector.t A n1) (xs2 : Vector.t A n2)
+  (EQ : xs1 =~= xs2)
+  : xs2 =~= xs1.
+Proof.
+  destruct EQ. econs.
+Qed.
+
+Lemma heq_trans (n1 : nat) (n2 : nat) (n3 : nat) (xs1 : Vector.t A n1) (xs2 : Vector.t A n2) (xs3 : Vector.t A n3)
+  (EQ : xs1 =~= xs2)
+  (EQ' : xs2 =~= xs3)
+  : xs1 =~= xs3.
+Proof.
+  destruct EQ. exact EQ'.
+Qed.
+
+Lemma heq_iff (n : nat) (m : nat) (xs : Vector.t A n) (xs' : Vector.t A m)
+  : xs =~= xs' <-> to_list xs = to_list xs'.
+Proof.
+  split.
+  - intros HEQ. destruct HEQ. reflexivity.
+  - intros EQ. eapply heq_trans. 2: eapply from_list_to_list.
+    rewrite <- EQ. eapply heq_sym. eapply from_list_to_list.
 Qed.
 
 End WITH_LIST.
