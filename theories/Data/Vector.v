@@ -461,13 +461,15 @@ Qed.
 
 Section WITH_LIST.
 
-Fixpoint to_list {A : Type} {n : nat} (xs : Vector.t A n) {struct xs} : list A :=
+Context {A : Type}.
+
+Fixpoint to_list {n : nat} (xs : Vector.t A n) {struct xs} : list A :=
   match xs with
   | [] => L.nil
   | x :: xs => L.cons x (to_list xs)
   end.
 
-Lemma to_list_inj {A : Type} {n : nat} (xs1 : Vector.t A n) (xs2 : Vector.t A n)
+Lemma to_list_inj {n : nat} (xs1 : Vector.t A n) (xs2 : Vector.t A n)
   (EXT_EQ : to_list xs1 = to_list xs2)
   : xs1 = xs2.
 Proof.
@@ -478,18 +480,64 @@ Proof.
     + apply f_equal with (f := @L.tl A) in EXT_EQ. eapply IH. exact EXT_EQ. 
 Qed.
 
-Fixpoint from_list {A : Type} (xs : list A) {struct xs} : Vector.t A (L.length xs) :=
+Fixpoint from_list (xs : list A) {struct xs} : Vector.t A (L.length xs) :=
   match xs with
   | L.nil => []
   | L.cons x xs => x :: from_list xs
   end.
 
-Lemma to_list_from_list {A : Type} (xs : list A)
+Lemma to_list_from_list (xs : list A)
   : to_list (from_list xs) = xs.
 Proof.
   induction xs as [ | x xs IH]; simpl.
   - reflexivity.
   - f_equal. exact IH.
+Qed.
+
+Inductive vec_heq (n : nat) (xs : Vector.t A n) : forall m, Vector.t A m -> Prop :=
+  | vec_ext_heq_refl
+    : vec_heq n xs n xs.
+
+#[local] Notation " xs =~= xs' " := (vec_heq _ xs _ xs') : type_scope.
+
+Lemma vec_heq_if_eq (n : nat) (xs : Vector.t A n) (xs' : Vector.t A n)
+  (EQ : xs = xs')
+  : xs =~= xs'.
+Proof.
+  subst xs'. econs.
+Qed.
+
+Lemma len_eq_from_vec_heq (n : nat) (m : nat) (xs : Vector.t A n) (xs' : Vector.t A m)
+  (HEQ : xs =~= xs')
+  : n = m.
+Proof.
+  exact (
+    match HEQ in vec_heq _ _ m xs' return n = m with
+    | vec_ext_heq_refl _ _ => @eq_refl nat n
+    end
+  ).
+Defined.
+
+Lemma eq_from_vec_heq (n : nat) (xs : Vector.t A n) (xs' : Vector.t A n)
+  (HEQ : xs =~= xs')
+  : xs = xs'.
+Proof.
+  pose proof (
+    match HEQ in vec_heq _ _ m xs' return @existT nat (Vector.t A) n xs = @existT nat (Vector.t A) m xs' with
+    | vec_ext_heq_refl _ _ => @eq_refl (@sigT nat (Vector.t A)) (@existT nat (Vector.t A) n xs)
+    end
+  ) as EQ.
+  apply B.projT2_eq in EQ.
+  - exact EQ.
+  - clear xs' HEQ EQ. intros xs' EQ. rewrite eq_pirrel_fromEqDec with (H_eq1 := EQ) (H_eq2 := eq_refl). reflexivity. 
+Defined.
+
+Lemma from_list_to_list (n : nat) (xs : Vector.t A n)
+  : from_list (to_list xs) =~= xs.
+Proof.
+  induction xs as [ | n x xs IH]; simpl.
+  - econs.
+  - destruct IH. rewrite to_list_from_list. econs.
 Qed.
 
 End WITH_LIST.
