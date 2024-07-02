@@ -829,9 +829,9 @@ Proof.
 Defined.
 
 Fixpoint MuRecInterpreter (n : Arity) (f : MuRec n) {struct f}
-  : forall xs, ⟪ CONVERGE : exists z, MuRecSpec n f xs z ⟫ -> { z : Value | MuRecSpec n f xs z }
+  : forall xs, (exists z, MuRecSpec n f xs z) -> { z : Value | MuRecSpec n f xs z }
 with MuRecsInterpreter (n : Arity) (m : Arity) (fs : MuRecs n m) {struct fs}
-  : forall xs, ⟪ CONVERGE : exists z, MuRecsSpec n m fs xs z ⟫ -> { z : Vector.t Value m | MuRecsSpec n m fs xs z }.
+  : forall xs, (exists z, MuRecsSpec n m fs xs z) -> { z : Vector.t Value m | MuRecsSpec n m fs xs z }.
 Proof.
   - unnw. destruct f; simpl; intros xs EXISTENCE.
     + clear EXISTENCE. revert xs. introVCons x xs. revert xs. introVNil. exists (S x). econs 1.
@@ -908,7 +908,7 @@ Proof.
       * i. pose proof (MIN y H) as [p SPEC']. exists (S p). split. lia. rewrite <- MuRecGraph_correct in SPEC'. exact SPEC'.
       * rewrite <- MuRecGraph_correct in SPEC. exact SPEC.
   - unnw. destruct fs; intros xs EXISTENCE.
-    + exists VNil. econs 1.
+    + exists []. econs 1.
     + assert (claim1 : exists z : Value, MuRecSpec n f xs z).
       { destruct EXISTENCE as [z SPEC]. rewrite <- MuRecsGraph_correct in SPEC. simpl in SPEC.
         destruct SPEC as (y&ys&CALL&CALLs&EQ). exists y. rewrite <- MuRecGraph_correct. exact CALL.
