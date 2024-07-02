@@ -38,3 +38,5 @@ compiled with OCaml 5.1.1
 - [SoonWon Moon](https://github.com/damhiya)
 
 - [Clare Jang](https://github.com/Ailrun)
+
+- [Dominique Larchey-Wendling](https://github.com/DmxLarchey)
