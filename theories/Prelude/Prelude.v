@@ -861,6 +861,35 @@ Qed.
 
 #[global] Hint Rewrite @in_difference_iff : datatypes.
 
+Definition delete {A : Type} (x1 : A) (X2 : E.t A) : E.t A :=
+  fun x => x <> x1 /\ x \in X2.
+
+#[global] Hint Unfold delete : datatypes.
+
+Lemma in_delete_iff {A : Type} (x1 : A) (X2 : E.t A)
+  : forall z : A, z \in delete x1 X2 <-> (z <> x1 /\ z \in X2).
+Proof.
+  reflexivity.
+Qed.
+
+#[global] Hint Rewrite @in_delete_iff : datatypes.
+
+#[global]
+Add Parametric Morphism {A : Type}
+  : (@elem A) with signature (eq ==> eqProp ==> iff) as In_eq_eqProp_iff.
+Proof.
+  intros x y1 y2 EQ_y. pose proof (EQ_y x) as H_EQ. do 4 red in H_EQ. now unfold elem.
+Qed.
+
+#[global]
+Add Parametric Morphism {A: Type}
+  : (@isSubsetOf A) with signature (eqProp ==> eqProp ==> iff) as isSubsetOf_eqProp_eqProp_iff.
+Proof.
+  intros x1 x2 EQ_x y1 y2 EQ_y. split; intros SUBSET z H_IN.
+  - rewrite <- EQ_y. rewrite <- EQ_x in H_IN. done.
+  - rewrite -> EQ_y. rewrite -> EQ_x in H_IN. done.
+Qed.
+
 End E.
 
 Notation ensemble := E.t.
@@ -878,6 +907,7 @@ Notation ensemble := E.t.
 #[global] Hint Resolve E.ensemble_fmap_spec : datatypes.
 #[global] Hint Resolve E.in_full_iff : datatypes.
 #[global] Hint Resolve E.in_difference_iff : datatypes.
+#[global] Hint Resolve E.in_delete_iff : datatypes.
 
 Module CAT.
 

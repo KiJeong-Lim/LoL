@@ -1868,7 +1868,7 @@ Proof.
           - rewrite subst_trm_unfold. rename w into u. destruct (eq_dec u chi) as [EQ4 | NE4].
             + subst u. pose proof (@chi_frm_is_fresh_in_subst (All_frm y p) (one_subst x t)) as claim2. fold chi in claim2.
               unfold frm_is_fresh_in_subst in claim2. rewrite forallb_forall in claim2.
-              assert (claim3: In chi (fvs_frm (All_frm y p))).
+              assert (claim3 : In chi (fvs_frm (All_frm y p))).
               { rewrite fv_is_free_in_frm. rewrite is_free_in_frm_unfold. rewrite andb_true_iff, negb_true_iff, Nat.eqb_neq. split. done. done. }
               apply claim2 in claim3. unfold "∘"%prg in claim3. rewrite negb_true_iff in claim3.
               unfold one_subst, cons_subst, nil_subst in claim3. destruct (eq_dec chi x) as [EQ5 | NE5]. done. rewrite is_free_in_trm_unfold, Nat.eqb_neq in claim3. done.
@@ -1890,7 +1890,7 @@ Proof.
             { done. }
       - destruct (eq_dec z chi) as [EQ' | NE'].
         + rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done.
-        + assert (ALPHA: subst_frm (cons_subst y (Var_trm chi) (one_subst x t)) p ≡ subst_frm (one_subst y (Var_trm chi)) (nsubst x t p)).
+        + assert (ALPHA : subst_frm (cons_subst y (Var_trm chi) (one_subst x t)) p ≡ subst_frm (one_subst y (Var_trm chi)) (nsubst x t p)).
           { pose proof (@subst_frm_compat_alpha_equiv (nsubst x t p) (subst_frm (one_subst x t) p) (one_subst y (Var_trm chi)) claim1) as claim2.
             rewrite claim2. rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
             intros u u_free. unfold subst_compose. unfold one_subst, cons_subst, nil_subst.
@@ -1904,7 +1904,7 @@ Proof.
           }
           rewrite is_free_in_frm_unfold. rewrite andb_false_iff. left.
           rewrite alpha_equiv_compat_fresh with (ALPHA := ALPHA).
-          assert (claim2: is_free_in_frm z (nsubst x t p) = false).
+          assert (claim2 : is_free_in_frm z (nsubst x t p) = false).
           { rewrite alpha_equiv_compat_fresh with (ALPHA := claim1).
             destruct (is_free_in_frm z (subst_frm (one_subst x t) p)) as [ | ] eqn: H_OBS1; trivial.
             rewrite <- free_in_frm_wrt_iff in H_OBS1. unfold free_in_frm_wrt in H_OBS1.
