@@ -856,7 +856,7 @@ Proof.
   - eapply cut with (A := p2). 2: done. eapply extend_proves. 2: exact PROVE2. intros q q_in. rewrite E.in_singleton_iff in q_in; unnw. subst q; eauto with *.
 Qed.
 
-Section SUB_ALL_CLOSE_FROM. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/subAll.v#L1177" *)
+Section SUBST. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/subAll.v" *)
 
 Fixpoint close_from (a : nat) (n : nat) (p : frm L) {struct n} : frm L :=
   match n with
@@ -864,7 +864,35 @@ Fixpoint close_from (a : nat) (n : nat) (p : frm L) {struct n} : frm L :=
   | S m => All_frm (a + m) (close_from a m p)
   end.
 
-End SUB_ALL_CLOSE_FROM.
+Lemma close_from_alpha (a : nat) (n : nat) (p : frm L) (p' : frm L)
+  (ALPHA : p ≡ p')
+  : close_from a n p ≡ close_from a n p'.
+Proof.
+  revert a n. induction ALPHA; i.
+  - subst ts'. reflexivity.
+  - subst t1' t2'. reflexivity.
+  - induction n as [ | n IH]; simpl.
+    + eapply alpha_Neg_frm. done.
+    + eapply alpha_equiv_All_frm_intro. done.
+  - induction n as [ | n IH]; simpl.
+    + eapply alpha_Imp_frm; done.
+    + eapply alpha_equiv_All_frm_intro. done.
+  - induction n as [ | n IH]; simpl.
+    + eapply alpha_All_frm with (z := z); try done.
+    + eapply alpha_equiv_All_frm_intro. done.
+Qed.
+
+#[local] Opaque le_lt_dec.
+
+#[global]
+Add Parametric Morphism
+  : close_from with signature (eq ==> eq ==> alpha_equiv ==> alpha_equiv)
+  as close_from_compat_with_alpha.
+Proof.
+  intros a n p p' ALPHA. eapply close_from_alpha. exact ALPHA.
+Qed.
+
+End SUBST.
 
 End HILBERT_PROOF_SYSTEM.
 
