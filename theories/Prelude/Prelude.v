@@ -14,7 +14,7 @@ Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
 
 Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
-Ltac done := first [congruence | simpl in *; congruence | lia | now firstorder; first [congruence | lia | eauto]].
+Ltac done := first [congruence | simpl in *; congruence | lia | now firstorder; first [congruence | tauto | lia | eauto]].
 Ltac obs_eqb n m :=
   let H_OBS := fresh "H_OBS" in
   destruct (Nat.eqb n m) as [ | ] eqn: H_OBS; [rewrite Nat.eqb_eq in H_OBS | rewrite Nat.eqb_neq in H_OBS].
@@ -1246,5 +1246,11 @@ Proof.
     + intros CONTRA. apply in_mk_edge_seq_inv in CONTRA. contradiction.
     + eapply IH.
 Qed.
+
+Definition finsubset {A : Type} (xs : list A) (X : ensemble A) : Prop :=
+  forall x : A, L.In x xs -> E.elem x X.
+
+Definition listrep {A : Type} (xs : list A) (X : ensemble A) : Prop :=
+  forall x : A, L.In x xs <-> E.elem x X.
 
 End L.

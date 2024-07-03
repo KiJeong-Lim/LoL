@@ -1,4 +1,5 @@
 Require Import LoL.Prelude.Prelude.
+Require Import LoL.Prelude.Notations.
 Require Import LoL.Math.ThN.
 Require Import LoL.Data.Vector.
 
@@ -2081,12 +2082,12 @@ Let L' : language := mkL_with_constant_symbols _constant_symbols'.
 Hypothesis constant_symbols_similarity : Similarity _constant_symbols _constant_symbols'.
 
 Inductive trm_similarity : Similarity (trm L) (trm L') :=
-  | IVar_sim (x : ivar)
+  | Var_sim (x : ivar)
     : @Var_trm L x =~= @Var_trm L' x
-  | Func_sim (f : _function_symbols) (ts : trms L (L.(function_arity_table) f)) (ts' : trms L' (L.(function_arity_table) f))
+  | Fun_sim (f : _function_symbols) (ts : trms L (L.(function_arity_table) f)) (ts' : trms L' (L.(function_arity_table) f))
     (ts_SIM : ts =~= ts')
     : @Fun_trm L f ts =~= @Fun_trm L' f ts'
-  | Cnst_sim (c : _constant_symbols) (c' : _constant_symbols')
+  | Con_sim (c : _constant_symbols) (c' : _constant_symbols')
     (c_SIM : c =~= c')
     : @Con_trm L c =~= @Con_trm L' c'
 with trms_similarity : forall n : arity, Similarity (trms L n) (trms L' n) :=
@@ -2201,3 +2202,33 @@ Context {L : language} {constant_symbols' : Set}.
 End AUGMENTED_LANGUAGE.
 
 End EXTEND_LANGUAGE_BY_ADDING_CONSTANTS.
+
+#[global] Bind Scope lang_scope with frm.
+#[global] Declare Custom Entry fol_frm_viewer.
+
+Notation " R '@@' ts " := (Rel_frm R ts) (R constr, ts constr, in custom fol_frm_viewer at level 0). 
+Notation " t1 '=' t2 " := (Eqn_frm t1 t2) (t1 constr, t2 constr, in custom fol_frm_viewer at level 0).
+Notation " 'False' " := (Bot_frm) (in custom fol_frm_viewer at level 0, no associativity).
+Notation " '~' p1 " := (Neg_frm p1) (in custom fol_frm_viewer at level 2, right associativity).
+Notation " p1 '/\' p2 " := (Con_frm p1 p2) (in custom fol_frm_viewer at level 2, right associativity).
+Notation " p1 '\/' p2 " := (Dis_frm p1 p2) (in custom fol_frm_viewer at level 3, right associativity).
+Notation " p1 '->' p2 " := (Imp_frm p1 p2) (in custom fol_frm_viewer at level 4, right associativity).
+Notation " p1 '<->' p2 " := (Iff_frm p1 p2) (in custom fol_frm_viewer at level 4, no associativity).
+Notation " 'forall' y ',' p1 " := (All_frm y p1) (y constr, in custom fol_frm_viewer at level 4, p1 constr).
+Notation " 'exists' y ',' p1 " := (Exs_frm y p1) (y constr, in custom fol_frm_viewer at level 4, p1 constr).
+Notation " p " := p (in custom fol_frm_viewer at level 0, p ident).
+Notation " '(' p ')' " := p (in custom fol_frm_viewer at level 0, p at level 10).
+Notation " '$' p '$' " := p (p custom fol_frm_viewer at level 10, at level 0, format "'$' p '$'", no associativity) : lang_scope.
+
+Declare Scope subst_scope.
+Delimit Scope subst_scope with subst.
+
+Notation " '⟦' s '⟧' p " := (subst_frm s p) (only printing, in custom fol_frm_viewer at level 0, right associativity, format "'⟦'  s  '⟧' p").
+Notation " '⟦' s '⟧' t " := (subst_trm s t) (only printing, in custom fol_frm_viewer at level 0, right associativity).
+Notation " '⟦' s '⟧' ts " := (subst_trms s ts) (only printing, in custom fol_frm_viewer at level 0, right associativity).
+Notation " '⟦' s '⟧' p " := (subst_frm s p) : lang_scope.
+
+Notation " x '↦' t ';' s " := (cons_subst x t s) : subst_scope.
+Notation " 'ι' " := (nil_subst) : subst_scope.
+Notation " x '↦' t " := (one_subst x t) : subst_scope.
+Notation " s2 '∘' s1 " := (subst_compose s1 s2) : subst_scope.

@@ -376,7 +376,7 @@ Qed.
 
 #[local] Existing Instance V.vec_isSetoid.
 
-Lemma Func_eqAxm_preserves_truth (f : L.(function_symbols)) (STRUCTURE : structureOf L) (env : ivar -> domain_of_discourse)
+Lemma Fun_eqAxm_preserves_truth (f : L.(function_symbols)) (STRUCTURE : structureOf L) (env : ivar -> domain_of_discourse)
   : interpret_frm STRUCTURE env (Fun_eqAxm f).
 Proof.
   enough (HACK : forall phi,
@@ -855,6 +855,16 @@ Proof.
   - eapply cut with (A := p1). 2: done. eapply extend_proves. 2: exact PROVE1. intros q q_in. rewrite E.in_singleton_iff in q_in; unnw. subst q; eauto with *.
   - eapply cut with (A := p2). 2: done. eapply extend_proves. 2: exact PROVE2. intros q q_in. rewrite E.in_singleton_iff in q_in; unnw. subst q; eauto with *.
 Qed.
+
+Section SUB_ALL_CLOSE_FROM. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/subAll.v#L1177" *)
+
+Fixpoint close_from (a : nat) (n : nat) (p : frm L) {struct n} : frm L :=
+  match n with
+  | O => p
+  | S m => All_frm (a + m) (close_from a m p)
+  end.
+
+End SUB_ALL_CLOSE_FROM.
 
 End HILBERT_PROOF_SYSTEM.
 
