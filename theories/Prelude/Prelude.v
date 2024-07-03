@@ -14,7 +14,7 @@ Require Export Coq.Relations.Relation_Operators.
 Require Export Coq.Setoids.Setoid.
 
 Notation " '⟪' x ':' t '⟫' " := (NW (fun x : unit => match x with tt => t end)) (x name, t at level 200, at level 0, no associativity) : type_scope.
-Ltac done := first [congruence | simpl in *; congruence | lia | now firstorder; first [lia | eauto with *]].
+Ltac done := first [congruence | simpl in *; congruence | lia | now firstorder; first [congruence | lia | eauto]].
 Ltac obs_eqb n m :=
   let H_OBS := fresh "H_OBS" in
   destruct (Nat.eqb n m) as [ | ] eqn: H_OBS; [rewrite Nat.eqb_eq in H_OBS | rewrite Nat.eqb_neq in H_OBS].
@@ -230,6 +230,54 @@ Class Similarity (A : Type) (B : Type) : Type :=
 #[global]
 Instance forall_liftsSimilarity {I : Type} {A : I -> Type} {B : I -> Type} (SIMILARITY : forall i, Similarity (A i) (B i)) : Similarity (forall i, A i) (forall i, B i) :=
   fun f : forall i, A i => fun g : forall i, B i => forall i, is_similar_to (f i) (g i).
+
+Theorem transfinite_induction {A : Type} {B : A -> Prop} (R : A -> A -> Prop)
+  (WF : well_founded R)
+  (IND : forall x : A, (forall y : A, R y x -> B y) -> B x)
+  : forall x : A, B x.
+Proof.
+  pose (Accrec_fix :=
+    fix Accrec_fix (x : A) (H_acc : @Acc A R x) {struct H_acc} : B x :=
+    match H_acc with
+    | @Acc_intro _ _ _ IH => IND x (fun y : A => fun H_yRx : R y x => Accrec_fix y (IH y H_yRx))
+    end
+  ).
+  exact (fun x : A => Accrec_fix x (WF x)).
+Defined.
+
+Theorem transfinite_recursion {A : Type} {B : A -> Type} (R : A -> A -> Prop)
+  (WF : well_founded R)
+  (IND : forall x : A, (forall y : A, R y x -> B y) -> B x)
+  : forall x : A, B x.
+Proof.
+  pose (Accrec_fix :=
+    fix Accrec_fix (x : A) (H_acc : @Acc A R x) {struct H_acc} : B x :=
+    match H_acc with
+    | @Acc_intro _ _ _ IH => IND x (fun y : A => fun H_yRx : R y x => Accrec_fix y (IH y H_yRx))
+    end
+  ).
+  exact (fun x : A => Accrec_fix x (WF x)).
+Qed.
+
+Lemma preimage_preserves_wf {A : Type} {B : Type} (R : B -> B -> Prop) (f : A -> B)
+  (WF : well_founded R)
+  (Rof := fun lhs : A => fun rhs : A => R (f lhs) (f rhs))
+  : well_founded Rof.
+Proof.
+  intros x. remember (f x) as y eqn: y_eq_f_x.
+  revert x y_eq_f_x. induction (WF y) as [y' _ IH].
+  intros x' hyp_eq. econstructor. intros x f_x_R_f_x'.
+  subst y'. eapply IH; [exact (f_x_R_f_x') | reflexivity].
+Defined.
+
+Lemma list_length_wf_ind {A: Type} (phi: list A -> Prop)
+  (IND: forall s: list A, (forall s': list A, length s' < length s -> phi s') -> phi s)
+  : forall s: list A, phi s.
+Proof.
+  pose proof (@preimage_preserves_wf) as REC.
+  specialize REC with (A := list A) (B := nat) (R := Nat.lt) (f := @length A).
+  exact (transfinite_induction (fun lhs : list A => fun rhs : list A => length lhs < length rhs) (REC lt_wf) IND).
+Qed.
 
 End B.
 
