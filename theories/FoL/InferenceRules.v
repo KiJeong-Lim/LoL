@@ -1017,10 +1017,85 @@ Proof.
     }
     pose proof (subst_frm_close_frm_1 n p' r s' BOUND') as claim1. rewrite Deduction_theorem in claim1.
     eapply cut_one'. exact claim1. unfold p'. rewrite <- Deduction_theorem. eapply lift_close_from; try done.
-    ii. pose proof (@last_ivar_frm_gt L p z). rewrite H in H0. unfold last_ivar_frm in H0. lia.
+    intros z FREE. pose proof (@last_ivar_frm_gt L p z) as claim2. rewrite FREE in claim2. unfold last_ivar_frm in claim2. done.
 Qed.
 
 End SUBST.
+
+Section EQUATIONS. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/folLogic3.v" *)
+
+Fixpoint pairwise_equal {n : nat} (Gamma : ensemble (frm L)) {struct n} : trms L n -> trms L n -> Prop :=
+  match n with
+  | O => fun ts => fun ts' => True
+  | S n' => fun ts => fun ts' => Gamma \proves (Eqn_frm (head ts) (head ts')) /\ pairwise_equal (n := n') Gamma (tail ts) (tail ts')
+  end.
+
+Definition trms_map : forall n, trms L n -> trms L n -> ivar -> trm L :=
+  nat_rec (fun x => trms L x -> trms L x -> ivar -> trm L) (fun _ => fun _ => fun z => Var_trm z) (fun n => fun IH => fun ts => fun ts' => fun z => if eq_dec z (n + n) then head ts else if eq_dec z (S (n + n)) then head ts' else IH (tail ts) (tail ts') z).
+
+#[local] Notation nVars := varcouples.
+#[local] Notation PairwiseEqual := pairwise_equal.
+#[local] Notation termsMap := trms_map.
+
+Lemma nVars_subst_fst n (ts : trms L n) (ts' : trms L n)
+  : subst_trms (trms_map n ts ts') (fst (nVars n)) = ts.
+Proof.
+  revert n ts ts'. induction n as [ | n IH].
+  - intros ts. pattern ts. revert ts. eapply trms_case0.
+    intros ts'. pattern ts'. revert ts'. eapply trms_case0.
+    reflexivity.
+  - intros ts. pattern ts. revert ts. eapply trms_caseS. intros t ts.
+    intros ts'. pattern ts'. revert ts'. eapply trms_caseS. intros t' ts'.
+    assert (claim1 : forall z, forall FREE : is_free_in_trms z (fst (nVars n)) = true, z < n + n).
+    { clear IH t t' ts ts'. induction n as [ | n IH]; simpl; ii.
+      - inv FREE.
+      - simpl in FREE. destruct (nVars n) as [FST SND] eqn: EQN.
+        simpl in FREE, IH. rewrite is_free_in_trms_unfold in FREE.
+        rewrite orb_true_iff in FREE. destruct FREE as [FREE | FREE].
+        + rewrite is_free_in_trm_unfold in FREE. rewrite Nat.eqb_eq in FREE. lia.
+        + apply IH in FREE. lia.
+    }
+    simpl. destruct (nVars n) as [FST SND] eqn: EQN. simpl in *.
+    unfold head, tail. simpl. rewrite subst_trms_unfold. simpl. f_equal.
+    + rewrite subst_trm_unfold. destruct eq_dec as [EQ | NE]; done.
+    + rewrite <- IH with (ts' := ts'). eapply equiv_subst_in_trms_implies_subst_trms_same.
+      intros z FREE. destruct (eq_dec z (n + n)) as [EQ1 | NE1].
+      { apply claim1 in FREE. done. }
+      destruct (eq_dec z (S (n + n))) as [EQ2 | NE2].
+      { apply claim1 in FREE. done. }
+      reflexivity.
+Qed.
+
+Lemma nVars_subst_snd n (ts : trms L n) (ts' : trms L n)
+  : subst_trms (trms_map n ts ts') (snd (nVars n)) = ts'.
+Proof.
+  revert n ts ts'. induction n as [ | n IH].
+  - intros ts. pattern ts. revert ts. eapply trms_case0.
+    intros ts'. pattern ts'. revert ts'. eapply trms_case0.
+    reflexivity.
+  - intros ts. pattern ts. revert ts. eapply trms_caseS. intros t ts.
+    intros ts'. pattern ts'. revert ts'. eapply trms_caseS. intros t' ts'.
+    assert (claim1 : forall z, forall FREE : is_free_in_trms z (snd (nVars n)) = true, z < n + n).
+    { clear IH t t' ts ts'. induction n as [ | n IH]; simpl; ii.
+      - inv FREE.
+      - simpl in FREE. destruct (nVars n) as [FST SND] eqn: EQN.
+        simpl in FREE, IH. rewrite is_free_in_trms_unfold in FREE.
+        rewrite orb_true_iff in FREE. destruct FREE as [FREE | FREE].
+        + rewrite is_free_in_trm_unfold in FREE. rewrite Nat.eqb_eq in FREE. lia.
+        + apply IH in FREE. lia.
+    }
+    simpl. destruct (nVars n) as [FST SND] eqn: EQN. simpl in *.
+    unfold head, tail. simpl. rewrite subst_trms_unfold. simpl. f_equal.
+    + rewrite subst_trm_unfold. destruct eq_dec as [EQ | NE]. done. destruct eq_dec; done.
+    + rewrite <- IH with (ts := ts). eapply equiv_subst_in_trms_implies_subst_trms_same.
+      intros z FREE. destruct (eq_dec z (n + n)) as [EQ1 | NE1].
+      { apply claim1 in FREE. done. }
+      destruct (eq_dec z (S (n + n))) as [EQ2 | NE2].
+      { apply claim1 in FREE. done. }
+      reflexivity.
+Qed.
+
+End EQUATIONS.
 
 End HILBERT_PROOF_SYSTEM.
 
