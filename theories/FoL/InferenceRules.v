@@ -892,7 +892,7 @@ Qed.
 
 #[local] Opaque le_lt_dec.
 
-Fixpoint multiple_subst (m : nat) (n : nat) (p : frm L) : frm L :=
+(* Fixpoint multiple_subst (m : nat) (n : nat) (p : frm L) : frm L :=
   match n with
   | O => p
   | S n' => subst_frm (one_subst n' (Var_trm (m + n'))) (multiple_subst m n' p)
@@ -919,7 +919,38 @@ Lemma close_from_0_n_p_alpha (n : nat) (p : frm L) (m : nat) (Gamma : ensemble (
   (BOUND : forall z : ivar, is_free_in_frm z p = true -> z < m)
   (PROVE : Gamma \proves (close_from 0 n p))
   : Gamma \proves (close_from m n (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else Var_trm (m + x)) p)).
-Abort.
+Proof.
+  rewrite <- multiple_subst_simultaneous_subst; trivial. induction n as [ | n IH]; i; [exact PROVE | simpl in *].
+  remember (m + n) as y eqn: H_y. eapply cut_one'. 2: exact PROVE. eapply for_All_I.
+  - intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []].
+    destruct (is_free_in_frm y (All_frm n (close_from 0 n p))) as [ | ] eqn: H_OBS; trivial.
+    assert (claim1 : forall z : ivar, n <= z -> m <= z -> is_free_in_frm z (All_frm n (close_from 0 n p)) = false).
+    { clear H_OBS PROVE Gamma IH y H_y. intros z. revert p m z LE BOUND. induction n as [ | n IH]; simpl; intros p m z LE BOUND LE1 LE2.
+      - simpl. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (BOUND z). destruct (is_free_in_frm z p) as [ | ]; try done.
+      - do 2 rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (eq_dec z n) as [H | H]; try tauto. pose proof (eq_dec z (S n)) as [H' | H']; try tauto.
+        left. left. exploit (IH p m z); try done. intros FRESH. simpl in FRESH. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq in FRESH. done.
+    }
+    rewrite <- claim1 with (z := y); try done.
+  - assert (claim1 : forall p : frm L, forall v1 : nat, forall v2 : nat, forall v3 : nat, forall v4 : nat, v3 < v1 -> v1 + v2 <= v4 -> E.empty \proves Imp_frm (subst_frm (one_subst v3 (Var_trm v4)) (close_from v1 v2 p)) (close_from v1 v2 (subst_frm (one_subst v3 (Var_trm v4)) p))).
+    { clear. intros p s n. induction n as [ | n IH]; simpl; i.
+      - eapply for_Imp_I; eapply for_ByHyp. autorewrite with datatypes. done.
+      - set (chi := chi_frm _ _). rewrite Nat.add_comm in H0. simpl in H0. rewrite Nat.add_comm in H0.
+        revert H0 chi. remember (s + n) as m eqn: H_m. i.
+        replace (All_frm chi (subst_frm (cons_subst m (Var_trm chi) (one_subst v3 (Var_trm v4))) (close_from s n p))) with (All_frm chi (subst_frm (one_subst m (Var_trm chi)) (subst_frm (one_subst v3 (Var_trm v4)) (close_from s n p)))).
+        { eapply for_Imp_I. eapply cut_one; cycle -1.
+          - eapply for_All_E with (x := chi) (t := Var_trm v4). eapply for_ByHyp. left. reflexivity.
+          - 
+        }
+        { f_equal. rewrite <- subst_compose_frm_spec. eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst.
+          destruct (eq_dec u m) as [EQ1 | NE1].
+          - subst u. unfold eq_dec at 2. destruct (nat_hasEqDec m v3) as [EQ2 | NE2]; try done.
+            rewrite subst_trm_unfold. unfold eq_dec. destruct (nat_hasEqDec m m) as [EQ3 | NE3]; try done.
+          - destruct (eq_dec u v3) as [EQ2 | NE2].
+            + rewrite subst_trm_unfold. unfold eq_dec. destruct (nat_hasEqDec v4 m) as [EQ3 | NE3]; try done.
+            + rewrite subst_trm_unfold. unfold eq_dec. destruct (nat_hasEqDec u m) as [EQ3 | NE3]; try done.
+        }
+    }
+Qed. *)
 
 End SUBST.
 
