@@ -882,8 +882,6 @@ Proof.
     + eapply alpha_equiv_All_frm_intro. done.
 Qed.
 
-#[local] Opaque le_lt_dec.
-
 #[global]
 Add Parametric Morphism
   : close_from with signature (eq ==> eq ==> alpha_equiv ==> alpha_equiv)
@@ -891,6 +889,15 @@ Add Parametric Morphism
 Proof.
   intros a n p p' ALPHA. eapply close_from_alpha. exact ALPHA.
 Qed.
+
+#[local] Opaque le_lt_dec.
+
+Lemma close_from_0_n_p_alpha (n : nat) (p : frm L) (m : nat) (Gamma : ensemble (frm L))
+  (LE : n <= m)
+  (BOUND : forall z : ivar, is_free_in_frm z p = true -> z < m)
+  (PROVE : Gamma \proves close_from 0 n p)
+  : Gamma \proves close_from m n (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else Var_trm (m + x)) p).
+Abort.
 
 End SUBST.
 
