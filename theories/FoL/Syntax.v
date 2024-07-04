@@ -1573,7 +1573,24 @@ Qed.
 
 #[global]
 Add Parametric Morphism
-  : All_frm with signature (eq ==> alpha_equiv ==> alpha_equiv) as All_frm_eq_alpha_equiv_alpha_equiv.
+  : Neg_frm with signature (alpha_equiv ==> alpha_equiv)
+  as Neg_frm_alpha_equiv_alpha_equiv.
+Proof.
+  ii. eapply alpha_Neg_frm; done.
+Qed.
+
+#[global]
+Add Parametric Morphism
+  : Imp_frm with signature (alpha_equiv ==> alpha_equiv ==> alpha_equiv)
+  as Neg_frm_alpha_equiv_alpha_equiv_alpha_equiv.
+Proof.
+  ii. eapply alpha_Imp_frm; done.
+Qed.
+
+#[global]
+Add Parametric Morphism
+  : All_frm with signature (eq ==> alpha_equiv ==> alpha_equiv)
+  as All_frm_eq_alpha_equiv_alpha_equiv.
 Proof.
   intros y p1 p2 ALPHA. eapply alpha_equiv_All_frm_intro. exact ALPHA.
 Qed.

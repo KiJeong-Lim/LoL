@@ -892,11 +892,33 @@ Qed.
 
 #[local] Opaque le_lt_dec.
 
+Fixpoint multiple_subst (m : nat) (n : nat) (p : frm L) : frm L :=
+  match n with
+  | O => p
+  | S n' => subst_frm (one_subst n' (Var_trm (m + n'))) (multiple_subst m n' p)
+  end.
+
+Lemma multiple_subst_simultaneous_subst (m : nat) (n : nat) (p : frm L)
+  (LE : n <= m)
+  (BOUND : forall z : ivar, is_free_in_frm z p = true -> z < m)
+  : multiple_subst m n p ≡ subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else Var_trm (m + x)) p.
+Proof.
+  revert m p LE BOUND. induction n as [ | n IH]; simpl; i.
+  - symmetry. eapply subst_nil_frm. intros u u_free.
+    destruct (le_lt_dec 0 u) as [LE1 | LT1]; try done.
+  - rewrite IH with (p := p); try done. rewrite <- subst_compose_frm_spec.
+    eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free.
+    unfold subst_compose, one_subst, cons_subst, nil_subst. destruct (le_lt_dec n u) as [EQ1 | NE1], (le_lt_dec (S n) u) as [LE2 | LT2]; try done.
+    + rewrite subst_trm_unfold. destruct (eq_dec u n) as [EQ3 | NE3]; try done.
+    + rewrite subst_trm_unfold. destruct (eq_dec u n) as [EQ3 | NE3]; try done.
+    + rewrite subst_trm_unfold. unfold eq_dec. destruct (nat_hasEqDec (m + u) n) as [EQ3 | NE3]; try done.
+Qed.
+
 Lemma close_from_0_n_p_alpha (n : nat) (p : frm L) (m : nat) (Gamma : ensemble (frm L))
   (LE : n <= m)
   (BOUND : forall z : ivar, is_free_in_frm z p = true -> z < m)
-  (PROVE : Gamma \proves close_from 0 n p)
-  : Gamma \proves close_from m n (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else Var_trm (m + x)) p).
+  (PROVE : Gamma \proves (close_from 0 n p))
+  : Gamma \proves (close_from m n (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else Var_trm (m + x)) p)).
 Abort.
 
 End SUBST.
