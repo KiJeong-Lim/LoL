@@ -782,12 +782,12 @@ Qed.
 Lemma for_All_I' (x : ivar) (y : ivar) (p : frm L) (Gamma : ensemble (frm L))
   (NOT_FREE1 : is_not_free_in_frms y Gamma)
   (NOT_FREE2 : is_not_free_in_frm y (All_frm x p))
-  (PROVE1: Gamma \proves subst_frm (one_subst x (Var_trm y)) p)
+  (PROVE : Gamma \proves subst_frm (one_subst x (Var_trm y)) p)
   : Gamma \proves All_frm x p.
 Proof.
   eapply cut_one' with (A := (All_frm y (subst_frm (one_subst x (Var_trm y)) p))).
   - rewrite <- Deduction_theorem. eapply rebind_All_frm_bwd. exact NOT_FREE2.
-  - eapply for_All_I. exact NOT_FREE1. exact PROVE1.
+  - eapply for_All_I. exact NOT_FREE1. exact PROVE.
 Qed.
 
 Lemma rebind_All_frm (Gamma : ensemble (frm L)) (x : ivar) (x' : ivar) (p : frm L)
@@ -914,18 +914,18 @@ Proof.
     + rewrite subst_trm_unfold. unfold eq_dec. destruct (nat_hasEqDec (m + u) n) as [EQ3 | NE3]; try done.
 Qed.
 
-Lemma close_from_0_n_p_imp_close_from_m_n_subst_p (n : nat) (p : frm L) (m : nat) (Gamma : ensemble (frm L))
+Lemma lift_close_from (n : nat) (p : frm L) (m : nat)
   (LE : n <= m)
   (BOUND : forall z : ivar, is_free_in_frm z p = true -> z < m)
   : E.empty \proves Imp_frm (close_from 0 n p) (close_from m n (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else Var_trm (m + x)) p)).
 Proof.
-  rewrite <- multiple_subst_simultaneous_subst; trivial. revert m LE p BOUND Gamma. induction n as [ | n IH]; i; simpl in *.
+  rewrite <- multiple_subst_simultaneous_subst; trivial. revert m LE p BOUND. induction n as [ | n IH]; i; simpl in *.
   - eapply for_Imp_I. eapply for_ByHyp. autorewrite with datatypes. done.
   - remember (m + n) as y eqn: H_y. eapply for_Imp_I. eapply for_All_I.
     + intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []].
       destruct (is_free_in_frm y (All_frm n (close_from 0 n p))) as [ | ] eqn: H_OBS; trivial.
       assert (claim1 : forall z : ivar, n <= z -> m <= z -> is_free_in_frm z (All_frm n (close_from 0 n p)) = false).
-      { clear H_OBS Gamma IH y H_y. intros z. revert p m z LE BOUND. induction n as [ | n IH]; simpl; intros p m z LE BOUND LE1 LE2.
+      { clear H_OBS IH y H_y. intros z. revert p m z LE BOUND. induction n as [ | n IH]; simpl; intros p m z LE BOUND LE1 LE2.
         - simpl. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (BOUND z). destruct (is_free_in_frm z p) as [ | ]; try done.
         - do 2 rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (eq_dec z n) as [H | H]; try tauto. pose proof (eq_dec z (S n)) as [H' | H']; try tauto.
           left. left. exploit (IH p m z); try done. intros FRESH. simpl in FRESH. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq in FRESH. done.
@@ -952,6 +952,72 @@ Proof.
       { rewrite <- Deduction_theorem. eapply IH; try done. }
       rewrite <- nsubst_id with (x := n) (p := close_from 0 n p) at 2. rewrite nsubst_nice.
       eapply for_All_E. eapply for_ByHyp. autorewrite with datatypes. done.
+Qed.
+
+Lemma subst_frm_close_frm_1 (n : nat) (p : frm L) (m : nat) (s : subst L)
+  (BOUND : forall y, y < n -> forall z : ivar, is_free_in_trm z (s (m + y)) = true -> z < m)
+  : E.empty \proves Imp_frm (close_from m n p) (subst_frm (fun x : ivar => if le_lt_dec m x then if le_lt_dec (m + n) x then Var_trm x else s x else Var_trm x) p).
+Proof.
+  revert p m s BOUND. induction n as [ | n IH]; simpl; i.
+  - clear BOUND. eapply for_Imp_I. eapply cut_one' with (A := subst_frm nil_subst p).
+    + eapply for_ByHyp. autorewrite with datatypes. left. eapply alpha_equiv_inv_subst.
+      rewrite subst_nil_frm. reflexivity.
+      intros u u_free. rewrite Nat.add_0_r. destruct (le_lt_dec m u) as [LE1 | LT1]; try done.
+    + rewrite subst_nil_frm. 2: done. eapply for_ByHyp. autorewrite with datatypes. done.
+  - set (s1 := fun x : ivar => if le_lt_dec m x then if le_lt_dec (m + n) x then Var_trm x else s x else Var_trm x).
+    set (s2 := fun x : ivar => if le_lt_dec m x then if le_lt_dec (m + S n) x then Var_trm x else s x else Var_trm x).
+    assert (ALPHA : nsubst (m + n) (s (m + n)) (subst_frm s1 p) ≡ subst_frm s2 p).
+    { rewrite nsubst_nice. rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+      intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst, s1, s2.
+      destruct (le_lt_dec m u) as [LE1 | LT1].
+      - destruct (le_lt_dec (m + n) u) as [LE2 | LT2], (le_lt_dec (m + S n) u) as [LE3 | LT3]; try done.
+        + rewrite subst_trm_unfold. destruct (eq_dec u (m + n)) as [EQ4 | NE4]; try done.
+        + rewrite subst_trm_unfold. destruct (eq_dec u (m + n)) as [EQ4 | NE4]; try done.
+        + eapply subst_nil_trm. intros y y_free. assert (LT : u - m < S n) by lia.
+          pose proof (BOUND (u - m) LT y) as claim1. replace (m + (u - m)) with u in claim1 by lia. specialize (claim1 y_free).
+          destruct (eq_dec y (m + n)) as [EQ4 | NE4]; try done.
+      - rewrite subst_trm_unfold. destruct (eq_dec u (m + n)) as [EQ2 | NE2]; try done.
+    }
+    rewrite <- ALPHA. eapply for_Imp_I. rewrite nsubst_nice. eapply for_All_E.
+    clear s2 ALPHA. unfold s1. remember (m + n) as y eqn: H_y in *. fold s1. eapply for_All_I.
+    { intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []]. simpl. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done. }
+    eapply cut_one' with (A := close_from m n p).
+    { unfold s1. rewrite <- Deduction_theorem. subst y. eapply IH. ii; try done. }
+    { rewrite <- nsubst_id with (x := y) (p := close_from m n p) at 2. rewrite nsubst_nice. eapply for_All_E. eapply for_ByHyp. autorewrite with datatypes. done. }
+Qed.
+
+Lemma subst_frm_close_frm (n : nat) (s : subst L) (p : frm L)
+  : E.empty \proves Imp_frm (close_from 0 n p) (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else s x) p).
+Proof.
+  assert (BOUND : exists x, forall y : nat, y < n -> maxs (fvs_trm (s y)) <= x).
+  { clear p. induction n as [ | n [x IH]]; simpl; i.
+    - exists 0. lia.
+    - exists (max x (maxs (fvs_trm (s n)))). intros y LT.
+      assert (y = n \/ y < n) as [H | H] by lia.
+      + subst y. enough (WTS : maxs (fvs_trm (s n)) <= (maxs (fvs_trm (s n)))) by lia. done.
+      + transitivity x.
+        * eapply IH. done.
+        * done.
+  }
+  destruct BOUND as [x BOUND]. set (r := max n (1 + max x (maxs (fvs_frm p)))).
+  set (p' := subst_frm (fun z : ivar => if le_lt_dec n z then Var_trm z else Var_trm (r + z)) p).
+  set (s' := fun z : ivar => s (z - r)).
+  eapply for_Imp_I. eapply cut_one' with (A := subst_frm (fun z : ivar => if le_lt_dec r z then if le_lt_dec (r + n) z then Var_trm z else s' z else Var_trm z) p').
+  - eapply proves_alpha_proves.
+    + eapply for_ByHyp. autorewrite with datatypes. left. reflexivity.
+    + unfold p'. rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+      intros u u_free. unfold subst_compose. destruct (le_lt_dec n u) as [LE1 | LT1].
+      * rewrite subst_trm_unfold. destruct (le_lt_dec r u) as [LE2 | LT2], (le_lt_dec (r + n) x) as [LE3 | LT3]; try done.
+        assert (claim1 : u > last_ivar_frm p) by now unfold last_ivar_frm; lia. pose proof (@last_ivar_frm_gt L p u claim1). done.
+      * rewrite subst_trm_unfold. destruct (le_lt_dec r (r + u)) as [LE2 | LT2], (le_lt_dec (r + n) (r + u)) as [LE3 | LT3]; try done.
+        unfold s'. f_equal. done.
+  - assert (BOUND' : forall y : nat, y < n -> forall z : ivar, is_free_in_trm z (s' (r + y)) = true -> z < r).
+    { intros y LT z FREE. unfold s' in FREE. replace (r + y - r) with y in FREE by lia.
+      apply BOUND in LT. pose proof (@last_ivar_trm_gt L (s y) z) as claim1. unfold last_ivar_trm in claim1. rewrite FREE in claim1. lia.
+    }
+    pose proof (subst_frm_close_frm_1 n p' r s' BOUND') as claim1. rewrite Deduction_theorem in claim1.
+    eapply cut_one'. exact claim1. unfold p'. rewrite <- Deduction_theorem. eapply lift_close_from; try done.
+    ii. pose proof (@last_ivar_frm_gt L p z). rewrite H in H0. unfold last_ivar_frm in H0. lia.
 Qed.
 
 End SUBST.
