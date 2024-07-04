@@ -1,5 +1,6 @@
 Require LoL.Data.Vector.
 Require LoL.FoL.InferenceRules.
+Require LoL.FoL.MetaTh.
 Require LoL.FoL.Semantics.
 Require LoL.FoL.Syntax.
 Require LoL.Logic.Computer.

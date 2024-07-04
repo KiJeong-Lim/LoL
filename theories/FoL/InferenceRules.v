@@ -945,15 +945,13 @@ Proof.
               eapply for_All_E. eapply for_ByHyp. autorewrite with datatypes. done.
       }
       eapply cut_one'.
-      * rewrite <- Deduction_theorem. eapply claim1; try done.
-      * rewrite nsubst_nice. eapply for_All_E. eapply for_All_I.
-        { intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []].
-          simpl. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done.
-        }
-        eapply cut_one' with (A := close_from 0 n p).
-        { rewrite <- Deduction_theorem. eapply IH; try done. }
-        rewrite <- nsubst_id with (x := n) (p := close_from 0 n p) at 2. rewrite nsubst_nice.
-        eapply for_All_E. eapply for_ByHyp. autorewrite with datatypes. done.
+      { rewrite <- Deduction_theorem. eapply claim1; try done. }
+      rewrite nsubst_nice. eapply for_All_E. eapply for_All_I.
+      { intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []]. simpl. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done. }
+      eapply cut_one' with (A := close_from 0 n p).
+      { rewrite <- Deduction_theorem. eapply IH; try done. }
+      rewrite <- nsubst_id with (x := n) (p := close_from 0 n p) at 2. rewrite nsubst_nice.
+      eapply for_All_E. eapply for_ByHyp. autorewrite with datatypes. done.
 Qed.
 
 End SUBST.
