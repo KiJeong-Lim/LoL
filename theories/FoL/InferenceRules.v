@@ -1016,7 +1016,7 @@ Proof.
       apply BOUND in LT. pose proof (@last_ivar_trm_gt L (s y) z) as claim1. unfold last_ivar_trm in claim1. rewrite FREE in claim1. lia.
     }
     pose proof (subst_frm_close_frm_1 n p' r s' BOUND') as claim1. rewrite Deduction_theorem in claim1.
-    eapply cut_one'. exact claim1. unfold p'. rewrite <- Deduction_theorem. eapply lift_close_from; try done.
+    eapply cut_one'. exact claim1. unfold p'. rewrite <- Deduction_theorem. eapply lift_close_from. lia.
     intros z FREE. pose proof (@last_ivar_frm_gt L p z) as claim2. rewrite FREE in claim2. unfold last_ivar_frm in claim2. done.
 Qed.
 
@@ -1030,8 +1030,8 @@ Fixpoint pairwise_equal {n : nat} (Gamma : ensemble (frm L)) {struct n} : trms L
   | S n' => fun ts => fun ts' => Gamma \proves (Eqn_frm (head ts) (head ts')) /\ pairwise_equal (n := n') Gamma (tail ts) (tail ts')
   end.
 
-Definition trms_map : forall n, trms L n -> trms L n -> ivar -> trm L :=
-  nat_rec (fun x => trms L x -> trms L x -> ivar -> trm L) (fun _ => fun _ => fun z => Var_trm z) (fun n => fun IH => fun ts => fun ts' => fun z => if eq_dec z (n + n) then head ts else if eq_dec z (S (n + n)) then head ts' else IH (tail ts) (tail ts') z).
+Definition trms_map : forall n, trms L n -> trms L n -> subst L :=
+  nat_rec (fun n => trms L n -> trms L n -> ivar -> trm L) (fun _ => fun _ => fun z => Var_trm z) (fun n => fun ACC => fun ts => fun ts' => fun z => if eq_dec z (n + n) then head ts else if eq_dec z (S (n + n)) then head ts' else ACC (tail ts) (tail ts') z).
 
 #[local] Notation nVars := varcouples.
 #[local] Notation PairwiseEqual := pairwise_equal.
@@ -1063,7 +1063,7 @@ Proof.
       { apply claim1 in FREE. done. }
       destruct (eq_dec z (S (n + n))) as [EQ2 | NE2].
       { apply claim1 in FREE. done. }
-      reflexivity.
+      { reflexivity. }
 Qed.
 
 Lemma nVars_subst_snd n (ts : trms L n) (ts' : trms L n)
@@ -1092,7 +1092,7 @@ Proof.
       { apply claim1 in FREE. done. }
       destruct (eq_dec z (S (n + n))) as [EQ2 | NE2].
       { apply claim1 in FREE. done. }
-      reflexivity.
+      { reflexivity. }
 Qed.
 
 End EQUATIONS.
@@ -1116,7 +1116,7 @@ Inductive infers {L : language} (Gamma : ensemble (frm L)) : forall C : frm L, P
   | All_I x y p
     (NOT_FREE1 : is_not_free_in_frms y Gamma)
     (NOT_FREE2 : is_not_free_in_frm y (All_frm x p))
-    (INFERS1: Gamma ⊢ subst_frm (one_subst x (Var_trm y)) p)
+    (INFERS1 : Gamma ⊢ subst_frm (one_subst x (Var_trm y)) p)
     : Gamma ⊢ All_frm x p
   | All_E x t p
     (INFERS1 : Gamma ⊢ All_frm x p)
@@ -1128,8 +1128,8 @@ Inductive infers {L : language} (Gamma : ensemble (frm L)) : forall C : frm L, P
     (NOT_FREE1 : is_not_free_in_frms y Gamma)
     (NOT_FREE2 : is_not_free_in_frm y (Exs_frm x p1))
     (NOT_FREE3 : is_not_free_in_frm y p2)
-    (INFERS1: Gamma ⊢ Exs_frm x p1)
-    (INFERS2: E.insert (subst_frm (one_subst x (Var_trm y)) p1) Gamma ⊢ p2)
+    (INFERS1 : Gamma ⊢ Exs_frm x p1)
+    (INFERS2 : E.insert (subst_frm (one_subst x (Var_trm y)) p1) Gamma ⊢ p2)
     : Gamma ⊢ p2
   | Bot_I p1
     (INFERS1 : Gamma ⊢ p1)

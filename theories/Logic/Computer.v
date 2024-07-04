@@ -655,10 +655,10 @@ Inductive MuRecSpec : forall n : Arity, MuRec n -> Vector.t Value n -> Value -> 
   | MR_primRec_spec_S n g h xs z a acc
     (ACC : MuRecSpec (S n) (MR_primRec g h) (a :: xs) acc)
     (h_spec : MuRecSpec (S (S n)) h (a :: acc :: xs) z)
-    : MuRecSpec (S n) (MR_primRec g h) (S a :: xs) z  (* corrected by "SoonWon Moon" *)
+    : MuRecSpec (S n) (MR_primRec g h) (S a :: xs) z (* corrected by "SoonWon Moon" *)
   | MR_mu_spec n g xs z
     (g_spec : MuRecSpec (S n) g (z :: xs) 0)
-    (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (y :: xs) p)
+    (MIN : forall y, y < z -> exists p, p > 0 /\ MuRecSpec (S n) g (y :: xs) p) (* corrected by "SoonWon Moon" *)
     : MuRecSpec n (MR_mu g) xs z
 with MuRecsSpec : forall n : Arity, forall m : Arity, MuRecs n m -> Vector.t Value n -> Vector.t Value m -> Prop :=
   | MRs_nil_spec n xs
