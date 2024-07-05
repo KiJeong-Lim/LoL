@@ -24,7 +24,7 @@ Definition varcouples : forall n : nat, trms L n * trms L n :=
   nat_rec (fun n => (trms L n * trms L n)%type) (O_trms, O_trms) (fun n => prod_rec _ (fun lhs => fun rhs => (S_trms n (Var_trm (n + n)) lhs, S_trms n (Var_trm (S (n + n))) rhs))).
 
 Definition eqns_imp p : nat -> frm L :=
-  nat_rec _ p (fun n => fun q => Imp_frm (Eqn_frm (Var_trm (n + n)) (Var_trm (S (n + n)))) q).
+  nat_rec (fun _ => frm L) p (fun n => fun q => Imp_frm (Eqn_frm (Var_trm (n + n)) (Var_trm (S (n + n)))) q).
 
 Definition Fun_eqAxm (f : L.(function_symbols)) : frm L :=
   eqns_imp (prod_rec (fun _ => frm L) (fun lhs => fun rhs => Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs)) (varcouples (L.(function_arity_table) f))) (L.(function_arity_table) f).
@@ -994,7 +994,7 @@ Proof.
     - exists 0. lia.
     - exists (max x (maxs (fvs_trm (s n)))). intros y LT.
       assert (y = n \/ y < n) as [H | H] by lia.
-      + subst y. enough (WTS : maxs (fvs_trm (s n)) <= (maxs (fvs_trm (s n)))) by lia. done.
+      + subst y. enough (WTS : maxs (fvs_trm (s n)) <= maxs (fvs_trm (s n))) by lia. done.
       + transitivity x.
         * eapply IH. done.
         * done.
@@ -1023,6 +1023,78 @@ Qed.
 End SUBST.
 
 Section EQUATIONS. (* Reference: "https://github.com/princeton-vl/CoqGym/blob/master/coq_projects/goedel/folLogic3.v" *)
+
+Lemma proves_reflexivity (Gamma : ensemble (frm L)) (t1 : trm L)
+  : Gamma \proves Eqn_frm t1 t1.
+Proof.
+  set (s := fun z : ivar =>
+    match z with
+    | 0 => t1
+    | _ => Var_trm z
+    end
+  ).
+  eapply extend_proves with (Gamma := E.empty). done.
+  replace (Eqn_frm t1 t1) with (subst_frm s (Eqn_frm (Var_trm 0) (Var_trm 0))) by reflexivity.
+  pose proof (subst_frm_close_frm 1 s (Eqn_frm (Var_trm 0) (Var_trm 0))) as claim1.
+  rewrite Deduction_theorem in claim1. eapply cut_one'. eapply claim1.
+  simpl. eapply extend_proves with (Gamma := E.empty). done. eapply for_All_I.
+  { intros q q_in. autorewrite with datatypes in q_in. done. }
+  exists []. split.
+  { intros q q_in. rewrite E.in_finite_iff in q_in. done. }
+  econstructor. eapply EQN_REFL.
+Qed.
+
+Lemma proves_symmetry (Gamma : ensemble (frm L)) (t1 : trm L) (t2 : trm L)
+  (PROVE1 : Gamma \proves Eqn_frm t1 t2)
+  : Gamma \proves Eqn_frm t2 t1.
+Proof.
+  set (s := fun z : ivar =>
+    match z with
+    | 0 => t1
+    | 1 => t2
+    | _ => Var_trm z
+    end
+  ).
+  eapply cut_one'. 2: exact PROVE1. rewrite <- Deduction_theorem.
+  replace (Imp_frm (Eqn_frm t1 t2) (Eqn_frm t2 t1)) with (subst_frm s (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Eqn_frm (Var_trm 1) (Var_trm 0)))) by reflexivity.
+  pose proof (subst_frm_close_frm 2 s (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Eqn_frm (Var_trm 1) (Var_trm 0)))) as claim1.
+  rewrite Deduction_theorem in claim1. eapply cut_one'. eapply claim1.
+  simpl. eapply for_All_I.
+  { intros q q_in. autorewrite with datatypes in q_in. done. }
+  eapply for_All_I.
+  { intros q q_in. autorewrite with datatypes in q_in. done. }
+  exists []. split.
+  { intros q q_in. rewrite E.in_finite_iff in q_in. done. }
+  econstructor. eapply EQN_SYM.
+Qed.
+
+Lemma proves_transitivity (Gamma : ensemble (frm L)) (t1 : trm L) (t2 : trm L) (t3 : trm L)
+  (PROVE1 : Gamma \proves Eqn_frm t1 t2)
+  (PROVE2 : Gamma \proves Eqn_frm t2 t3)
+  : Gamma \proves Eqn_frm t1 t3.
+Proof.
+  set (s := fun z : ivar =>
+    match z with
+    | 0 => t1
+    | 1 => t2
+    | 2 => t3
+    | _ => Var_trm z
+    end
+  ).
+  eapply for_Imp_E. 2: exact PROVE2. eapply cut_one'. 2: exact PROVE1. rewrite <- Deduction_theorem.
+  replace (Imp_frm (Eqn_frm t1 t2) (Imp_frm (Eqn_frm t2 t3) (Eqn_frm t1 t3))) with (subst_frm s (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Imp_frm (Eqn_frm (Var_trm 1) (Var_trm 2)) (Eqn_frm (Var_trm 0) (Var_trm 2))))) by reflexivity.
+  pose proof (subst_frm_close_frm 3 s (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Imp_frm (Eqn_frm (Var_trm 1) (Var_trm 2)) (Eqn_frm (Var_trm 0) (Var_trm 2))))) as claim1.
+  rewrite Deduction_theorem in claim1. eapply cut_one'. eapply claim1.
+  simpl. eapply for_All_I.
+  { intros q q_in. autorewrite with datatypes in q_in. done. }
+  eapply for_All_I.
+  { intros q q_in. autorewrite with datatypes in q_in. done. }
+  eapply for_All_I.
+  { intros q q_in. autorewrite with datatypes in q_in. done. }
+  exists []. split.
+  { intros q q_in. rewrite E.in_finite_iff in q_in. done. }
+  econstructor. eapply EQN_TRANS.
+Qed.
 
 Fixpoint pairwise_equal {n : nat} (Gamma : ensemble (frm L)) {struct n} : trms L n -> trms L n -> Prop :=
   match n with
@@ -1093,6 +1165,125 @@ Proof.
       destruct (eq_dec z (S (n + n))) as [EQ2 | NE2].
       { apply claim1 in FREE. done. }
       { reflexivity. }
+Qed.
+
+Lemma add_pairwise_equals n (ts : trms L n) (ts' : trms L n) (s : subst L) (Gamma : ensemble (frm L)) (p : frm L)
+  (EQs : PairwiseEqual Gamma ts ts')
+  (BOUND : forall z : ivar, z < n + n -> s z = termsMap n ts ts' z)
+  (PROVE : Gamma \proves subst_frm s (nat_rec (fun _ => frm L) p (fun m : nat => fun ACC : frm L => Imp_frm (Eqn_frm (Var_trm (m + m)) (Var_trm (S (m + m)))) ACC) n))
+  : Gamma \proves subst_frm s p.
+Proof.
+  revert s Gamma p EQs BOUND PROVE. trms_ind2 ts ts'; simpl.
+  - i. exact PROVE.
+  - unfold head, tail. simpl. i. destruct EQs as [PROVE' EQs']. eapply IH with (ts' := ts'); trivial.
+    + ii. rewrite BOUND. 2: lia. unfold eq_dec, nat_hasEqDec. destruct (Nat.eq_dec z (n + n)) as [EQ1 | NE1], (Nat.eq_dec z (S (n + n))) as [EQ2 | NE2]; try done.
+    + eapply for_Imp_E. 1: exact PROVE. exploit (BOUND (n + n)); [lia | intros H1]. exploit (BOUND (S (n + n))); [lia | intros H2].
+      unfold eq_dec, nat_hasEqDec in *. destruct (Nat.eq_dec (n + n) (n + n)) as [EQ1 | NE1]; try done.
+      destruct (Nat.eq_dec (n + n) (S (n + n))) as [EQ2 | NE2]; try done. destruct (Nat.eq_dec (S (n + n)) (S (n + n))) as [EQ3 | NE3]; try done.
+      destruct (Nat.eq_dec (S (n + n)) (n + n)) as [EQ4 | NE4]; try done. do 2 rewrite subst_trm_unfold. done.
+Qed.
+
+#[local] Opaque le_lt_dec.
+
+#[local] Tactic Notation "des" :=
+  lazymatch goal with [ |- context[ Nat.eq_dec ?P ?Q ] ] => destruct (Nat.eq_dec P Q); try lia | [ |- context[ le_lt_dec ?P ?Q ] ] => destruct (le_lt_dec P Q); try lia end.
+
+Lemma Fun_eqAxm_free_vars (z : ivar) (f : L.(function_symbols))
+  (n := L.(function_arity_table) f)
+  : is_free_in_frm z (Fun_eqAxm f) = true <-> z < n + n.
+Proof.
+  unfold Fun_eqAxm. fold n. remember (fun lhs => fun rhs => Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs)) as phi eqn: H_phi.
+  fold n in phi, H_phi. rewrite <- H_phi. i. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *.
+  assert (claim1 : is_free_in_frm z (phi xs ys) = is_free_in_trms z xs || is_free_in_trms z ys).
+  { subst phi. i. rewrite is_free_in_frm_unfold. do 2 rewrite is_free_in_trm_unfold. done. }
+  clear H_phi. subst n. revert z phi claim1 H_OBS. trms_ind2 xs ys; simpl; i.
+  - rewrite claim1. rewrite is_free_in_trms_unfold. done.
+  - do 2 rewrite is_free_in_trm_unfold. obs_eqb (n + n) z; obs_eqb (S (n + n)) z; simpl; try done.
+    transitivity (z < n + n). 2: lia. destruct (nVars n) as [xs' ys'] eqn: H_OBS'. simpl in *.
+    pose proof (claim2 := f_equal fst H_OBS). pose proof (claim3 := f_equal snd H_OBS). simpl in *.
+    pose proof (claim4 := f_equal head claim2). pose proof (claim5 := f_equal head claim3). unfold head in claim4, claim5. simpl in *.
+    pose proof (claim6 := f_equal tail claim2). pose proof (claim7 := f_equal tail claim3). unfold tail in claim6, claim7. simpl in *.
+    subst xs' ys' t t'. clear claim2 claim3.
+    eapply IH with (ys := ys) (phi := fun lhs => fun rhs => phi (S_trms _ (Var_trm (n + n)) lhs) (S_trms _ (Var_trm (S (n + n))) rhs)); trivial.
+    rewrite claim1. rewrite is_free_in_trms_unfold with (ts := S_trms _ _ xs). rewrite is_free_in_trms_unfold with (ts := S_trms _ _ ys).
+    do 2 rewrite is_free_in_trm_unfold with (t := Var_trm _). obs_eqb (n + n) z; obs_eqb (S (n + n)) z; try done.
+Qed.
+
+Lemma Rel_eqAxm_free_vars (z : ivar) (R : L.(relation_symbols))
+  (n := L.(relation_arity_table) R)
+  : is_free_in_frm z (Rel_eqAxm R) = true <-> z < n + n.
+Proof.
+  unfold Rel_eqAxm. fold n. remember (fun lhs => fun rhs => Imp_frm (Rel_frm R lhs) (Rel_frm R rhs)) as phi eqn: H_phi.
+  fold n in phi, H_phi. rewrite <- H_phi. i. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *.
+  assert (claim1 : is_free_in_frm z (phi xs ys) = is_free_in_trms z xs || is_free_in_trms z ys).
+  { subst phi. i. rewrite is_free_in_frm_unfold. do 2 rewrite is_free_in_frm_unfold. done. }
+  clear H_phi. subst n. revert z phi claim1 H_OBS. trms_ind2 xs ys; simpl; i.
+  - rewrite claim1. rewrite is_free_in_trms_unfold. done.
+  - do 2 rewrite is_free_in_trm_unfold. obs_eqb (n + n) z; obs_eqb (S (n + n)) z; simpl; try done.
+    transitivity (z < n + n). 2: lia. destruct (nVars n) as [xs' ys'] eqn: H_OBS'. simpl in *.
+    pose proof (claim2 := f_equal fst H_OBS). pose proof (claim3 := f_equal snd H_OBS). simpl in *.
+    pose proof (claim4 := f_equal head claim2). pose proof (claim5 := f_equal head claim3). unfold head in claim4, claim5. simpl in *.
+    pose proof (claim6 := f_equal tail claim2). pose proof (claim7 := f_equal tail claim3). unfold tail in claim6, claim7. simpl in *.
+    subst xs' ys' t t'. clear claim2 claim3.
+    eapply IH with (ys := ys) (phi := fun lhs => fun rhs => phi (S_trms _ (Var_trm (n + n)) lhs) (S_trms _ (Var_trm (S (n + n))) rhs)); trivial.
+    rewrite claim1. rewrite is_free_in_trms_unfold with (ts := S_trms _ _ xs). rewrite is_free_in_trms_unfold with (ts := S_trms _ _ ys).
+    do 2 rewrite is_free_in_trm_unfold with (t := Var_trm _). obs_eqb (n + n) z; obs_eqb (S (n + n)) z; try done.
+Qed.
+
+Lemma proves_eqn_fun (Gamma : ensemble (frm L)) (f : L.(function_symbols)) ts ts'
+  (PROVE : PairwiseEqual Gamma ts ts')
+  : Gamma \proves Eqn_frm (Fun_trm f ts) (Fun_trm f ts').
+Proof.
+  rewrite <- nVars_subst_fst with (ts := ts) (ts' := ts') at 1.
+  rewrite <- nVars_subst_snd with (ts := ts) (ts' := ts') at 2.
+  set (s := termsMap _ _ _). set (lhs := fst _). set (rhs := snd _).
+  change (Gamma \proves subst_frm (termsMap (L.(function_arity_table) f) ts ts') (Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs))).
+  eapply add_pairwise_equals with (n := L.(function_arity_table) f) (ts := ts) (ts' := ts'); trivial.
+  rename lhs into xs, rhs into ys. fold s. set (n := L.(function_arity_table) f).
+  eapply extend_proves with (Gamma := E.empty). done. eapply cut_one' with (A := close_from 0 (n + n) (Fun_eqAxm f)).
+  - pose proof (subst_frm_close_frm (n + n) s (Fun_eqAxm f)) as claim1. rewrite Deduction_theorem in claim1.
+    eapply cut_one'. 2: exact claim1. clear claim1. set (P := subst_frm _ (Fun_eqAxm f)). set (Q := subst_frm s _).
+    enough (FACT : P = Q) by now rewrite FACT; eapply for_ByHyp; rewrite E.in_insert_iff; done.
+    subst P Q. transitivity (subst_frm s (Fun_eqAxm f)).
+    + eapply equiv_subst_in_frm_implies_subst_frm_same. clear. ii.
+      enough (LT : z < n + n) by now des; done. rewrite Fun_eqAxm_free_vars in FREE. done.
+    + f_equal. unfold Fun_eqAxm. remember (fun lhs => fun rhs => Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs)) as phi eqn: H_phi.
+      replace (Eqn_frm (Fun_trm f xs) (Fun_trm f ys)) with (phi xs ys) by now subst phi.
+      clear. subst xs ys n. revert phi. induction (L.(function_arity_table) f) as [ | n IH]; simpl; i.
+      * reflexivity.
+      * specialize IH with (phi := fun ts => fun ts' => phi (S_trms _ (Var_trm (n + n)) ts) (S_trms _ (Var_trm (S (n + n))) ts')).
+        simpl in *. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *. reflexivity.
+  - induction (n + n) as [ | m IH]; simpl; i.
+    + exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply EQN_FUN.
+    + eapply for_All_I; done.
+Qed.
+
+Lemma proves_eqn_rel (Gamma : ensemble (frm L)) (R : L.(relation_symbols)) ts ts'
+  (PROVE : PairwiseEqual Gamma ts ts')
+  : Gamma \proves Imp_frm (Rel_frm R ts) (Rel_frm R ts').
+Proof.
+  rewrite <- nVars_subst_fst with (ts := ts) (ts' := ts') at 1.
+  rewrite <- nVars_subst_snd with (ts := ts) (ts' := ts') at 2.
+  set (s := termsMap _ _ _). set (lhs := fst _). set (rhs := snd _).
+  change (Gamma \proves subst_frm (termsMap (L.(relation_arity_table) R) ts ts') (Imp_frm (Rel_frm R lhs) (Rel_frm R rhs))).
+  eapply add_pairwise_equals with (n := L.(relation_arity_table) R) (ts := ts) (ts' := ts'); trivial.
+  rename lhs into xs, rhs into ys. fold s. set (n := L.(relation_arity_table) R).
+  eapply extend_proves with (Gamma := E.empty). done. eapply cut_one' with (A := close_from 0 (n + n) (Rel_eqAxm R)).
+  - pose proof (subst_frm_close_frm (n + n) s (Rel_eqAxm R)) as claim1. rewrite Deduction_theorem in claim1.
+    eapply cut_one'. 2: exact claim1. clear claim1. set (P := subst_frm _ (Rel_eqAxm R)). set (Q := subst_frm s _).
+    enough (FACT : P = Q) by now rewrite FACT; eapply for_ByHyp; rewrite E.in_insert_iff; done.
+    subst P Q. transitivity (subst_frm s (Rel_eqAxm R)).
+    + eapply equiv_subst_in_frm_implies_subst_frm_same. clear. ii.
+      enough (LT : z < n + n) by now des; done. rewrite Rel_eqAxm_free_vars in FREE. done.
+    + f_equal. unfold Rel_eqAxm. remember (fun lhs => fun rhs => Imp_frm (Rel_frm R lhs) (Rel_frm R rhs)) as phi eqn: H_phi.
+      replace (Imp_frm (Rel_frm R xs) (Rel_frm R ys)) with (phi xs ys) by now subst phi.
+      clear. subst xs ys n. revert phi. induction (L.(relation_arity_table) R) as [ | n IH]; simpl; i.
+      * reflexivity.
+      * specialize IH with (phi := fun ts => fun ts' => phi (S_trms _ (Var_trm (n + n)) ts) (S_trms _ (Var_trm (S (n + n))) ts')).
+        simpl in *. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *. reflexivity.
+  - induction (n + n) as [ | m IH]; simpl; i.
+    + exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply EQN_REL.
+    + eapply for_All_I; done.
 Qed.
 
 End EQUATIONS.

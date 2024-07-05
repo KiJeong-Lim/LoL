@@ -612,6 +612,22 @@ Proof.
       * eapply PrimRecsSpec_complete.
 Qed.
 
+Theorem PrimRecSpec_iff (n : arity) (f : PrimRec n) (xs : Vector.t nat n) (z : nat)
+  : PrimRecSpec n f xs z <-> eval_vec xs (runPrimRec f) = z.
+Proof.
+  split.
+  - intros SPEC. eapply PrimRecSpec_sound; exact SPEC.
+  - intros <-. eapply PrimRecSpec_complete.
+Qed.
+
+Theorem PrimRecsSpec_iff (n : arity) (m : arity) (f : PrimRecs n m) (xs : Vector.t nat n) (z : Vector.t nat m)
+  : PrimRecsSpec n m f xs z <-> V.map (eval_vec xs) (runPrimRecs f) = z.
+Proof.
+  split.
+  - intros SPEC. eapply PrimRecsSpec_sound; exact SPEC.
+  - intros <-. eapply PrimRecsSpec_complete.
+Qed.
+
 End PRIMITIVE_RECURSION.
 
 Section MU_RECURSIVE.
@@ -910,7 +926,7 @@ Proof.
       }
       pose proof (MuRecInterpreter n f xs claim1) as [y y_spec].
       pose proof (MuRecsInterpreter n m fs xs claim2) as [ys ys_spec].
-      exists (y :: ys). econs 2. exact y_spec. exact ys_spec.
+      exists (y :: ys). econs 2; [exact y_spec | exact ys_spec].
 Qed.
 
 End MU_RECURSIVE.
