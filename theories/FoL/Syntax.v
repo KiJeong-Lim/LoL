@@ -1617,6 +1617,14 @@ Proof.
       * reflexivity.
 Qed.
 
+Lemma alpha_is_not_free_in_frm (p : frm) (p' : frm) (x : ivar)
+  (ALPHA : p ≡ p')
+  (NOT_FREE : is_not_free_in_frm x p)
+  : is_not_free_in_frm x p'.
+Proof.
+  red. red in NOT_FREE. symmetry in ALPHA. pose proof (is_free_in_frm_compat_alpha_equiv p' p x ALPHA). destruct (is_free_in_frm x p') as [ | ]; done.
+Qed.
+
 End ALPHA.
 
 Infix "≡" := alpha_equiv : type_scope.

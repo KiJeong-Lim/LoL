@@ -1186,7 +1186,7 @@ Qed.
 #[local] Opaque le_lt_dec.
 
 #[local] Tactic Notation "des" :=
-  lazymatch goal with [ |- context[ Nat.eq_dec ?P ?Q ] ] => destruct (Nat.eq_dec P Q); try lia | [ |- context[ le_lt_dec ?P ?Q ] ] => destruct (le_lt_dec P Q); try lia end.
+  unfold eq_dec, nat_hasEqDec; lazymatch goal with [ |- context[ Nat.eq_dec ?P ?Q ] ] => destruct (Nat.eq_dec P Q); try lia | [ |- context[ le_lt_dec ?P ?Q ] ] => destruct (le_lt_dec P Q); try lia end.
 
 Lemma Fun_eqAxm_free_vars (z : ivar) (f : L.(function_symbols))
   (n := L.(function_arity_table) f)
@@ -1285,6 +1285,150 @@ Proof.
     + exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply EQN_REL.
     + eapply for_All_I; done.
 Qed.
+
+Lemma proves_eqn_trm (t : trm L) (lhs : trm L) (rhs : trm L) (Gamma : ensemble (frm L)) (y : ivar)
+  (PROVE : Gamma \proves Eqn_frm lhs rhs)
+  : Gamma \proves Eqn_frm (subst_trm (one_subst y lhs) t) (subst_trm (one_subst y rhs) t)
+with proves_eqn_trms n (ts : trms L n) (lhs : trm L) (rhs : trm L) (Gamma : ensemble (frm L)) (y : ivar)
+  (PROVE : Gamma \proves Eqn_frm lhs rhs)
+  : PairwiseEqual Gamma (subst_trms (one_subst y lhs) ts) (subst_trms (one_subst y rhs) ts).
+Proof.
+  - revert lhs rhs Gamma y PROVE. trm_ind t; simpl; i.
+    + do 2 rewrite subst_trm_unfold. unfold one_subst, cons_subst, nil_subst. unfold eq_dec, nat_hasEqDec. des.
+      * exact PROVE.
+      * eapply proves_reflexivity.
+    + do 2 rewrite subst_trm_unfold. eapply proves_eqn_fun. eapply proves_eqn_trms. exact PROVE.
+    + do 2 rewrite subst_trm_unfold. eapply proves_reflexivity.
+  - revert lhs rhs Gamma y PROVE. trms_ind ts; simpl; i.
+    + exact I.
+    + do 2 rewrite subst_trms_unfold with (ts := S_trms _ _ _). unfold head, tail. simpl. split.
+      * eapply proves_eqn_trm. exact PROVE.
+      * eapply proves_eqn_trms. exact PROVE.
+Qed.
+
+Lemma proves_eqn_frm (p : frm L) (lhs : trm L) (rhs : trm L) (Gamma : ensemble (frm L)) (y : ivar)
+  (PROVE : Gamma \proves Eqn_frm lhs rhs)
+  : Gamma \proves Imp_frm (subst_frm (one_subst y lhs) p) (subst_frm (one_subst y rhs) p).
+Proof.
+  revert p lhs rhs Gamma y PROVE.
+  enough (WTS : forall p, forall lhs, forall rhs, forall Gamma, forall x,
+    Gamma \proves Eqn_frm lhs rhs ->
+    Gamma \proves Imp_frm (nsubst x lhs p) (nsubst x rhs p) /\ Gamma \proves Imp_frm (nsubst x rhs p) (nsubst x lhs p)
+  ).
+  { ii. apply WTS with (x := y) (p := p) in PROVE. destruct PROVE as [PROVE PROVE'].
+    do 2 rewrite nsubst_nice in PROVE. exact PROVE.
+  }
+  intros p. pattern p. revert p. eapply frm_depth_lt_ind; intros p IH lhs rhs Gamma x PROVE; destruct p as [R ts | t1 t2 | p1 | p1 p2 | y p1].
+  - split; (do 2 rewrite nsubst_nice); (do 2 rewrite subst_frm_unfold with (p := Rel_frm _ _)); eapply proves_eqn_rel; eapply proves_eqn_trms; trivial; eapply proves_symmetry; trivial.
+  - split; (do 2 rewrite nsubst_nice); (do 2 rewrite subst_frm_unfold with (p := Eqn_frm _ _)).
+    + eapply for_Imp_I. pose proof (proves_eqn_trm t1 lhs rhs Gamma x PROVE) as claim1. pose proof (proves_eqn_trm t2 lhs rhs Gamma x PROVE) as claim2.
+      eapply proves_transitivity.
+      { eapply proves_symmetry. eapply extend_proves with (Gamma := Gamma).
+        - intros ?. rewrite E.in_insert_iff. done.
+        - exact claim1.
+      }
+      eapply proves_transitivity.
+      { eapply for_ByHyp. left. reflexivity. }
+      eapply extend_proves with (Gamma := Gamma).
+      { intros ?. rewrite E.in_insert_iff. done. }
+      exact claim2.
+    + eapply for_Imp_I. pose proof (proves_eqn_trm t1 lhs rhs Gamma x PROVE) as claim1. pose proof (proves_eqn_trm t2 lhs rhs Gamma x PROVE) as claim2.
+      eapply proves_transitivity.
+      { eapply proves_symmetry. eapply extend_proves with (Gamma := Gamma).
+        - intros ?. rewrite E.in_insert_iff. done.
+        - eapply proves_symmetry. exact claim1.
+      }
+      eapply proves_transitivity.
+      { eapply for_ByHyp. left. reflexivity. }
+      eapply extend_proves with (Gamma := Gamma).
+      { intros ?. rewrite E.in_insert_iff. done. }
+      eapply proves_symmetry. exact claim2.
+  - do 2 rewrite nsubst_unfold with (p := Neg_frm _). apply IH with (x := x) (p' := p1) in PROVE. 2: done. destruct PROVE as [PROVE PROVE']. split.
+    + eapply for_CP1. done.
+    + eapply for_CP1. done.
+  - do 2 rewrite nsubst_unfold with (p := Imp_frm _ _). pose proof (PROVE' := PROVE). apply IH with (x := x) (p' := p1) in PROVE. 2: simpl; done. apply IH with (x := x) (p' := p2) in PROVE'. 2: simpl; done. destruct PROVE as [PROVE1 PROVE2], PROVE' as [PROVE3 PROVE4]. split.
+    + eapply for_Imp_I. eapply for_Imp_I. eapply for_Imp_E.
+      { eapply extend_proves with (Gamma := Gamma).
+        - intros ?. do 2 rewrite E.in_insert_iff. done.
+        - exact PROVE3.
+      }
+      eapply for_Imp_E.
+      { eapply for_ByHyp. right. left. reflexivity. }
+      eapply for_Imp_E.
+      { eapply extend_proves with (Gamma := Gamma).
+        - intros ?. do 2 rewrite E.in_insert_iff. done.
+        - exact PROVE2.
+      }
+      eapply for_ByHyp. left. reflexivity.
+    + eapply for_Imp_I. eapply for_Imp_I. eapply for_Imp_E.
+      { eapply extend_proves with (Gamma := Gamma).
+        - intros ?. do 2 rewrite E.in_insert_iff. done.
+        - exact PROVE4.
+      }
+      eapply for_Imp_E.
+      { eapply for_ByHyp. right. left. reflexivity. }
+      eapply for_Imp_E.
+      { eapply extend_proves with (Gamma := Gamma).
+        - intros ?. do 2 rewrite E.in_insert_iff. done.
+        - exact PROVE1.
+      }
+      eapply for_ByHyp. left. reflexivity.
+  - do 2 rewrite nsubst_unfold with (p := All_frm _ _). set (y1 := fresh_var x lhs p1). set (y2 := fresh_var x rhs p1). simpl. split.
+    + destruct (eq_dec x y) as [EQ1 | NE1].
+      { eapply for_Imp_I. eapply for_ByHyp. left. reflexivity. }
+      destruct (is_free_in_trm y lhs) as [ | ] eqn: H_OBS1, (is_free_in_trm y rhs) as [ | ] eqn: H_OBS2.
+      { rename lhs into t, rhs into t', x into y, y into z. set (x := 1 + maxs ([y] ++ (fvs_trm t) ++ (fvs_trm t') ++ (fvs_frm p1))).
+        revert x. set (phi := fun x : ivar => All_frm x (nsubst y t (nsubst z (Var_trm x) p1))). set (phi' := fun x : ivar => All_frm x (nsubst y t' (nsubst z (Var_trm x) p1))). i. fold (phi y1). fold (phi' y2).
+        enough (claim1 : Gamma \proves Imp_frm (phi y1) (phi x)).
+        enough (claim2 : Gamma \proves Imp_frm (phi x) (phi' x)).
+        enough (claim3 : Gamma \proves Imp_frm (phi' x) (phi' y2)).
+        - eapply for_compose. exact claim3. eapply for_compose. exact claim2. exact claim1.
+        - assert (NOT_FREE : is_not_free_in_frm x (All_frm y2 (nsubst y t' (nsubst z (Var_trm y2) p1)))).
+          { red. rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (Nat.eq_dec x y2) as [EQ | NE]; [right | left]; trivial.
+            eapply alpha_is_not_free_in_frm. do 2 rewrite nsubst_nice. reflexivity. rewrite <- subst_compose_frm_spec. eapply frm_is_fresh_in_subst_iff.
+            unfold frm_is_fresh_in_subst. rewrite forallb_forall. intros u u_free. rewrite fv_is_free_in_frm in u_free. unfold B.compose, subst_compose, one_subst, cons_subst, nil_subst.
+            rewrite negb_true_iff. des.
+            - subst u. rewrite subst_trm_unfold. des.
+              + pose proof (fresh_var_ne_x y t' p1). done.
+              + rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. done.
+            - rewrite subst_trm_unfold. des.
+              + subst u. eapply last_ivar_trm_gt. unfold x, last_ivar_trm. repeat rewrite maxs_app. done.
+              + rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. intros ->.
+                enough (CONTRA : is_free_in_frm x p1 = false) by done.
+                eapply last_ivar_frm_gt. unfold x, last_ivar_frm. repeat rewrite maxs_app. done.
+          }
+          unfold phi'. eapply for_Imp_I. pose proof (PROVE1 := rebind_All_frm_bwd Gamma y2 x (nsubst y t' (nsubst z (Var_trm y2) p1)) NOT_FREE).
+          rewrite <- Deduction_theorem. eapply for_compose. exact PROVE1. eapply for_Imp_I.
+          rewrite <- Deduction_theorem. eapply extend_proves with (Gamma := E.empty). done. eapply for_Imp_I. eapply for_All_I.
+          + intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []].
+            rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done.
+          + eapply cut_one' with (A := (nsubst y t' (nsubst z (Var_trm x) p1))); cycle 1.
+            * rewrite <- nsubst_id with (x := x) (p := nsubst y t' (nsubst z (Var_trm x) p1)).
+              rewrite nsubst_nice with (x := x) (t := Var_trm x) (p := nsubst y t' (nsubst z (Var_trm x) p1)) at 2. eapply for_All_E.
+              eapply for_ByHyp. rewrite nsubst_id. left. reflexivity.
+            * eapply proves_alpha_proves with (p := nsubst y t' (nsubst z (Var_trm x) p1)).
+              { eapply for_ByHyp. left. reflexivity. }
+              { repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+                intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)).
+                - subst u. rename u_free into FREE. symmetry. eapply subst_nil_trm. intros u u_free. des.
+                  + subst u. done.
+                  + done.
+                - subst u. enough (CONTRA : x <> y) by done. unfold x. simpl. done.
+                - pose proof (fresh_var_ne_x y t' p1). done.
+                - done.
+                - symmetry. subst u. rename u_free into FREE. eapply subst_nil_trm. intros u u_free. des.
+                  + subst u. pose proof (fresh_var_is_not_free_in_trm y t' p1). unfold y2 in u_free. done.
+                  + done.
+                - subst u. pose proof (fresh_var_is_not_free_in_frm y t' p1). unfold y2 in u_free. done.
+                - done.
+              }
+        - subst phi phi'. clear claim1. simpl.
+          pose proof (claim1 := IH). specialize claim1 with (p' := nsubst z (Var_trm x) p1). rewrite nsubst_preserves_rank in claim1. specialize (claim1 (le_n _)).
+          specialize claim1 with (lhs := t) (rhs := t') (Gamma := Gamma). specialize (claim1 y PROVE). destruct claim1 as [PROVE1 PROVE2].
+          pose proof (claim1 := IH). specialize claim1 with (p' := p1). admit.
+        - admit.
+      }
+Abort.
 
 End EQUATIONS.
 
