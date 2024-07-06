@@ -1306,6 +1306,14 @@ Proof.
       * eapply proves_eqn_trms. exact PROVE.
 Qed.
 
+Lemma alpha_hyp (Gamma : ensemble (frm L)) (p : frm L) (q : frm L)
+  (PROVE : p \in Gamma)
+  (ALPHA : p ≡ q)
+  : Gamma \proves q.
+Proof.
+  rewrite <- ALPHA. eapply for_ByHyp. done.
+Qed.
+
 Lemma proves_eqn_frm (p : frm L) (lhs : trm L) (rhs : trm L) (Gamma : ensemble (frm L)) (y : ivar)
   (PROVE : Gamma \proves Eqn_frm lhs rhs)
   : Gamma \proves Imp_frm (subst_frm (one_subst y lhs) p) (subst_frm (one_subst y rhs) p).
@@ -1382,55 +1390,112 @@ Proof.
     pose proof (IH p1 (le_n _)) as claim1. specialize claim1 with (lhs := lhs) (rhs := rhs) (Gamma := Gamma). specialize (claim1 x PROVE).
     destruct claim1 as [PROVE1 PROVE2]. destruct (is_free_in_trm y lhs) as [ | ] eqn: H_OBS1, (is_free_in_trm y rhs) as [ | ] eqn: H_OBS2.
     + rename lhs into t, rhs into t'. set (phi := fun z : ivar => All_frm z (nsubst x t (nsubst y (Var_trm z) p1))). set (phi' := fun z : ivar => All_frm z (nsubst x t' (nsubst y (Var_trm z) p1))).
-      set (z := 1 + maxs ([x] ++ fvs_trm t ++ fvs_trm t' ++ fvs_frm p1)). fold (phi y1). fold (phi' y2).
-      enough (claim1 : Gamma \proves Imp_frm (phi y1) (phi z) /\ Gamma \proves Imp_frm (phi z) (phi y1)).
-      enough (claim2 : Gamma \proves Imp_frm (phi z) (phi' z) /\ Gamma \proves Imp_frm (phi' z) (phi z)).
-      enough (claim3 : Gamma \proves Imp_frm (phi' z) (phi' y2) /\ Gamma \proves Imp_frm (phi' y2) (phi' z)).
-      * destruct claim1 as [PROVE3 PROVE4]. destruct claim2 as [PROVE5 PROVE6]. destruct claim3 as [PROVE7 PROVE8]. split.
-        { eapply for_compose. eapply for_compose. 2: exact PROVE5. all: trivial. }
-        { eapply for_compose. eapply for_compose. 2: exact PROVE6. all: trivial. }
-      * assert (NOT_FREE : is_not_free_in_frm z (All_frm y2 (nsubst x t' (nsubst y (Var_trm y2) p1)))).
-        { red. rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (Nat.eq_dec z y2) as [EQ1 | NE1]; [right | left]; trivial.
-          eapply alpha_is_not_free_in_frm. do 2 rewrite nsubst_nice. reflexivity. rewrite <- subst_compose_frm_spec. eapply frm_is_fresh_in_subst_iff.
-          unfold frm_is_fresh_in_subst. rewrite forallb_forall. intros u u_free. rewrite fv_is_free_in_frm in u_free. unfold B.compose, subst_compose, one_subst, cons_subst, nil_subst.
-          rewrite negb_true_iff. des.
-          - subst u. rewrite subst_trm_unfold. des. rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. done.
-          - rewrite subst_trm_unfold. des. 
+      set (z := 1 + maxs ([x] ++ [y] ++ fvs_trm t ++ fvs_trm t' ++ fvs_frm p1)). fold (phi y1). fold (phi' y2). rename p1 into p. split.
+      * eapply for_compose with (q := All_frm z (nsubst x t (nsubst y (Var_trm z) p))); cycle 1.
+        { unfold phi. eapply extend_proves with (Gamma := E.empty). done. eapply for_compose with (q := All_frm z (nsubst y1 (Var_trm z) (nsubst x t (nsubst y (Var_trm y1) p)))); cycle 1.
+          - rewrite nsubst_nice with (x := y1) (t := Var_trm z). eapply rebind_All_frm_fwd.
+            red. rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (Nat.eq_dec z y1) as [? | ?]; [right | left]; trivial.
+            eapply alpha_is_not_free_in_frm. do 2 rewrite nsubst_nice. reflexivity. rewrite <- subst_compose_frm_spec. eapply frm_is_fresh_in_subst_iff.
+            unfold frm_is_fresh_in_subst. rewrite forallb_forall. intros u u_free. unfold subst_compose, B.compose, one_subst, cons_subst, nil_subst. rewrite negb_true_iff.
+            rewrite fv_is_free_in_frm in u_free. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+            + subst u. rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. done.
             + subst u. eapply last_ivar_trm_gt. unfold z, last_ivar_trm. repeat rewrite maxs_app. done.
             + rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. intros ->.
-              enough (CONTRA : is_free_in_frm z p1 = false) by done.
-              eapply last_ivar_frm_gt. unfold z, last_ivar_frm. repeat rewrite maxs_app. done.
+              enough (CONTRA : is_free_in_frm z p = false) by done. eapply last_ivar_frm_gt. unfold z, last_ivar_frm. repeat rewrite maxs_app. done.
+          - eapply for_Imp_E with (p := All_frm z (Imp_frm (nsubst y1 (Var_trm z) (nsubst x t (nsubst y (Var_trm y1) p))) (nsubst x t (nsubst y (Var_trm z) p)))).
+            { exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply FA3. }
+            eapply for_All_I. done. eapply for_Imp_I. eapply alpha_hyp. left. reflexivity.
+            repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+            intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+            + enough (CONTRA : z > x) by done. unfold z. repeat rewrite maxs_app. simpl; done.
+            + eapply subst_nil_trm. subst u. rename u_free into FREE. intros u u_free. des. subst u. done. done.
+            + subst u. done.
         }
-        pose proof (PROVE3 := rebind_All_frm_bwd Gamma y2 z (nsubst x t' (nsubst y (Var_trm y2) p1)) NOT_FREE).
-        pose proof (PROVE4 := rebind_All_frm_fwd Gamma y2 z (nsubst x t' (nsubst y (Var_trm y2) p1)) NOT_FREE).
-        unfold phi'. split.
-        { eapply for_compose. exact PROVE3. eapply extend_proves with (Gamma := E.empty). done.
-          eapply for_Imp_I. eapply for_All_I.
-          - intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []].
-            rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done.
-          - eapply proves_alpha_proves.
-            { eapply for_All_E with (x := z) (t := Var_trm z). eapply for_ByHyp. left. reflexivity. }
-            { rewrite <- nsubst_nice with (x := z) (t := Var_trm z). rewrite nsubst_id. repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
-              intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
-              - subst u. enough (CONTRA : z <> x) by done. unfold z. simpl. done.
-              - symmetry. eapply subst_nil_trm. subst u. rename u_free into FREE. intros u u_free. des; trivial. subst u. done.
-              - subst u. done.
-            }
+        eapply for_compose with (q := All_frm z (nsubst x t' (nsubst y (Var_trm z) p))).
+        { unfold phi'. eapply extend_proves with (Gamma := E.empty). done. eapply for_compose.
+          - eapply rebind_All_frm_bwd with (x' := z). red. rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (Nat.eq_dec z y2) as [? | ?]; [right | left]; trivial.
+            eapply alpha_is_not_free_in_frm. do 2 rewrite nsubst_nice. reflexivity. rewrite <- subst_compose_frm_spec. eapply frm_is_fresh_in_subst_iff.
+            unfold frm_is_fresh_in_subst. rewrite forallb_forall. intros u u_free. unfold subst_compose, B.compose, one_subst, cons_subst, nil_subst. rewrite negb_true_iff.
+            rewrite fv_is_free_in_frm in u_free. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+            + subst u. rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. done.
+            + subst u. eapply last_ivar_trm_gt. unfold z, last_ivar_trm. repeat rewrite maxs_app. done.
+            + rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. intros ->.
+              enough (CONTRA : is_free_in_frm z p = false) by done. eapply last_ivar_frm_gt. unfold z, last_ivar_frm. repeat rewrite maxs_app. done.
+          - rewrite <- nsubst_nice. eapply for_Imp_E with (p := All_frm z (Imp_frm (nsubst x t' (nsubst y (Var_trm z) p)) (nsubst y2 (Var_trm z) (nsubst x t' (nsubst y (Var_trm y2) p))))).
+            { exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply FA3. }
+            eapply for_All_I. done. eapply for_Imp_I. eapply alpha_hyp. left. reflexivity.
+            repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+            intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+            + enough (CONTRA : z > x) by done. unfold z. repeat rewrite maxs_app. simpl; done.
+            + symmetry. eapply subst_nil_trm. subst u. rename u_free into FREE. intros u u_free. des. subst u. done. done.
+            + subst u. done.
         }
-        { eapply for_compose. 2: exact PROVE4. eapply extend_proves with (Gamma := E.empty). done.
-          eapply for_Imp_I. eapply for_All_I.
-          - intros q q_in. autorewrite with datatypes in q_in. destruct q_in as [-> | []].
-            rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done.
-          - eapply proves_alpha_proves.
-            { eapply for_All_E with (x := z) (t := Var_trm z). eapply for_ByHyp. left. reflexivity. }
-            { rewrite <- nsubst_nice with (x := z) (t := Var_trm z). rewrite nsubst_id. repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
-              intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
-              - subst u. enough (CONTRA : z <> x) by done. unfold z. simpl. done.
-              - eapply subst_nil_trm. subst u. rename u_free into FREE. intros u u_free. des; trivial. subst u. done.
-              - subst u. done.
-            }
+        eapply cut_one'. 2: exact PROVE. eapply for_Imp_I. eapply for_All_I.
+        { intros q q_in; autorewrite with datatypes in q_in; destruct q_in as [-> | [-> | []]].
+          - rewrite is_free_in_frm_unfold; rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq; done.
+          - rewrite is_free_in_frm_unfold; rewrite orb_false_iff. split; eapply last_ivar_trm_gt; unfold z, last_ivar_trm; repeat rewrite maxs_app; done.
         }
-      *
+        pose proof (IH (nsubst y (Var_trm z) p)) as claim1. rewrite nsubst_preserves_rank in claim1. specialize (claim1 (le_n _)).
+        assert (PROVE' : (E.insert (All_frm z (nsubst x t (nsubst y (Var_trm z) p))) (E.insert (Eqn_frm t t') E.empty)) \proves Eqn_frm t t').
+        { eapply for_ByHyp. right. left. reflexivity. }
+        specialize claim1 with (lhs := t) (rhs := t'). destruct (claim1 _ x PROVE') as [PROVE3 PROVE4]. clear claim1.
+        eapply for_Imp_E. exact PROVE3. eapply cut_one' with (A := All_frm z (nsubst x t (nsubst y (Var_trm z) p))).
+        { rewrite <- nsubst_id with (x := z) (p := nsubst x t (nsubst y (Var_trm z) p)) at 2. rewrite nsubst_nice with (x := z) (t := Var_trm z). eapply for_All_E. eapply for_ByHyp. left. reflexivity. }
+        { eapply for_ByHyp. left. reflexivity. }
+    * rename phi into phi', phi' into phi. rename y1 into y2, y2 into y1, t into t', t' into t, PROVE1 into PROVE2, PROVE2 into PROVE1.
+      eapply for_compose with (q := All_frm z (nsubst x t (nsubst y (Var_trm z) p))); cycle 1.
+      { unfold phi. eapply extend_proves with (Gamma := E.empty). done. eapply for_compose with (q := All_frm z (nsubst y1 (Var_trm z) (nsubst x t (nsubst y (Var_trm y1) p)))); cycle 1.
+        - rewrite nsubst_nice with (x := y1) (t := Var_trm z). eapply rebind_All_frm_fwd.
+          red. rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (Nat.eq_dec z y1) as [? | ?]; [right | left]; trivial.
+          eapply alpha_is_not_free_in_frm. do 2 rewrite nsubst_nice. reflexivity. rewrite <- subst_compose_frm_spec. eapply frm_is_fresh_in_subst_iff.
+          unfold frm_is_fresh_in_subst. rewrite forallb_forall. intros u u_free. unfold subst_compose, B.compose, one_subst, cons_subst, nil_subst. rewrite negb_true_iff.
+          rewrite fv_is_free_in_frm in u_free. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+          + subst u. rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. done.
+          + subst u. eapply last_ivar_trm_gt. unfold z, last_ivar_trm. repeat rewrite maxs_app. done.
+          + rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. intros ->.
+            enough (CONTRA : is_free_in_frm z p = false) by done. eapply last_ivar_frm_gt. unfold z, last_ivar_frm. repeat rewrite maxs_app. done.
+        - eapply for_Imp_E with (p := All_frm z (Imp_frm (nsubst y1 (Var_trm z) (nsubst x t (nsubst y (Var_trm y1) p))) (nsubst x t (nsubst y (Var_trm z) p)))).
+          { exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply FA3. }
+          eapply for_All_I. done. eapply for_Imp_I. eapply alpha_hyp. left. reflexivity.
+          repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+          intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+          + enough (CONTRA : z > x) by done. unfold z. repeat rewrite maxs_app. simpl; done.
+          + eapply subst_nil_trm. subst u. rename u_free into FREE. intros u u_free. des. subst u. done. done.
+          + subst u. done.
+      }
+      eapply for_compose with (q := All_frm z (nsubst x t' (nsubst y (Var_trm z) p))).
+      { unfold phi'. eapply extend_proves with (Gamma := E.empty). done. eapply for_compose.
+        - eapply rebind_All_frm_bwd with (x' := z). red. rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. pose proof (Nat.eq_dec z y2) as [? | ?]; [right | left]; trivial.
+          eapply alpha_is_not_free_in_frm. do 2 rewrite nsubst_nice. reflexivity. rewrite <- subst_compose_frm_spec. eapply frm_is_fresh_in_subst_iff.
+          unfold frm_is_fresh_in_subst. rewrite forallb_forall. intros u u_free. unfold subst_compose, B.compose, one_subst, cons_subst, nil_subst. rewrite negb_true_iff.
+          rewrite fv_is_free_in_frm in u_free. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+          + subst u. rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. done.
+          + subst u. eapply last_ivar_trm_gt. unfold z, last_ivar_trm. repeat rewrite maxs_app. done.
+          + rewrite is_free_in_trm_unfold. rewrite Nat.eqb_neq. intros ->.
+            enough (CONTRA : is_free_in_frm z p = false) by done. eapply last_ivar_frm_gt. unfold z, last_ivar_frm. repeat rewrite maxs_app. done.
+        - rewrite <- nsubst_nice. eapply for_Imp_E with (p := All_frm z (Imp_frm (nsubst x t' (nsubst y (Var_trm z) p)) (nsubst y2 (Var_trm z) (nsubst x t' (nsubst y (Var_trm y2) p))))).
+          { exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply FA3. }
+          eapply for_All_I. done. eapply for_Imp_I. eapply alpha_hyp. left. reflexivity.
+          repeat rewrite nsubst_nice. repeat rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
+          intros u u_free. unfold subst_compose, one_subst, cons_subst, nil_subst. repeat (des; try rewrite subst_trm_unfold with (t := Var_trm _)); trivial.
+          + enough (CONTRA : z > x) by done. unfold z. repeat rewrite maxs_app. simpl; done.
+          + symmetry. eapply subst_nil_trm. subst u. rename u_free into FREE. intros u u_free. des. subst u. done. done.
+          + subst u. done.
+      }
+      eapply cut_one'. 2: exact PROVE. eapply for_Imp_I. eapply for_All_I.
+      { intros q q_in; autorewrite with datatypes in q_in; destruct q_in as [-> | [-> | []]].
+        - rewrite is_free_in_frm_unfold; rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq; done.
+        - rewrite is_free_in_frm_unfold; rewrite orb_false_iff. split; eapply last_ivar_trm_gt; unfold z, last_ivar_trm; repeat rewrite maxs_app; done.
+      }
+      pose proof (IH (nsubst y (Var_trm z) p)) as claim1. rewrite nsubst_preserves_rank in claim1. specialize (claim1 (le_n _)). apply proves_symmetry in PROVE.
+      assert (PROVE' : (E.insert (All_frm z (nsubst x t (nsubst y (Var_trm z) p))) (E.insert (Eqn_frm t' t) E.empty)) \proves Eqn_frm t' t).
+      { eapply for_ByHyp. right. left. reflexivity. }
+      specialize claim1 with (lhs := t') (rhs := t). destruct (claim1 _ x PROVE') as [PROVE3 PROVE4]. clear claim1.
+      eapply for_Imp_E. exact PROVE4. eapply cut_one' with (A := All_frm z (nsubst x t (nsubst y (Var_trm z) p))).
+      { rewrite <- nsubst_id with (x := z) (p := nsubst x t (nsubst y (Var_trm z) p)) at 2. rewrite nsubst_nice with (x := z) (t := Var_trm z). eapply for_All_E. eapply for_ByHyp. left. reflexivity. }
+      { eapply for_ByHyp. left. reflexivity. }
+  + rename lhs into t, rhs into t', p1 into p. set (z := 1 + maxs ([x] ++ [y] ++ fvs_trm t ++ fvs_trm t' ++ fvs_frm p)). split.
+    * 
 Abort.
 
 End EQUATIONS.
