@@ -11,7 +11,7 @@ Reserved Notation " x '↦' t ';' s " (at level 55, right associativity).
 Reserved Notation " x '↦' t " (at level 55, no associativity).
 Reserved Notation " '∅' " (at level 0, no associativity).
 Reserved Notation " 'ι' " (at level 0, no associativity).
-Reserved Notation " '⟦' s '⟧' p " (at level 30, no associativity, format "'⟦'  s  '⟧' p").
+Reserved Notation " '⟦' s '⟧' p " (at level 0, right associativity, format "'⟦'  s  '⟧' p").
 
 Module MonadNotations.
 

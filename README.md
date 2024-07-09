@@ -12,7 +12,7 @@
 
 - [ ] Propositional Logic (Soundness, Completeness)
 
-- [ ] Simply Typed Lambda Calculus (SN)
+- [ ] Simply Typed Lambda Calculus (SN property)
 
 - [ ] First-Order Logic (Soundness, Completeness)
 
