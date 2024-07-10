@@ -1,5 +1,7 @@
 -Q theories LoL #
 #
+theories/Data/Graph.v #
+theories/Data/NumRepr.v #
 theories/Data/Vector.v #
 theories/Logic/Computer.v #
 theories/Logic/FolCMetaTh.v #

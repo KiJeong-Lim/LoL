@@ -1,3 +1,4 @@
+Require LoL.Data.Graph.
 Require LoL.Data.Vector.
 Require LoL.Logic.Computer.
 Require LoL.Logic.FolCMetaTh.

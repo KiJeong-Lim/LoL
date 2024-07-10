@@ -13,6 +13,13 @@ Reserved Notation " '∅' " (at level 0, no associativity).
 Reserved Notation " 'ι' " (at level 0, no associativity).
 Reserved Notation " '⟦' s '⟧' p " (at level 0, right associativity, format "'⟦'  s  '⟧' p").
 
+Reserved Notation " base '^{'  power  '}' " (at level 15, left associativity).
+Reserved Notation " src '~~~[' x ']~~>' tgt " (at level 70, no associativity).
+Reserved Notation " src '---[' x ']-->' tgt " (at level 70, no associativity).
+Reserved Notation " src '===[' x ']==>' tgt " (at level 70, no associativity).
+Reserved Notation " src '~~~[' x ']~~>*' tgt " (at level 70, no associativity).
+Reserved Notation " src '---[' x ']-->*' tgt " (at level 70, no associativity).
+
 Module MonadNotations.
 
 Infix ">>=" := bind.

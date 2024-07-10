@@ -459,7 +459,7 @@ Proof.
     simpl. rewrite cp_spec in H_OBS. apply cpInv_inj in H_OBS. destruct H_OBS as [<- <-]. congruence.
 Qed.
 
-Section WITH_LIST.
+Section SECOND_CITIZEN_EQUALITY.
 
 Context {A : Type}.
 
@@ -563,7 +563,14 @@ Proof.
     rewrite <- EQ. eapply heq_sym. eapply from_list_to_list.
 Qed.
 
-End WITH_LIST.
+Theorem heq_congruence (P : forall n : nat, Vector.t A n -> Prop) (n : nat) (n' : nat) (xs : Vector.t A n) (xs' : Vector.t A n')
+  (HEQ : xs =~= xs')
+  : P n xs <-> P n' xs'.
+Proof.
+  destruct HEQ. reflexivity.
+Qed.
+
+End SECOND_CITIZEN_EQUALITY.
 
 Fixpoint snoc {A : Type} {n : nat} (xs : Vector.t A n) (x : A) {struct xs} : Vector.t A (S n) :=
   match xs with
