@@ -879,8 +879,7 @@ Proof.
           assert (EQ : acc = acc').
           { eapply MuRec_isPartialFunction.
             - exact acc_spec.
-            - rewrite <- MuRecGraph_correct.
-              simpl. unfold V.head, V.tail. simpl. exact CALL.
+            - rewrite <- MuRecGraph_correct. simpl. unfold V.head, V.tail. simpl. exact CALL.
           }
           subst acc'. exists z. rewrite <- MuRecGraph_correct. exact CALL'.
         }

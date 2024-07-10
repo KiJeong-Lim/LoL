@@ -24,34 +24,48 @@ Qed.
 
 Context {D : Type}.
 
-Definition fixedpoints_of `{SETOID : isSetoid D} (f : D -> D) : ensemble D :=
+Definition fixedpointsOf `{SETOID : isSetoid D} (f : D -> D) : ensemble D :=
   fun x => x == f x.
 
-Definition prefixedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
+Definition prefixedpointsOf `{POSET : isPoset D} (f : D -> D) : ensemble D :=
   fun x => x >= f x.
 
-Definition postfixedpoints_of `{POSET : isPoset D} (f : D -> D) : ensemble D :=
+Definition postfixedpointsOf `{POSET : isPoset D} (f : D -> D) : ensemble D :=
   fun x => x =< f x.
 
-Definition upperbounds_of `{POSET : isPoset D} (X : ensemble D) : ensemble D :=
+Definition upperboundsOf `{POSET : isPoset D} (X : ensemble D) : ensemble D :=
   fun u => forall x : D, forall IN : x \in X, x =< u.
 
-Definition lowerbounds_of `{POSET : isPoset D} (X: ensemble D) : ensemble D :=
+Definition lowerboundsOf `{POSET : isPoset D} (X: ensemble D) : ensemble D :=
   fun l => forall x : D, forall IN : x \in X, x >= l.
 
-Definition is_supremum_of `{POSET : isPoset D} (sup_X : D) (X : ensemble D) : Prop :=
-  forall u : D, sup_X =< u <-> u \in upperbounds_of X.
+Definition is_supremumOf `{POSET : isPoset D} (sup_X : D) (X : ensemble D) : Prop :=
+  forall u : D, sup_X =< u <-> u \in upperboundsOf X.
 
 Definition is_infimum_of `{POSET : isPoset D} (inf_X : D) (X : ensemble D) : Prop :=
-  forall l : D, inf_X >= l <-> l \in lowerbounds_of X.
+  forall l : D, inf_X >= l <-> l \in lowerboundsOf X.
+
+#[local] Notation f_eqProp := (eqProp (isSetoid := arrow_isSetoid _)).
+
+#[local] Infix "=~=" := f_eqProp : type_scope.
+
+#[global]
+Add Parametric Morphism `{SETOID : isSetoid D}
+  : fixedpointsOf with signature (eqProp ==> eqProp)
+  as fixedpointsOf_compatWith_eqProp.
+Proof.
+  intros f1 f2 f1_eq_f2. unfold fixedpointsOf. cbn. intros x. split; intros EQ.
+  - transitivity (f1 x); [exact EQ | exact (f1_eq_f2 x)].
+  - transitivity (f2 x); [exact EQ | symmetry; exact (f1_eq_f2 x)].
+Qed.
 
 End POSET_basic1.
 
-#[global] Hint Unfold fixedpoints_of : mathhints.
-#[global] Hint Unfold prefixedpoints_of : mathhints.
-#[global] Hint Unfold postfixedpoints_of : mathhints.
-#[global] Hint Unfold upperbounds_of : mathhints.
-#[global] Hint Unfold lowerbounds_of : mathhints.
+#[global] Hint Unfold fixedpointsOf : mathhints.
+#[global] Hint Unfold prefixedpointsOf : mathhints.
+#[global] Hint Unfold postfixedpointsOf : mathhints.
+#[global] Hint Unfold upperboundsOf : mathhints.
+#[global] Hint Unfold lowerboundsOf : mathhints.
 
 Class isDecidableTotalOrder (A : Type) `{POSET : isPoset A} : Type :=
   { compare (lhs : A) (rhs : A) : comparison

@@ -1,9 +1,10 @@
 Require LoL.Data.Vector.
-Require LoL.FoL.InferenceRules.
-Require LoL.FoL.MetaTh.
-Require LoL.FoL.Semantics.
-Require LoL.FoL.Syntax.
 Require LoL.Logic.Computer.
+Require LoL.Logic.FolCMetaTh.
+Require LoL.Logic.FolHPS.
+Require LoL.Logic.FolND.
+Require LoL.Logic.FolSemantics.
+Require LoL.Logic.FolSyntax.
 Require LoL.Math.CDomain.
 Require LoL.Math.ThDomain.
 Require LoL.Math.ThN.

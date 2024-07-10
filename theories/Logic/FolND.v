@@ -1,18 +1,14 @@
 Require Import LoL.Prelude.Prelude.
-Require Import LoL.Prelude.LEM.
 Require Import LoL.Prelude.Notations.
 Require Import LoL.Math.ThN.
 Require Import LoL.Data.Vector.
-Require Import LoL.FoL.Syntax.
-Require Import LoL.FoL.Semantics.
-Require Import LoL.FoL.InferenceRules.
+Require Import LoL.Logic.FolSyntax.
+Require Import LoL.Logic.FolSemantics.
 
 #[local] Infix "\in" := E.elem.
 #[local] Infix "\subseteq" := E.isSubsetOf.
 
 #[local] Infix "≡" := alpha_equiv.
-
-Module ND.
 
 Inductive infers {L : language} (Gamma : ensemble (frm L)) : forall C : frm L, Prop :=
   | By_hyp p
@@ -96,5 +92,3 @@ Inductive infers {L : language} (Gamma : ensemble (frm L)) : forall C : frm L, P
     (INFERS2 : Gamma ⊢ p2)
     : Gamma ⊢ p1
   where " Gamma ⊢ C " := (infers Gamma C) : type_scope.
-
-End ND.
