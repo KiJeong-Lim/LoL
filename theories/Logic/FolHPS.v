@@ -1103,12 +1103,8 @@ Fixpoint pairwise_equal {n : nat} (Gamma : ensemble (frm L)) {struct n} : trms L
 Definition trms_map : forall n, trms L n -> trms L n -> subst L :=
   nat_rec (fun n => trms L n -> trms L n -> ivar -> trm L) (fun _ => fun _ => fun z => Var_trm z) (fun n => fun ACC => fun ts => fun ts' => fun z => if eq_dec z (n + n) then head ts else if eq_dec z (S (n + n)) then head ts' else ACC (tail ts) (tail ts') z).
 
-#[local] Notation nVars := varcouples.
-#[local] Notation PairwiseEqual := pairwise_equal.
-#[local] Notation termsMap := trms_map.
-
-Lemma nVars_subst_fst n (ts : trms L n) (ts' : trms L n)
-  : subst_trms (trms_map n ts ts') (fst (nVars n)) = ts.
+Lemma varcouples_subst_fst n (ts : trms L n) (ts' : trms L n)
+  : subst_trms (trms_map n ts ts') (fst (varcouples n)) = ts.
 Proof.
   revert n ts ts'. induction n as [ | n IH].
   - intros ts. pattern ts. revert ts. eapply trms_case0.
@@ -1116,16 +1112,16 @@ Proof.
     reflexivity.
   - intros ts. pattern ts. revert ts. eapply trms_caseS. intros t ts.
     intros ts'. pattern ts'. revert ts'. eapply trms_caseS. intros t' ts'.
-    assert (claim1 : forall z, forall FREE : is_free_in_trms z (fst (nVars n)) = true, z < n + n).
+    assert (claim1 : forall z, forall FREE : is_free_in_trms z (fst (varcouples n)) = true, z < n + n).
     { clear IH t t' ts ts'. induction n as [ | n IH]; simpl; ii.
       - inv FREE.
-      - simpl in FREE. destruct (nVars n) as [FST SND] eqn: EQN.
+      - simpl in FREE. destruct (varcouples n) as [FST SND] eqn: EQN.
         simpl in FREE, IH. rewrite is_free_in_trms_unfold in FREE.
         rewrite orb_true_iff in FREE. destruct FREE as [FREE | FREE].
         + rewrite is_free_in_trm_unfold in FREE. rewrite Nat.eqb_eq in FREE. lia.
         + apply IH in FREE. lia.
     }
-    simpl. destruct (nVars n) as [FST SND] eqn: EQN. simpl in *.
+    simpl. destruct (varcouples n) as [FST SND] eqn: EQN. simpl in *.
     unfold head, tail. simpl. rewrite subst_trms_unfold. simpl. f_equal.
     + rewrite subst_trm_unfold. destruct eq_dec as [EQ | NE]; done.
     + rewrite <- IH with (ts' := ts'). eapply equiv_subst_in_trms_implies_subst_trms_same.
@@ -1136,8 +1132,8 @@ Proof.
       { reflexivity. }
 Qed.
 
-Lemma nVars_subst_snd n (ts : trms L n) (ts' : trms L n)
-  : subst_trms (trms_map n ts ts') (snd (nVars n)) = ts'.
+Lemma varcouples_subst_snd n (ts : trms L n) (ts' : trms L n)
+  : subst_trms (trms_map n ts ts') (snd (varcouples n)) = ts'.
 Proof.
   revert n ts ts'. induction n as [ | n IH].
   - intros ts. pattern ts. revert ts. eapply trms_case0.
@@ -1145,16 +1141,16 @@ Proof.
     reflexivity.
   - intros ts. pattern ts. revert ts. eapply trms_caseS. intros t ts.
     intros ts'. pattern ts'. revert ts'. eapply trms_caseS. intros t' ts'.
-    assert (claim1 : forall z, forall FREE : is_free_in_trms z (snd (nVars n)) = true, z < n + n).
+    assert (claim1 : forall z, forall FREE : is_free_in_trms z (snd (varcouples n)) = true, z < n + n).
     { clear IH t t' ts ts'. induction n as [ | n IH]; simpl; ii.
       - inv FREE.
-      - simpl in FREE. destruct (nVars n) as [FST SND] eqn: EQN.
+      - simpl in FREE. destruct (varcouples n) as [FST SND] eqn: EQN.
         simpl in FREE, IH. rewrite is_free_in_trms_unfold in FREE.
         rewrite orb_true_iff in FREE. destruct FREE as [FREE | FREE].
         + rewrite is_free_in_trm_unfold in FREE. rewrite Nat.eqb_eq in FREE. lia.
         + apply IH in FREE. lia.
     }
-    simpl. destruct (nVars n) as [FST SND] eqn: EQN. simpl in *.
+    simpl. destruct (varcouples n) as [FST SND] eqn: EQN. simpl in *.
     unfold head, tail. simpl. rewrite subst_trms_unfold. simpl. f_equal.
     + rewrite subst_trm_unfold. destruct eq_dec as [EQ | NE]. done. destruct eq_dec; done.
     + rewrite <- IH with (ts := ts). eapply equiv_subst_in_trms_implies_subst_trms_same.
@@ -1166,8 +1162,8 @@ Proof.
 Qed.
 
 Lemma add_pairwise_equals n (ts : trms L n) (ts' : trms L n) (s : subst L) (Gamma : ensemble (frm L)) (p : frm L)
-  (EQs : PairwiseEqual Gamma ts ts')
-  (BOUND : forall z : ivar, z < n + n -> s z = termsMap n ts ts' z)
+  (EQs : pairwise_equal Gamma ts ts')
+  (BOUND : forall z : ivar, z < n + n -> s z = trms_map n ts ts' z)
   (PROVE : Gamma \proves subst_frm s (nat_rec (fun _ => frm L) p (fun m : nat => fun ACC : frm L => Imp_frm (Eqn_frm (Var_trm (m + m)) (Var_trm (S (m + m)))) ACC) n))
   : Gamma \proves subst_frm s p.
 Proof.
@@ -1191,13 +1187,13 @@ Lemma Fun_eqAxm_free_vars (z : ivar) (f : L.(function_symbols))
   : is_free_in_frm z (Fun_eqAxm f) = true <-> z < n + n.
 Proof.
   unfold Fun_eqAxm. fold n. remember (fun lhs => fun rhs => Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs)) as phi eqn: H_phi.
-  fold n in phi, H_phi. rewrite <- H_phi. i. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *.
+  fold n in phi, H_phi. rewrite <- H_phi. i. destruct (varcouples n) as [xs ys] eqn: H_OBS. simpl in *.
   assert (claim1 : is_free_in_frm z (phi xs ys) = is_free_in_trms z xs || is_free_in_trms z ys).
   { subst phi. i. rewrite is_free_in_frm_unfold. do 2 rewrite is_free_in_trm_unfold. done. }
   clear H_phi. subst n. revert z phi claim1 H_OBS. trms_ind2 xs ys; simpl; i.
   - rewrite claim1. rewrite is_free_in_trms_unfold. done.
   - do 2 rewrite is_free_in_trm_unfold. obs_eqb (n + n) z; obs_eqb (S (n + n)) z; simpl; try done.
-    transitivity (z < n + n). 2: lia. destruct (nVars n) as [xs' ys'] eqn: H_OBS'. simpl in *.
+    transitivity (z < n + n). 2: lia. destruct (varcouples n) as [xs' ys'] eqn: H_OBS'. simpl in *.
     pose proof (claim2 := f_equal fst H_OBS). pose proof (claim3 := f_equal snd H_OBS). simpl in *.
     pose proof (claim4 := f_equal head claim2). pose proof (claim5 := f_equal head claim3). unfold head in claim4, claim5. simpl in *.
     pose proof (claim6 := f_equal tail claim2). pose proof (claim7 := f_equal tail claim3). unfold tail in claim6, claim7. simpl in *.
@@ -1212,13 +1208,13 @@ Lemma Rel_eqAxm_free_vars (z : ivar) (R : L.(relation_symbols))
   : is_free_in_frm z (Rel_eqAxm R) = true <-> z < n + n.
 Proof.
   unfold Rel_eqAxm. fold n. remember (fun lhs => fun rhs => Imp_frm (Rel_frm R lhs) (Rel_frm R rhs)) as phi eqn: H_phi.
-  fold n in phi, H_phi. rewrite <- H_phi. i. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *.
+  fold n in phi, H_phi. rewrite <- H_phi. i. destruct (varcouples n) as [xs ys] eqn: H_OBS. simpl in *.
   assert (claim1 : is_free_in_frm z (phi xs ys) = is_free_in_trms z xs || is_free_in_trms z ys).
   { subst phi. i. rewrite is_free_in_frm_unfold. do 2 rewrite is_free_in_frm_unfold. done. }
   clear H_phi. subst n. revert z phi claim1 H_OBS. trms_ind2 xs ys; simpl; i.
   - rewrite claim1. rewrite is_free_in_trms_unfold. done.
   - do 2 rewrite is_free_in_trm_unfold. obs_eqb (n + n) z; obs_eqb (S (n + n)) z; simpl; try done.
-    transitivity (z < n + n). 2: lia. destruct (nVars n) as [xs' ys'] eqn: H_OBS'. simpl in *.
+    transitivity (z < n + n). 2: lia. destruct (varcouples n) as [xs' ys'] eqn: H_OBS'. simpl in *.
     pose proof (claim2 := f_equal fst H_OBS). pose proof (claim3 := f_equal snd H_OBS). simpl in *.
     pose proof (claim4 := f_equal head claim2). pose proof (claim5 := f_equal head claim3). unfold head in claim4, claim5. simpl in *.
     pose proof (claim6 := f_equal tail claim2). pose proof (claim7 := f_equal tail claim3). unfold tail in claim6, claim7. simpl in *.
@@ -1229,13 +1225,13 @@ Proof.
 Qed.
 
 Lemma proves_eqn_fun (Gamma : ensemble (frm L)) (f : L.(function_symbols)) ts ts'
-  (PROVE : PairwiseEqual Gamma ts ts')
+  (PROVE : pairwise_equal Gamma ts ts')
   : Gamma \proves Eqn_frm (Fun_trm f ts) (Fun_trm f ts').
 Proof.
-  rewrite <- nVars_subst_fst with (ts := ts) (ts' := ts') at 1.
-  rewrite <- nVars_subst_snd with (ts := ts) (ts' := ts') at 2.
-  set (s := termsMap _ _ _). set (lhs := fst _). set (rhs := snd _).
-  change (Gamma \proves subst_frm (termsMap (L.(function_arity_table) f) ts ts') (Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs))).
+  rewrite <- varcouples_subst_fst with (ts := ts) (ts' := ts') at 1.
+  rewrite <- varcouples_subst_snd with (ts := ts) (ts' := ts') at 2.
+  set (s := trms_map _ _ _). set (lhs := fst _). set (rhs := snd _).
+  change (Gamma \proves subst_frm (trms_map (L.(function_arity_table) f) ts ts') (Eqn_frm (Fun_trm f lhs) (Fun_trm f rhs))).
   eapply add_pairwise_equals with (n := L.(function_arity_table) f) (ts := ts) (ts' := ts'); trivial.
   rename lhs into xs, rhs into ys. fold s. set (n := L.(function_arity_table) f).
   eapply extend_proves with (Gamma := E.empty). done. eapply cut_one' with (A := close_from 0 (n + n) (Fun_eqAxm f)).
@@ -1250,20 +1246,20 @@ Proof.
       clear. subst xs ys n. revert phi. induction (L.(function_arity_table) f) as [ | n IH]; simpl; i.
       * reflexivity.
       * specialize IH with (phi := fun ts => fun ts' => phi (S_trms _ (Var_trm (n + n)) ts) (S_trms _ (Var_trm (S (n + n))) ts')).
-        simpl in *. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *. reflexivity.
+        simpl in *. destruct (varcouples n) as [xs ys] eqn: H_OBS. simpl in *. reflexivity.
   - induction (n + n) as [ | m IH]; simpl; i.
     + exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply EQN_FUN.
     + eapply for_All_I; done.
 Qed.
 
 Lemma proves_eqn_rel (Gamma : ensemble (frm L)) (R : L.(relation_symbols)) ts ts'
-  (PROVE : PairwiseEqual Gamma ts ts')
+  (PROVE : pairwise_equal Gamma ts ts')
   : Gamma \proves Imp_frm (Rel_frm R ts) (Rel_frm R ts').
 Proof.
-  rewrite <- nVars_subst_fst with (ts := ts) (ts' := ts') at 1.
-  rewrite <- nVars_subst_snd with (ts := ts) (ts' := ts') at 2.
-  set (s := termsMap _ _ _). set (lhs := fst _). set (rhs := snd _).
-  change (Gamma \proves subst_frm (termsMap (L.(relation_arity_table) R) ts ts') (Imp_frm (Rel_frm R lhs) (Rel_frm R rhs))).
+  rewrite <- varcouples_subst_fst with (ts := ts) (ts' := ts') at 1.
+  rewrite <- varcouples_subst_snd with (ts := ts) (ts' := ts') at 2.
+  set (s := trms_map _ _ _). set (lhs := fst _). set (rhs := snd _).
+  change (Gamma \proves subst_frm (trms_map (L.(relation_arity_table) R) ts ts') (Imp_frm (Rel_frm R lhs) (Rel_frm R rhs))).
   eapply add_pairwise_equals with (n := L.(relation_arity_table) R) (ts := ts) (ts' := ts'); trivial.
   rename lhs into xs, rhs into ys. fold s. set (n := L.(relation_arity_table) R).
   eapply extend_proves with (Gamma := E.empty). done. eapply cut_one' with (A := close_from 0 (n + n) (Rel_eqAxm R)).
@@ -1278,7 +1274,7 @@ Proof.
       clear. subst xs ys n. revert phi. induction (L.(relation_arity_table) R) as [ | n IH]; simpl; i.
       * reflexivity.
       * specialize IH with (phi := fun ts => fun ts' => phi (S_trms _ (Var_trm (n + n)) ts) (S_trms _ (Var_trm (S (n + n))) ts')).
-        simpl in *. destruct (nVars n) as [xs ys] eqn: H_OBS. simpl in *. reflexivity.
+        simpl in *. destruct (varcouples n) as [xs ys] eqn: H_OBS. simpl in *. reflexivity.
   - induction (n + n) as [ | m IH]; simpl; i.
     + exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eapply EQN_REL.
     + eapply for_All_I; done.
@@ -1289,7 +1285,7 @@ Lemma proves_eqn_trm (t : trm L) (lhs : trm L) (rhs : trm L) (Gamma : ensemble (
   : Gamma \proves Eqn_frm (subst_trm (one_subst y lhs) t) (subst_trm (one_subst y rhs) t)
 with proves_eqn_trms n (ts : trms L n) (lhs : trm L) (rhs : trm L) (Gamma : ensemble (frm L)) (y : ivar)
   (PROVE : Gamma \proves Eqn_frm lhs rhs)
-  : PairwiseEqual Gamma (subst_trms (one_subst y lhs) ts) (subst_trms (one_subst y rhs) ts).
+  : pairwise_equal Gamma (subst_trms (one_subst y lhs) ts) (subst_trms (one_subst y rhs) ts).
 Proof.
   - revert lhs rhs Gamma y PROVE. trm_ind t; simpl; i.
     + do 2 rewrite subst_trm_unfold. unfold one_subst, cons_subst, nil_subst. unfold eq_dec, nat_hasEqDec. des.

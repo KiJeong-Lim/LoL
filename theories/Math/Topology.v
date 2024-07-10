@@ -3,9 +3,8 @@ Require Import LoL.Prelude.Prelude.
 #[local] Infix "\in" := E.elem : type_scope.
 #[local] Infix "\subseteq" := E.isSubsetOf : type_scope.
 
-Class hasTopology (A : Type) : Type :=
-  { isOpen (X : ensemble A) : Prop
-  ; full_isOpen
+Class TopologyAxioms {A : Type} (isOpen : ensemble A -> Prop) : Prop :=
+  { full_isOpen
     : isOpen E.full
   ; intersection_isOpen (X1 : ensemble A) (X2 : ensemble A)
     (OPEN1 : isOpen X1)
@@ -18,6 +17,11 @@ Class hasTopology (A : Type) : Type :=
     (OPEN : isOpen X1)
     (EXT_EQ : X1 == X2)
     : isOpen X2
+  }.
+
+Class hasTopology (A : Type) : Type :=
+  { isOpen (X : ensemble A) : Prop
+  ; topology_axioms :: @TopologyAxioms A isOpen
   }.
 
 #[global]
@@ -38,7 +42,8 @@ Proof.
   rewrite EQ. eapply unions_isOpen. now firstorder.
 Qed.
 
-#[global] Hint Resolve full_isOpen : mathhints.
-#[global] Hint Resolve intersection_isOpen : mathhints.
-#[global] Hint Resolve unions_isOpen : mathhints.
-#[global] Hint Resolve empty_isOpen : mathhints.
+Section TOPOLOGICAL_SPACES.
+
+#[local] Obligation Tactic := i.
+
+End TOPOLOGICAL_SPACES.

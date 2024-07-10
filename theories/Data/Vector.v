@@ -84,7 +84,8 @@ Proof.
       { reflexivity. }
 Defined.
 
-Definition fin (n : nat) : Set := @sig nat (gt n).
+Definition fin (n : nat) : Set :=
+  @sig nat (gt n).
 
 Fixpoint runFin {n : nat} (i : Fin.t n) {struct i} : fin n :=
   match i in Fin.t x return @sig nat (gt x) with
