@@ -1662,65 +1662,65 @@ Proof.
   rewrite maxs_app. rewrite maxs_app. lia.
 Qed.
 
-Inductive nsubst_spec (x : ivar) (t : trm) : frm -> frm -> Prop :=
-  | nsubst_All_EQ y p
+Inductive subst1_spec (x : ivar) (t : trm) : frm -> frm -> Prop :=
+  | subst1_All_EQ y p
     (EQ : x = y)
-    : nsubst_spec x t (All_frm y p) (All_frm y p)
-  | nsubst_All_FRESH y p1 p1'
+    : subst1_spec x t (All_frm y p) (All_frm y p)
+  | subst1_All_FRESH y p1 p1'
     (NE : x <> y)
     (NOT_OCCUR : is_free_in_trm y t = false)
-    (SUBST1 : nsubst_spec x t p1 p1')
-    : nsubst_spec x t (All_frm y p1) (All_frm y p1')
-  | nsubst_All_RENAME y z p1 p1' p1''
+    (SUBST1 : subst1_spec x t p1 p1')
+    : subst1_spec x t (All_frm y p1) (All_frm y p1')
+  | subst1_All_RENAME y z p1 p1' p1''
     (NEW_IVAR : z = fresh_var x t p1)
     (NE : x <> y)
     (NOT_OCCUR : is_free_in_trm y t = true)
-    (SUBST1 : nsubst_spec y (Var_trm z) p1 p1')
-    (SUBST2 : nsubst_spec x t p1' p1'')
-    : nsubst_spec x t (All_frm y p1) (All_frm z p1'')
-  | nsubst_Atomic p p'
+    (SUBST1 : subst1_spec y (Var_trm z) p1 p1')
+    (SUBST2 : subst1_spec x t p1' p1'')
+    : subst1_spec x t (All_frm y p1) (All_frm z p1'')
+  | subst1_Atomic p p'
     (RANK_ZERO : frm_depth p = 0)
     (EQ : p' = subst_frm (one_subst x t) p)
-    : nsubst_spec x t p p'
-  | nsubst_Neg p1 p1'
-    (SUBST1 : nsubst_spec x t p1 p1')
-    : nsubst_spec x t (Neg_frm p1) (Neg_frm p1')
-  | nsubst_Imp p1 p2 p1' p2'
-    (SUBST1 : nsubst_spec x t p1 p1')
-    (SUBST2 : nsubst_spec x t p2 p2')
-    : nsubst_spec x t (Imp_frm p1 p2) (Imp_frm p1' p2').
+    : subst1_spec x t p p'
+  | subst1_Neg p1 p1'
+    (SUBST1 : subst1_spec x t p1 p1')
+    : subst1_spec x t (Neg_frm p1) (Neg_frm p1')
+  | subst1_Imp p1 p2 p1' p2'
+    (SUBST1 : subst1_spec x t p1 p1')
+    (SUBST2 : subst1_spec x t p2 p2')
+    : subst1_spec x t (Imp_frm p1 p2) (Imp_frm p1' p2').
 
-Lemma nsubst_uniquely_exists x t
-  : forall p : frm, { p' : frm | nsubst_spec x t p p' /\ frm_depth p = frm_depth p' /\ (forall q' : frm, forall SUBST : nsubst_spec x t p q', q' = p') }.
+Lemma subst1_uniquely_exists x t
+  : forall p : frm, { p' : frm | subst1_spec x t p p' /\ frm_depth p = frm_depth p' /\ (forall q' : frm, forall SUBST : subst1_spec x t p q', q' = p') }.
 Proof.
   intros p. revert x t. pattern p. revert p. eapply @B.transfinite_recursion with (R := fun p => fun p' => frm_depth p < frm_depth p').
   { eapply B.preimage_preserves_wf. exact lt_wf. }
-  intros p IH x t. change (forall q, frm_depth q < frm_depth p -> forall x, forall t, { p' : frm | nsubst_spec x t q p'/\ frm_depth q = frm_depth p' /\ (forall q' : frm, forall SUBST : nsubst_spec x t q q', q' = p') }) in IH.
+  intros p IH x t. change (forall q, frm_depth q < frm_depth p -> forall x, forall t, { p' : frm | subst1_spec x t q p'/\ frm_depth q = frm_depth p' /\ (forall q' : frm, forall SUBST : subst1_spec x t q q', q' = p') }) in IH.
   destruct p.
   - exists (Rel_frm R (subst_trms (one_subst x t) ts)).
-    split. { eapply nsubst_Atomic; reflexivity. }
+    split. { eapply subst1_Atomic; reflexivity. }
     split. { simpl; reflexivity. }
     ii. inv SUBST. { reflexivity. }
   - exists (Eqn_frm (subst_trm (one_subst x t) t1) (subst_trm (one_subst x t) t2)).
-    split. { eapply nsubst_Atomic; reflexivity. }
+    split. { eapply subst1_Atomic; reflexivity. }
     split. { simpl; reflexivity. }
     ii. inv SUBST. { reflexivity. }
   - assert (rank_LT1 : frm_depth p < frm_depth (Neg_frm p)) by now simpl; lia.
     pose proof (IH p rank_LT1 x t) as [p' [SUBST1 [RANK_EQ1 UNIQUE1]]].
     exists (Neg_frm p').
-    split. { eapply nsubst_Neg; trivial. }
+    split. { eapply subst1_Neg; trivial. }
     split. { simpl; lia. }
     ii. inv SUBST. { inv RANK_ZERO. } { f_equal. eapply UNIQUE1. trivial. }
   - assert (rank_LT1 : frm_depth p1 < frm_depth (Imp_frm p1 p2)) by now simpl; lia.
     assert (rank_LT2 : frm_depth p2 < frm_depth (Imp_frm p1 p2)) by now simpl; lia.
     pose proof (IH p1 rank_LT1 x t) as [p1' [SUBST1 [RANK_EQ1 UNIQUE1]]]. pose proof (IH p2 rank_LT2 x t) as [p2' [SUBST2 [RANK_EQ2 UNIQUE2]]].
     exists (Imp_frm p1' p2').
-    split. { eapply nsubst_Imp; trivial. }
+    split. { eapply subst1_Imp; trivial. }
     split. { simpl; lia. }
     ii. inv SUBST. { inv RANK_ZERO. } { f_equal. eapply UNIQUE1; trivial. eapply UNIQUE2; trivial. }
   - pose proof (eq_dec x y) as [EQ | NE].
     + exists (All_frm y p).
-      split. { eapply nsubst_All_EQ; trivial. }
+      split. { eapply subst1_All_EQ; trivial. }
       split. { simpl; lia. }
       ii. inv SUBST. { reflexivity. } { contradiction. } { contradiction. } { inv RANK_ZERO. }
     + destruct (is_free_in_trm y t) as [ | ] eqn: H_OBS.
@@ -1730,72 +1730,72 @@ Proof.
         assert (rank_LT2 : frm_depth p' < frm_depth (All_frm y p)) by now simpl; lia.
         pose proof (IH p' rank_LT2 x t) as [p'' [SUBST2 [RANK_EQ2 UNIQUE2]]].
         exists (All_frm z p'').
-        split. { eapply nsubst_All_RENAME with (p1' := p'); trivial. }
+        split. { eapply subst1_All_RENAME with (p1' := p'); trivial. }
         split. { simpl; lia. }
         ii. inv SUBST. { contradiction. } { rewrite H_OBS in NOT_OCCUR; discriminate. } { f_equal; eapply UNIQUE2; apply UNIQUE1 in SUBST0; done. } { inv RANK_ZERO. }
       * assert (rank_LT1 : frm_depth p < frm_depth (All_frm y p)) by now simpl; lia.
         pose proof (IH p rank_LT1 x t) as [p' [SUBST1 [RANK_EQ1 UNIQUE1]]].
         exists (All_frm y p').
-        split. { eapply nsubst_All_FRESH; trivial. }
+        split. { eapply subst1_All_FRESH; trivial. }
         split. { simpl; lia. }
         ii. inv SUBST. { contradiction. } { f_equal; eapply UNIQUE1; trivial. } { rewrite H_OBS in NOT_OCCUR; discriminate. } { inv RANK_ZERO. }
 Qed.
 
-Definition nsubst (x : ivar) (t : trm) (p : frm) : frm :=
-  proj1_sig (nsubst_uniquely_exists x t p).
+Definition subst1 (x : ivar) (t : trm) (p : frm) : frm :=
+  proj1_sig (subst1_uniquely_exists x t p).
 
-Lemma nsubst_preserves_rank (x : ivar) (t : trm) (p : frm)
-  : frm_depth (nsubst x t p) = frm_depth p.
+Lemma subst1_preserves_rank (x : ivar) (t : trm) (p : frm)
+  : frm_depth (subst1 x t p) = frm_depth p.
 Proof.
-  unfold nsubst. destruct (nsubst_uniquely_exists x t p) as [p' [SUBST RANK_EQ]]; simpl. lia.
+  unfold subst1. destruct (subst1_uniquely_exists x t p) as [p' [SUBST RANK_EQ]]; simpl. lia.
 Qed.
 
-Lemma nsubst_satisfies_spec (x : ivar) (t : trm) (p : frm)
-  : nsubst_spec x t p (nsubst x t p).
+Lemma subst1_satisfies_spec (x : ivar) (t : trm) (p : frm)
+  : subst1_spec x t p (subst1 x t p).
 Proof.
-  unfold nsubst. destruct (nsubst_uniquely_exists x t p) as [q' [SUBST [RANK_EQ UNIQUE]]]; simpl. done. 
+  unfold subst1. destruct (subst1_uniquely_exists x t p) as [q' [SUBST [RANK_EQ UNIQUE]]]; simpl. done. 
 Qed.
 
-Lemma nsubst_satisfies_spec_uniquely (x : ivar) (t : trm) (p : frm)
-  : forall q, nsubst_spec x t p q <-> q = nsubst x t p.
+Lemma subst1_satisfies_spec_uniquely (x : ivar) (t : trm) (p : frm)
+  : forall q, subst1_spec x t p q <-> q = subst1 x t p.
 Proof.
-  intros q. unfold nsubst. destruct (nsubst_uniquely_exists x t p) as [p' [SPEC [RANK_EQ UNIQUE]]]; simpl.
+  intros q. unfold subst1. destruct (subst1_uniquely_exists x t p) as [p' [SPEC [RANK_EQ UNIQUE]]]; simpl.
   split. { eapply UNIQUE. } { intros ->. exact SPEC. }
 Qed.
 
-Lemma nsubst_unfold (x : ivar) (t : trm) (p : frm) :
-  nsubst x t p =
+Lemma subst1_unfold (x : ivar) (t : trm) (p : frm) :
+  subst1 x t p =
   match p with
   | Rel_frm R ts => Rel_frm R (subst_trms (one_subst x t) ts)
   | Eqn_frm t1 t2 => Eqn_frm (subst_trm (one_subst x t) t1) (subst_trm (one_subst x t) t2)
-  | Neg_frm p1 => Neg_frm (nsubst x t p1)
-  | Imp_frm p1 p2 => Imp_frm (nsubst x t p1) (nsubst x t p2)
+  | Neg_frm p1 => Neg_frm (subst1 x t p1)
+  | Imp_frm p1 p2 => Imp_frm (subst1 x t p1) (subst1 x t p2)
   | All_frm y p1 =>
     let z : ivar := fresh_var x t p1 in
-    if eq_dec x y then All_frm y p1 else if is_free_in_trm y t then All_frm z (nsubst x t (nsubst y (Var_trm z) p1)) else All_frm y (nsubst x t p1)
+    if eq_dec x y then All_frm y p1 else if is_free_in_trm y t then All_frm z (subst1 x t (subst1 y (Var_trm z) p1)) else All_frm y (subst1 x t p1)
   end.
 Proof.
-  unfold nsubst at 1. symmetry. destruct (nsubst_uniquely_exists x t p) as [q' [SUBST [RANK_EQ UNIQUE]]]. simpl proj1_sig. destruct p.
-  - eapply UNIQUE. simpl. eapply nsubst_Atomic; trivial.
-  - eapply UNIQUE. simpl. eapply nsubst_Atomic; trivial.
-  - eapply UNIQUE. eapply nsubst_Neg; eapply nsubst_satisfies_spec.
-  - eapply UNIQUE. eapply nsubst_Imp; eapply nsubst_satisfies_spec.
+  unfold subst1 at 1. symmetry. destruct (subst1_uniquely_exists x t p) as [q' [SUBST [RANK_EQ UNIQUE]]]. simpl proj1_sig. destruct p.
+  - eapply UNIQUE. simpl. eapply subst1_Atomic; trivial.
+  - eapply UNIQUE. simpl. eapply subst1_Atomic; trivial.
+  - eapply UNIQUE. eapply subst1_Neg; eapply subst1_satisfies_spec.
+  - eapply UNIQUE. eapply subst1_Imp; eapply subst1_satisfies_spec.
   - destruct (eq_dec x y) as [EQ | NE].
-    + eapply UNIQUE. eapply nsubst_All_EQ; trivial.
+    + eapply UNIQUE. eapply subst1_All_EQ; trivial.
     + destruct (is_free_in_trm y t) as [ | ] eqn: H_OBS.
-      * eapply UNIQUE. eapply nsubst_All_RENAME with (p1' := nsubst y (Var_trm (fresh_var x t p)) p); trivial; eapply nsubst_satisfies_spec.
-      * eapply UNIQUE. eapply nsubst_All_FRESH; trivial. eapply nsubst_satisfies_spec.
+      * eapply UNIQUE. eapply subst1_All_RENAME with (p1' := subst1 y (Var_trm (fresh_var x t p)) p); trivial; eapply subst1_satisfies_spec.
+      * eapply UNIQUE. eapply subst1_All_FRESH; trivial. eapply subst1_satisfies_spec.
 Qed.
 
-Theorem nsubst_nice x t p
-  : nsubst x t p ≡ subst_frm (one_subst x t) p.
+Theorem subst1_nice x t p
+  : subst1 x t p ≡ subst_frm (one_subst x t) p.
 Proof.
   revert x t. pattern p. revert p. eapply frm_depth_lt_ind; ii. destruct p.
-  - rewrite nsubst_unfold. reflexivity.
-  - rewrite nsubst_unfold. reflexivity.
-  - rewrite nsubst_unfold. simpl. eapply alpha_Neg_frm; eapply IH; simpl; lia.
-  - rewrite nsubst_unfold. simpl. eapply alpha_Imp_frm; eapply IH; simpl; lia.
-  - rewrite nsubst_unfold. simpl.
+  - rewrite subst1_unfold. reflexivity.
+  - rewrite subst1_unfold. reflexivity.
+  - rewrite subst1_unfold. simpl. eapply alpha_Neg_frm; eapply IH; simpl; lia.
+  - rewrite subst1_unfold. simpl. eapply alpha_Imp_frm; eapply IH; simpl; lia.
+  - rewrite subst1_unfold. simpl.
     set (chi := chi_frm (one_subst x t) (All_frm y p)). set (z := fresh_var x t p).
     destruct (eq_dec x y) as [EQ | NE].
     { subst y. eapply alpha_All_frm with (z := chi).
@@ -1817,8 +1817,8 @@ Proof.
     }
     destruct (is_free_in_trm y t) as [ | ] eqn: H_OBS.
     { eapply alpha_All_frm with (z := z).
-      - assert (rank_LT1 : frm_depth (nsubst y (Var_trm z) p) < frm_depth (All_frm y p)).
-        { rewrite nsubst_preserves_rank. simpl; lia. }
+      - assert (rank_LT1 : frm_depth (subst1 y (Var_trm z) p) < frm_depth (All_frm y p)).
+        { rewrite subst1_preserves_rank. simpl; lia. }
         pose proof (IH _ rank_LT1 x t) as claim1.
         assert (rank_LT2 : frm_depth p < frm_depth (All_frm y p)).
         { simpl; lia. }
@@ -1916,8 +1916,8 @@ Proof.
             { done. }
       - destruct (eq_dec z chi) as [EQ' | NE'].
         + rewrite is_free_in_frm_unfold. rewrite andb_false_iff, negb_false_iff, Nat.eqb_eq. done.
-        + assert (ALPHA : subst_frm (cons_subst y (Var_trm chi) (one_subst x t)) p ≡ subst_frm (one_subst y (Var_trm chi)) (nsubst x t p)).
-          { pose proof (@subst_frm_compat_alpha_equiv (nsubst x t p) (subst_frm (one_subst x t) p) (one_subst y (Var_trm chi)) claim1) as claim2.
+        + assert (ALPHA : subst_frm (cons_subst y (Var_trm chi) (one_subst x t)) p ≡ subst_frm (one_subst y (Var_trm chi)) (subst1 x t p)).
+          { pose proof (@subst_frm_compat_alpha_equiv (subst1 x t p) (subst_frm (one_subst x t) p) (one_subst y (Var_trm chi)) claim1) as claim2.
             rewrite claim2. rewrite <- subst_compose_frm_spec. eapply alpha_equiv_eq_intro. eapply equiv_subst_in_frm_implies_subst_frm_same.
             intros u u_free. unfold subst_compose. unfold one_subst, cons_subst, nil_subst.
             destruct (eq_dec u x) as [EQ1 | NE1].
@@ -1930,7 +1930,7 @@ Proof.
           }
           rewrite is_free_in_frm_unfold. rewrite andb_false_iff. left.
           rewrite alpha_equiv_compat_fresh with (ALPHA := ALPHA).
-          assert (claim2 : is_free_in_frm z (nsubst x t p) = false).
+          assert (claim2 : is_free_in_frm z (subst1 x t p) = false).
           { rewrite alpha_equiv_compat_fresh with (ALPHA := claim1).
             destruct (is_free_in_frm z (subst_frm (one_subst x t) p)) as [ | ] eqn: H_OBS1; trivial.
             rewrite <- free_in_frm_wrt_iff in H_OBS1. unfold free_in_frm_wrt in H_OBS1.
@@ -1940,27 +1940,27 @@ Proof.
             - rewrite is_free_in_trm_unfold in FREE. rewrite Nat.eqb_eq in FREE. subst u.
               pose proof (fresh_var_is_not_free_in_frm x t p); subst z; done.
           }
-          pose proof (@one_subst_free_assoc_lemma3 y chi z (nsubst x t p) NE') as claim3.
-          destruct (is_free_in_frm z (subst_frm (one_subst y (Var_trm chi)) (nsubst x t p))) as [ | ] eqn: H_OBS2.
+          pose proof (@one_subst_free_assoc_lemma3 y chi z (subst1 x t p) NE') as claim3.
+          destruct (is_free_in_frm z (subst_frm (one_subst y (Var_trm chi)) (subst1 x t p))) as [ | ] eqn: H_OBS2.
           * specialize (claim3 eq_refl). done.
           * done.
     }
 Qed.
 
-Lemma nsubst_id x p
-  : nsubst x (Var_trm x) p = p.
+Lemma subst1_id x p
+  : subst1 x (Var_trm x) p = p.
 Proof.
   revert x. pattern p. revert p. eapply frm_depth_lt_ind.
   ii. destruct p.
-  - rewrite nsubst_unfold. f_equal. rewrite subst_nil_trms; trivial.
+  - rewrite subst1_unfold. f_equal. rewrite subst_nil_trms; trivial.
     intros u u_free. unfold one_subst, cons_subst, nil_subst. destruct (eq_dec u x) as [EQ | NE]; done.
-  - rewrite nsubst_unfold. f_equal. rewrite subst_nil_trm; trivial.
+  - rewrite subst1_unfold. f_equal. rewrite subst_nil_trm; trivial.
     { intros u u_free. unfold one_subst, cons_subst, nil_subst. destruct (eq_dec u x) as [EQ | NE]; done. }
     rewrite subst_nil_trm; trivial.
     { intros u u_free. unfold one_subst, cons_subst, nil_subst. destruct (eq_dec u x) as [EQ | NE]; done. }
-  - rewrite nsubst_unfold. f_equal. eapply IH. simpl; done.
-  - rewrite nsubst_unfold. f_equal; eapply IH; simpl; done.
-  - rewrite nsubst_unfold. destruct (eq_dec x y) as [EQ | NE].
+  - rewrite subst1_unfold. f_equal. eapply IH. simpl; done.
+  - rewrite subst1_unfold. f_equal; eapply IH; simpl; done.
+  - rewrite subst1_unfold. destruct (eq_dec x y) as [EQ | NE].
     + simpl. reflexivity.
     + simpl. cbn zeta. destruct (Nat.eqb x y) as [ | ] eqn: H_OBS.
       * rewrite Nat.eqb_eq in H_OBS. done.
