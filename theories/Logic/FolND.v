@@ -12,6 +12,8 @@ Require Import LoL.Logic.FolSemantics.
 
 Import ListNotations.
 
+Section FACTS_ON_ND.
+
 Inductive infers {L : language} (Gamma : list (frm L)) : forall C : frm L, Prop :=
   | By_hyp p
     (IN : L.In p Gamma)
@@ -46,3 +48,18 @@ Inductive infers {L : language} (Gamma : list (frm L)) : forall C : frm L, Prop 
     (INFERS2 : Gamma ⊢ p1)
     : Gamma ⊢ p2
   where " Gamma ⊢ C " := (infers Gamma C) : type_scope.
+
+Context {L : language}.
+
+(* Lemma generalized_weakening (eta : renaming) (Gamma : list (frm L)) (C : frm L)
+  (eta_inj : exists eta' : renaming, forall z : ivar, is_free_in_frm z C = true -> eta' (eta z) = z)
+  (INFERS : Gamma ⊢ C)
+  : L.map (rename_frm eta) Gamma ⊢ rename_frm eta C.
+Proof.
+  revert eta eta_inj. induction INFERS; i.
+  - eapply By_hyp. rewrite L.in_map_iff. done.
+  - simpl. eapply Eqn_I.
+  - rewrite rename_frm_one_subst. 2:{ eapply eta_inj_upgrade_once. des }
+Qed. *)
+
+End FACTS_ON_ND.

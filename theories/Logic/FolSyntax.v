@@ -10,8 +10,6 @@ Section SYNTAX.
 
 Definition ivar : Set := nat.
 
-Definition renaming : Set := ivar -> ivar.
-
 Let arity : Set := nat.
 
 #[projections(primitive)]
@@ -1065,56 +1063,6 @@ Proof.
       * done.
 Qed.
 
-Section RENAMING.
-
-Definition rename_trm (eta : renaming) : trm -> trm :=
-  subst_trm (Var_trm ∘ eta).
-
-Definition rename_trms {n : arity} (eta : renaming) : trms n -> trms n :=
-  subst_trms (Var_trm ∘ eta).
-
-Definition rename_frm (eta : renaming) : frm -> frm :=
-  subst_frm (Var_trm ∘ eta).
-
-Lemma rename_frm_subst (s : subst) (eta : renaming) (eta' : renaming) (p : frm)
-  (eta_inj : forall z : ivar, is_free_in_frm z p = true -> eta' (eta z) = z)
-  : rename_frm eta (subst_frm s p) = subst_frm (rename_trm eta ∘ s ∘ eta') (rename_frm eta p).
-Proof.
-  unfold rename_frm. do 2 rewrite <- subst_compose_frm_spec. eapply equiv_subst_in_frm_implies_subst_frm_same.
-  ii; unfold "∘"%prg in *; unfold subst_compose in *. symmetry. rewrite subst_trm_unfold. rewrite eta_inj; done.
-Qed.
-
-Lemma rename_frm_one_subst (eta : renaming) (x : ivar) (t : trm) (p : frm)
-  (eta_inj : exists eta' : renaming, forall z : ivar, is_free_in_frm z p = true \/ z = x -> eta' (eta z) = z)
-  : rename_frm eta (subst_frm (one_subst x t) p) = subst_frm (one_subst (eta x) (rename_trm eta t)) (rename_frm eta p).
-Proof.
-  destruct eta_inj as [eta' eta_inj].
-  assert (claim1 : eta' (eta x) = x) by done.
-  assert (claim2 : forall z : ivar, is_free_in_frm z p = true -> eta' (eta z) = z) by done.
-  rewrite rename_frm_subst with (eta' := eta'); trivial.
-  unfold rename_frm. do 2 rewrite <- subst_compose_frm_spec. eapply equiv_subst_in_frm_implies_subst_frm_same.
-  ii. unfold subst_compose. unfold B.compose. simpl. rewrite claim2; trivial.
-  unfold one_subst, cons_subst, nil_subst. destruct (eq_dec (eta z) (eta x)) as [eta_EQ | eta_NE].
-  - eapply f_equal with (f := eta') in eta_EQ. rewrite claim1 in eta_EQ. rewrite claim2 in eta_EQ; trivial.
-    subst z. destruct (eq_dec x x); done.
-  - destruct (eq_dec z x); done.
-Qed.
-
-Lemma eta_inj_upgrade_once (eta : renaming) (x : ivar) (p : frm)
-  (eta_inj : exists eta' : renaming, forall z : ivar, eta' (eta z) = z)
-  : exists eta' : renaming, forall z : ivar, is_free_in_frm z p = true \/ z = x -> eta' (eta z) = z.
-Proof.
-  destruct eta_inj as (eta'&eta_inj). exists (fun z : ivar => if eq_dec z (eta x) then x else eta' z). intros z [FREE | <-].
-  - destruct (eq_dec (eta z) (eta x)) as [EQ | NE].
-    + apply f_equal with (f := eta') in EQ. do 2 rewrite eta_inj in EQ. done.
-    + rewrite eta_inj. done.
-  - destruct (eq_dec (eta z) (eta z)); done.
-Qed.
-
-End RENAMING.
-
-Section EXTRA.
-
 Lemma trivial_subst (x : ivar) (p : frm)
   : subst_frm (one_subst x (Var_trm x)) p = subst_frm nil_subst p.
 Proof.
@@ -1249,8 +1197,6 @@ Proof.
       * eapply FvEq2. done.
       * exact FREE'.
 Qed.
-
-End EXTRA.
 
 End SUBSTITUTION.
 
