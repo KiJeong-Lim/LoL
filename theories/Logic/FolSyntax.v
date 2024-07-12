@@ -2148,7 +2148,8 @@ Inductive frm_similarity : Similarity (frm L) (frm L') :=
     (p1_SIM : p1 =~= p1')
     : @All_frm L y p1 =~= @All_frm L' y p1'.
 
-#[local] Instance frm_similarity_instance : Similarity (frm L) (frm L') := frm_similarity.
+#[local] Instance frm_similarity_instance : Similarity (frm L) (frm L') :=
+  frm_similarity.
 
 Variant frms_similarity (ps : ensemble (frm L)) (ps' : ensemble (frm L')) : Prop :=
   | is_extend_sig_frms_of_intro
