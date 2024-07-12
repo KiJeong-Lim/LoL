@@ -725,7 +725,7 @@ Proof.
 Qed.
 
 Lemma cut A B Gamma
-  (PROVE1 : E.insert A  Gamma \proves B)
+  (PROVE1 : E.insert A Gamma \proves B)
   (PROVE2 : Gamma \proves A)
   : Gamma \proves B.
 Proof.

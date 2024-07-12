@@ -5,6 +5,7 @@ theories/Data/NumRepr.v #
 theories/Data/Vector.v #
 theories/Logic/Computer.v #
 theories/Logic/FolCMetaTh.v #
+theories/Logic/FolMetaTh.v #
 theories/Logic/FolHPS.v #
 theories/Logic/FolND.v #
 theories/Logic/FolSemantics.v #

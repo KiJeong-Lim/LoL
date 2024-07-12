@@ -2154,7 +2154,7 @@ Variant frms_similarity (ps : ensemble (frm L)) (ps' : ensemble (frm L')) : Prop
   | is_extend_sig_frms_of_intro
     (BSIM : forall p' : frm L', forall IN : p' \in ps', exists p : frm L, p \in ps /\ p =~= p')
     (FSIM : forall p : frm L, forall IN : p \in ps, exists p' : frm L', p' \in ps' /\ p =~= p')
-    : ps =~= ps'.
+    : frms_similarity ps ps'.
 
 #[local] Instance frms_similarity_instance : Similarity (ensemble (frm L)) (ensemble (frm L')) :=
   frms_similarity.

@@ -3,6 +3,7 @@ Require LoL.Data.Vector.
 Require LoL.Logic.Computer.
 Require LoL.Logic.FolCMetaTh.
 Require LoL.Logic.FolHPS.
+Require LoL.Logic.FolMetaTh.
 Require LoL.Logic.FolND.
 Require LoL.Logic.FolSemantics.
 Require LoL.Logic.FolSyntax.
