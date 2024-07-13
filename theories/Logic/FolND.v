@@ -55,10 +55,4 @@ Inductive infers {L : language} (Gamma : list (frm L)) : forall C : frm L, Prop 
 
 Context {L : language}.
 
-Lemma nd_generalized_weakening (x' : ivar) (t' : trm L) (Gamma : list (frm L)) (Gamma' : list (frm L)) (C : frm L)
-  (INFERS : Gamma ⊢ C)
-  (INCL : forall q, L.In q Gamma -> L.In q Gamma')
-  : L.map (subst_frm (one_subst x' t')) Gamma' ⊢ subst_frm (one_subst x' t') C.
-Abort.
-
 End NATURAL_DEDUCTION.
