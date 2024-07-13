@@ -12,11 +12,9 @@ Require Import LoL.Logic.FolSemantics.
 
 Import ListNotations.
 
-Section NATURAL_DEDUCTION.
-
 #[local] Notation "p `[ x' := t' ]" := (subst1 x' t' p) (at level 15, no associativity, format "p `[  x'  :=  t'  ]").
-#[local] Notation "t ``[ x' := t' ]" := (subst_trm (one_subst x' t') t) (at level 15, no associativity, format "t ``[  x'  :=  t'  ]").
-#[local] Notation "ts ```[ x' := t' ]" := (subst_trms (one_subst x' t') ts) (at level 15, no associativity, format "ts ```[  x'  :=  t'  ]").
+
+Section NATURAL_DEDUCTION.
 
 Inductive infers {L : language} (Gamma : list (frm L)) : forall C : frm L, Prop :=
   | By_hyp p
