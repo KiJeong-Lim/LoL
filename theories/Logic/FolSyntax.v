@@ -1093,7 +1093,7 @@ Proof.
   revert s. frm_ind p; simpl; i; try done.
 Qed.
 
-Lemma quick_draw_one (p : frm ) (x : ivar) (y : ivar) (z : ivar) (s : subst)
+Lemma quick_draw_one (p : frm) (x : ivar) (y : ivar) (z : ivar) (s : subst)
   (FRESH : is_free_in_frm x p = false \/ x = y)
   : subst_frm (one_subst x (Var_trm z)) (subst_frm (cons_subst y (Var_trm z) s) p) = subst_frm (cons_subst y (Var_trm z) (subst_compose s (one_subst x (Var_trm z)))) (subst_frm (one_subst x (Var_trm y)) p).
 Proof.

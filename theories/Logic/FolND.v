@@ -12,7 +12,11 @@ Require Import LoL.Logic.FolSemantics.
 
 Import ListNotations.
 
-Section FACTS_ON_ND.
+Section NATURAL_DEDUCTION.
+
+#[local] Notation "p `[ x' := t' ]" := (subst1 x' t' p) (at level 15, no associativity, format "p `[  x'  :=  t'  ]").
+#[local] Notation "t ``[ x' := t' ]" := (subst_trm (one_subst x' t') t) (at level 15, no associativity, format "t ``[  x'  :=  t'  ]").
+#[local] Notation "ts ```[ x' := t' ]" := (subst_trms (one_subst x' t') ts) (at level 15, no associativity, format "ts ```[  x'  :=  t'  ]").
 
 Inductive infers {L : language} (Gamma : list (frm L)) : forall C : frm L, Prop :=
   | By_hyp p
@@ -51,15 +55,10 @@ Inductive infers {L : language} (Gamma : list (frm L)) : forall C : frm L, Prop 
 
 Context {L : language}.
 
-(* Lemma generalized_weakening (eta : renaming) (Gamma : list (frm L)) (C : frm L)
-  (eta_inj : exists eta' : renaming, forall z : ivar, is_free_in_frm z C = true -> eta' (eta z) = z)
+Lemma nd_generalized_weakening (x' : ivar) (t' : trm L) (Gamma : list (frm L)) (Gamma' : list (frm L)) (C : frm L)
   (INFERS : Gamma ⊢ C)
-  : L.map (rename_frm eta) Gamma ⊢ rename_frm eta C.
-Proof.
-  revert eta eta_inj. induction INFERS; i.
-  - eapply By_hyp. rewrite L.in_map_iff. done.
-  - simpl. eapply Eqn_I.
-  - rewrite rename_frm_one_subst. 2:{ eapply eta_inj_upgrade_once. des }
-Qed. *)
+  (INCL : forall q, L.In q Gamma -> L.In q Gamma')
+  : L.map (subst_frm (one_subst x' t')) Gamma' ⊢ subst_frm (one_subst x' t') C.
+Abort.
 
-End FACTS_ON_ND.
+End NATURAL_DEDUCTION.
