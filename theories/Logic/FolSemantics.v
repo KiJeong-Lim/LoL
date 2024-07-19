@@ -179,7 +179,7 @@ Lemma interpret_trm_ext_upto (env : ivar -> domain_of_discourse) (env' : ivar ->
   (EQUIV : forall z : ivar, forall FREE : is_free_in_trm z t = true, env z == env' z)
   : interpret_trm env t == interpret_trm env' t
 with interpret_trms_ext_upto n (env : ivar -> domain_of_discourse) (env' : ivar -> domain_of_discourse) (ts : trms L n)
-  (EQUIV: forall z: ivar, forall FREE: is_free_in_trms z ts = true, env z == env' z)
+  (EQUIV : forall z : ivar, forall FREE : is_free_in_trms z ts = true, env z == env' z)
   : interpret_trms env ts == interpret_trms env' ts.
 Proof.
   - revert env env' EQUIV. induction t as [x | f ts | c]; simpl; i.
@@ -227,7 +227,7 @@ Lemma not_free_no_effect_on_interpret_trm (env : ivar -> domain_of_discourse) (t
   (NOT_FREE : is_free_in_trm y t = false)
   : interpret_trm env t == interpret_trm (upd_env y y_value env) t
 with not_free_no_effect_on_interpret_trms n (env : ivar -> domain_of_discourse) (ts: trms L n) (y: ivar) (y_value: domain_of_discourse)
-  (NOT_FREE: is_free_in_trms y ts = false)
+  (NOT_FREE : is_free_in_trms y ts = false)
   : interpret_trms env ts == interpret_trms (upd_env y y_value env) ts.
 Proof.
   - unfold upd_env. revert env y y_value NOT_FREE. induction t as [x | f ts | c]; simpl; i.

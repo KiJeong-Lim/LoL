@@ -10,6 +10,8 @@ Section SYNTAX.
 
 Definition ivar : Set := nat.
 
+Definition renaming : Set := list (ivar * ivar).
+
 Let arity : Set := nat.
 
 #[projections(primitive)]
@@ -2178,6 +2180,11 @@ End EXTEND_LANGUAGE_BY_ADDING_CONSTANTS.
 #[global] Bind Scope lang_scope with frm.
 #[global] Declare Custom Entry fol_frm_viewer.
 
+Declare Scope subst_scope.
+Delimit Scope subst_scope with subst.
+
+Module FolNotations.
+
 Notation " R '@@' ts " := (Rel_frm R ts) (R constr, ts constr, in custom fol_frm_viewer at level 0). 
 Notation " t1 '=' t2 " := (Eqn_frm t1 t2) (t1 constr, t2 constr, in custom fol_frm_viewer at level 0).
 Notation " 'False' " := (Bot_frm) (in custom fol_frm_viewer at level 0, no associativity).
@@ -2192,9 +2199,6 @@ Notation " p " := p (in custom fol_frm_viewer at level 0, p ident).
 Notation " '(' p ')' " := p (in custom fol_frm_viewer at level 0, p at level 10).
 Notation " '$' p '$' " := p (p custom fol_frm_viewer at level 10, at level 0, format "'$' p '$'", no associativity) : lang_scope.
 
-Declare Scope subst_scope.
-Delimit Scope subst_scope with subst.
-
 Notation " '⟦' s '⟧' p " := (subst_frm s p) (only printing, in custom fol_frm_viewer at level 0, right associativity, format "'⟦'  s  '⟧' p").
 Notation " '⟦' s '⟧' t " := (subst_trm s t) (only printing, in custom fol_frm_viewer at level 0, right associativity).
 Notation " '⟦' s '⟧' ts " := (subst_trms s ts) (only printing, in custom fol_frm_viewer at level 0, right associativity).
@@ -2204,3 +2208,5 @@ Notation " x '↦' t ';' s " := (cons_subst x t s) : subst_scope.
 Notation " 'ι' " := (nil_subst) : subst_scope.
 Notation " x '↦' t " := (one_subst x t) : subst_scope.
 Notation " s2 '∘' s1 " := (subst_compose s1 s2) : subst_scope.
+
+End FolNotations.

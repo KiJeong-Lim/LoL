@@ -1853,4 +1853,91 @@ Qed.
 
 End EQUATIONS.
 
+Theorem proves_substitutivity (s : subst L) (Gamma : ensemble (frm L)) (p : frm L)
+  (PROVE : Gamma \proves p)
+  : E.image (subst_frm s) Gamma \proves subst_frm s p.
+Proof.
+  assert (empty_proof_intro : forall q : frm L, proof [] q -> E.empty \proves q).
+  { ii. exists []. split. intros ?. rewrite E.in_finite_iff. done. econstructor. eassumption. }
+  destruct PROVE as (ps&INCL&(PF)).
+  assert (PROVE : E.finite ps \proves p).
+  { exists ps. split. done. econstructor. exact PF. }
+  clear PF. revert Gamma p INCL PROVE s. induction ps as [ | q ps IH]; i.
+  - clear INCL. destruct PROVE as (ps&INCL&(PF)).
+    assert (ps_spec : forall q : frm L, ~ L.In q ps).
+    { intros q q_in. rewrite <- E.in_finite_iff in q_in. apply INCL in q_in. rewrite E.in_finite_iff in q_in. inv q_in. }
+    clear INCL. eapply extend_proves with (Gamma := E.empty). done.
+    clear Gamma. revert s. induction PF; i.
+    + pose proof (ps_spec p (or_introl eq_refl)) as [].
+    + eapply for_Imp_E.
+      * eapply IHPF1. intros p' H_in. eapply ps_spec with (q := p'). rewrite in_app_iff. done.
+      * eapply IHPF2. intros p' H_in. eapply ps_spec with (q := p'). rewrite in_app_iff. done.
+    + simpl. eapply for_All_I.
+      * intros p' H_in. inv H_in.
+      * eapply IHPF. intros p' H_in. pose proof (ps_spec p' H_in) as [].
+    + simpl. eapply empty_proof_intro. eapply IMP1.
+    + simpl. eapply empty_proof_intro. eapply IMP2.
+    + simpl. eapply empty_proof_intro. eapply CP.
+    + simpl. eapply empty_proof_intro. set (chi := chi_frm s (All_frm x p)). set (s' := cons_subst x (Var_trm chi) s). rewrite compose_one_subst_frm.
+      enough (ENOUGH : subst_frm (one_subst chi (subst_trm s t)) (subst_frm s' p) = subst_frm (cons_subst x (subst_trm s t) s) p).
+      { rewrite <- ENOUGH. eapply FA1. }
+      unfold s'. rewrite <- subst_compose_frm_spec. eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free.
+      unfold subst_compose, one_subst, cons_subst, nil_subst. destruct (eq_dec u x) as [EQ1 | NE1].
+      * subst u. rewrite subst_trm_unfold. destruct (eq_dec chi chi) as [EQ2 | NE2]; try done.
+      * eapply subst_nil_trm. intros w w_free. destruct (eq_dec w chi) as [EQ2 | NE2]; [subst w | reflexivity]. 
+        assert (claim1 : is_free_in_frm u (All_frm x p) = true).
+        { simpl. rewrite andb_true_iff, negb_true_iff, Nat.eqb_neq. split; trivial. }
+        apply chi_frm_not_free with (s := s) (p := All_frm x p) in claim1. subst chi. done.
+    + simpl. eapply empty_proof_intro. set (chi := chi_frm s (All_frm x p)).
+      replace (All_frm chi (subst_frm (cons_subst x (Var_trm chi) s) p)) with (All_frm chi (subst_frm s p)).
+      * eapply FA2. red. rewrite <- frm_is_fresh_in_subst_iff. unfold frm_is_fresh_in_subst.
+        rewrite forallb_forall. intros u u_free. unfold B.compose. rewrite negb_true_iff. rewrite fv_is_free_in_frm in u_free.
+        eapply chi_frm_not_free. simpl. rewrite andb_true_iff, negb_true_iff, Nat.eqb_neq. split; trivial.
+        intros CONTRA. subst u. red in NOT_FREE. done.
+      * f_equal. eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free.
+        unfold cons_subst. destruct (eq_dec u x) as [EQ1 | NE1]; trivial. subst u. red in NOT_FREE. done.
+    + set (n := 1 + last_ivar_frm (Imp_frm (All_frm x (Imp_frm p q)) (Imp_frm (All_frm x p) (All_frm x q)))).
+      replace (subst_frm s (Imp_frm (All_frm x (Imp_frm p q)) (Imp_frm (All_frm x p) (All_frm x q)))) with (subst_frm (fun z : ivar => if le_lt_dec n z then Var_trm z else s z) (Imp_frm (All_frm x (Imp_frm p q)) (Imp_frm (All_frm x p) (All_frm x q)))).
+      * eapply for_Imp_E. eapply subst_frm_close_frm. clearbody n. induction n as [ | n IH]; simpl; i.
+        { eapply empty_proof_intro. eapply FA3. }
+        { eapply for_All_I. done. exact IH. }
+      * eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free. destruct (le_lt_dec n u) as [LE | LT]; trivial.
+        pose proof (claim1 := @last_ivar_frm_gt L (Imp_frm (All_frm x (Imp_frm p q)) (Imp_frm (All_frm x p) (All_frm x q))) u). done.
+    + simpl. eapply proves_reflexivity.
+    + pose (n := 2). replace (subst_frm s (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Eqn_frm (Var_trm 1) (Var_trm 0)))) with (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else s x) (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Eqn_frm (Var_trm 1) (Var_trm 0)))).
+      * eapply for_Imp_E. eapply subst_frm_close_frm.
+        simpl. eapply for_All_I. done. eapply for_All_I. done. eapply empty_proof_intro. eapply EQN_SYM.
+      * eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free. simpl in u_free. repeat rewrite is_free_in_trm_unfold in u_free. repeat rewrite orb_true_iff in u_free. repeat rewrite Nat.eqb_eq in u_free.
+        destruct (le_lt_dec n u) as [LE | LT]; done.
+    + pose (n := 3). replace (subst_frm s (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Imp_frm (Eqn_frm (Var_trm 1) (Var_trm 2)) (Eqn_frm (Var_trm 0) (Var_trm 2))))) with (subst_frm (fun x : ivar => if le_lt_dec n x then Var_trm x else s x) (Imp_frm (Eqn_frm (Var_trm 0) (Var_trm 1)) (Imp_frm (Eqn_frm (Var_trm 1) (Var_trm 2)) (Eqn_frm (Var_trm 0) (Var_trm 2))))).
+      * eapply for_Imp_E. eapply subst_frm_close_frm.
+        simpl. eapply for_All_I. done. eapply for_All_I. done. eapply for_All_I. done. eapply empty_proof_intro. eapply EQN_TRANS.
+      * eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free. simpl in u_free. repeat rewrite is_free_in_trm_unfold in u_free. repeat rewrite orb_true_iff in u_free. repeat rewrite Nat.eqb_eq in u_free.
+        destruct (le_lt_dec n u) as [LE | LT]; done.
+    + set (m := L.(function_arity_table) f). replace (subst_frm s (Fun_eqAxm f)) with (subst_frm (fun x : ivar => if le_lt_dec (m + m) x then Var_trm x else s x) (Fun_eqAxm f)).
+      * eapply for_Imp_E. eapply subst_frm_close_frm.
+        clearbody m. induction (m + m) as [ | n IH]; simpl; i.
+        { eapply empty_proof_intro. eapply EQN_FUN. }
+        { eapply for_All_I. done. exact IH. }
+      * eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free.
+        destruct (le_lt_dec (m + m) u) as [LE1 | LT1]; trivial. rewrite Fun_eqAxm_free_vars in u_free. done.
+    + set (m := L.(relation_arity_table) R). replace (subst_frm s (Rel_eqAxm R)) with (subst_frm (fun x : ivar => if le_lt_dec (m + m) x then Var_trm x else s x) (Rel_eqAxm R)).
+      * eapply for_Imp_E. eapply subst_frm_close_frm.
+        clearbody m. induction (m + m) as [ | n IH]; simpl; i.
+        { eapply empty_proof_intro. eapply EQN_REL. }
+        { eapply for_All_I. done. exact IH. }
+      * eapply equiv_subst_in_frm_implies_subst_frm_same. intros u u_free.
+        destruct (le_lt_dec (m + m) u) as [LE1 | LT1]; trivial. rewrite Rel_eqAxm_free_vars in u_free. done.
+  - eapply for_Imp_E with (p := subst_frm s q).
+    + change (E.image (subst_frm s) Gamma \proves subst_frm s (Imp_frm q p)). eapply IH.
+      * intros p' H_in. rewrite E.in_finite_iff in H_in. eapply INCL. rewrite E.in_finite_iff. simpl. right. exact H_in.
+      * rewrite Deduction_theorem. eapply extend_proves with (Gamma := E.finite (q :: ps)).
+        { intros p' H_in. rewrite E.in_finite_iff in H_in. simpl in H_in. destruct H_in as [-> | H_in].
+          - left. reflexivity.
+          - right. rewrite E.in_finite_iff. exact H_in.
+        }
+        { exact PROVE. }
+    + eapply for_ByHyp. rewrite E.in_image_iff. exists q. split; trivial. eapply INCL. rewrite E.in_finite_iff. simpl. left. trivial.
+Qed.
+
 End HILBERT_PROOF_SYSTEM.
