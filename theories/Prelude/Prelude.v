@@ -1250,6 +1250,21 @@ Proof.
     + eapply IH.
 Qed.
 
+Definition ext_eq_as_finset {A : Type} (xs1 : list A) (xs2 : list A) : Prop :=
+  forall x : A, L.In x xs1 <-> L.In x xs2.
+
+#[global]
+Instance ext_eq_as_finset_Equivalence {A : Type} : Equivalence (@ext_eq_as_finset A) :=
+  relation_on_image_liftsEquivalence (arrow_isSetoid {| eqProp := iff; eqProp_Equivalence := iff_equivalence |}).(eqProp_Equivalence) (fun xs : list A => fun x : A => L.In x xs).
+
+#[global]
+Add Parametric Morphism {A : Type}
+  : (@L.In A) with signature (eq ==> ext_eq_as_finset ==> iff)
+  as ext_eq_as_finset_compatWith_In.
+Proof.
+  intros p ps1 ps2 INFERS. red in INFERS. exact (INFERS p).
+Qed.
+
 Definition finsubset {A : Type} (xs : list A) (X : ensemble A) : Prop :=
   forall x : A, L.In x xs -> E.elem x X.
 
