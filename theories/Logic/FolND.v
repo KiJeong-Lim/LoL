@@ -77,12 +77,48 @@ Proof.
   now split; eapply claim1.
 Qed.
 
-Lemma generalized_weakening eta ps ps' p
-  (SUBSET : forall q, L.In q ps -> L.In q ps')
-  (INFERS : ps ⊢ p)
-  : L.map (rename_frm eta) ps' ⊢ rename_frm eta p.
+(* Fixpoint generalized_weakening ps p (INFERS : ps ⊢ p) {struct INFERS}
+  : forall eta, (exists eta' : renaming, forall z, rename_var eta' (rename_var eta z) = z) -> forall ps', (forall q, L.In q ps -> L.In q ps') -> L.map (rename_frm eta) ps' ⊢ rename_frm eta p.
 Proof.
+  destruct INFERS; simpl; intros eta eta_inj ps' SUBSET.
+  - eapply By_hyp. eapply L.in_map_iff. done.
+  - eapply Eqn_I.
+  - rewrite -> rename_frm_one_subst. 2: now eapply eta_inj_upgrade_once. eapply Eqn_E with (t1 := rename_trm eta t1).
+    + eapply generalized_weakening with (p := Eqn_frm t1 t2). exact INFERS1. trivial. trivial.
+    + rewrite <- rename_frm_one_subst. 2: now eapply eta_inj_upgrade_once. eapply generalized_weakening. exact INFERS2. trivial. trivial.
+  - eapply All_I with (y := ?[z]).
+    + intros q q_in. rewrite L.in_map_iff in q_in. destruct q_in as (q'&<-&H_in).
+      admit.
+    + admit.
+    + admit.
+  - rewrite -> rename_frm_one_subst. 2: now eapply eta_inj_upgrade_once. eapply All_E.
+
+  - eapply Neg_I with (p2 := ?[p2]).
+    + change (L.map (rename_frm eta) (p1 :: ps') ⊢ ?p2). eapply generalized_weakening. exact INFERS1. trivial.
+      intros q q_in. simpl in *. destruct q_in as [<- | q_in]; [left | right]; done.
+    + change (L.map (rename_frm eta) (p1 :: ps') ⊢ rename_frm eta (Neg_frm p2)). eapply generalized_weakening. exact INFERS2. trivial.
+      intros q q_in. simpl in *. destruct q_in as [<- | q_in]; [left | right]; done.
+  - eapply Neg_E with (p1 := ?[p1]).
+    + eapply generalized_weakening. eapply INFERS1. trivial. trivial.
+    + change (L.map (rename_frm eta) ps' ⊢ rename_frm eta (Neg_frm p1)). eapply generalized_weakening. exact INFERS2. trivial. trivial.
+  - eapply Imp_I. change (L.map (rename_frm eta) (p1 :: ps') ⊢ rename_frm eta p2). eapply generalized_weakening. exact INFERS. trivial.
+    intros q q_in. simpl in *. destruct q_in as [<- | q_in]; [left | right]; done.
+  - eapply Imp_E with (p1 := rename_frm eta p1).
+    + change (L.map (rename_frm eta) ps' ⊢ rename_frm eta (Imp_frm p1 p2)). eapply generalized_weakening. exact INFERS1. trivial. trivial.
+    + eapply generalized_weakening. exact INFERS2. trivial. trivial.
 Abort.
+
+(* Fixpoint weakening ps p (INFERS : ps ⊢ p) {struct INFERS}
+  : forall ps', (forall q, L.In q ps -> L.In q ps') -> ps' ⊢ p.
+Proof.
+  destruct INFERS; intros ps' SUBSET.
+  - eapply By_hyp. eapply SUBSET. exact IN.
+  - eapply Eqn_I.
+  - eapply Eqn_E with (t1 := t1).
+    + eapply weakening. exact INFERS1. exact SUBSET.
+    + eapply weakening. exact INFERS2. exact SUBSET.
+  - eapply All_I with (y := y).
+Abort. *) *)
 
 Theorem extend_infers ps ps' p
   (SUBSET : forall q, L.In q ps -> L.In q ps')

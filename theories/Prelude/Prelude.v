@@ -307,6 +307,15 @@ Instance nat_hasEqDec : hasEqDec nat :=
   Nat.eq_dec.
 
 #[global]
+Instance pair_hasEqdec {A : Type} {B : Type}
+  `(A_hasEqDec : hasEqDec A)
+  `(B_hasEqDec : hasEqDec B)
+  : hasEqDec (A * B).
+Proof.
+  red in A_hasEqDec, B_hasEqDec. red. decide equality.
+Defined.
+
+#[global]
 Instance option_hasEqDec {A : Type}
   `(EQ_DEC : hasEqDec A)
   : hasEqDec (option A).

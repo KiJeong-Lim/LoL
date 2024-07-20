@@ -12,6 +12,12 @@ Definition ivar : Set := nat.
 
 Definition renaming : Set := list (ivar * ivar).
 
+Fixpoint rename_var (eta : renaming) (x : ivar) : ivar := 
+  match eta with
+  | [] => x
+  | (x', y) :: eta' => if eq_dec x x' then y else rename_var eta' x
+  end.
+
 Let arity : Set := nat.
 
 #[projections(primitive)]
@@ -1206,7 +1212,7 @@ Section RENAMING.
 
 Fixpoint rename_trm (eta : renaming) (t : trm) : trm :=
   match t with
-  | Var_trm x => B.maybe t Var_trm (L.lookup x eta)
+  | Var_trm x => Var_trm (rename_var eta x)
   | Fun_trm f ts => Fun_trm f (rename_trms eta ts)
   | Con_trm c => Con_trm c
   end
@@ -1224,6 +1230,40 @@ Fixpoint rename_frm (eta : renaming) (p : frm) : frm :=
   | Imp_frm p1 p2 => Imp_frm (rename_frm eta p1) (rename_frm eta p2)
   | All_frm y p1 => All_frm y (rename_frm ((y, y) :: eta) p1)
   end.
+
+Lemma rename_trm_nil (t : trm) eta
+  (eta_trivial : forall x, forall y, L.In (x, y) eta -> x = y)
+  : rename_trm eta t = t
+with rename_trms_nil n (ts : trms n) eta
+  (eta_trivial : forall x, forall y, L.In (x, y) eta -> x = y)
+  : rename_trms eta ts = ts.
+Proof.
+  - trm_ind t.
+    + simpl. f_equal. induction eta as [ | [x' y] eta IH]; simpl; i.
+      * reflexivity.
+      * destruct (eq_dec x x') as [EQ | NE].
+        { symmetry. eapply eta_trivial. subst x'. left. reflexivity. }
+        { eapply IH. intros x'' y' H_in. eapply eta_trivial. right. exact H_in. }
+    + simpl. f_equal. eapply rename_trms_nil; trivial.
+    + reflexivity.
+  - trms_ind ts.
+    + reflexivity.
+    + simpl. f_equal.
+      * eapply rename_trm_nil; trivial.
+      * exact IH; trivial.
+Qed.
+
+Lemma rename_frm_nil (p : frm) eta
+  (eta_trivial : forall x, forall y, L.In (x, y) eta -> x = y)
+  : rename_frm eta p = p.
+Proof.
+  revert eta eta_trivial. frm_ind p; simpl; i.
+  - f_equal. eapply rename_trms_nil; trivial.
+  - f_equal; eapply rename_trm_nil; trivial.
+  - f_equal. eapply IH1; trivial.
+  - f_equal; [eapply IH1 | eapply IH2]; trivial.
+  - f_equal. eapply IH1. intros x' y'. simpl. intros [EQ | H_in]; done.
+Qed.
 
 End RENAMING.
 
@@ -1956,6 +1996,9 @@ Definition Iff_frm (p1 : frm) (p2 : frm) : frm :=
 
 Definition Exs_frm (y : ivar) (p1 : frm) : frm :=
   Neg_frm (All_frm y (Neg_frm p1)).
+
+Definition is_sentence (p : frm) : Prop :=
+  forall z : ivar, is_not_free_in_frm z p.
 
 End SYNTAX.
 
