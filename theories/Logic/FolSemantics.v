@@ -337,9 +337,9 @@ Proof.
   - ii. eapply H. done.
 Qed.
 
-Lemma extend_entails {L : language} (Gamma: ensemble (@frm L)) (Gamma': ensemble (@frm L)) (C: frm L)
-  (ENTAILS: Gamma ⊧ C)
-  (SUBSET: Gamma \subseteq Gamma')
+Lemma extend_entails {L : language} (Gamma : ensemble (@frm L)) (Gamma' : ensemble (@frm L)) (C : frm L)
+  (ENTAILS : Gamma ⊧ C)
+  (SUBSET : Gamma \subseteq Gamma')
   : Gamma' ⊧ C.
 Proof.
   ii. eapply ENTAILS. done.
