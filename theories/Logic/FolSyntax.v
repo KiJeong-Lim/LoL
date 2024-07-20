@@ -1202,6 +1202,31 @@ Qed.
 
 End SUBSTITUTION.
 
+Section RENAMING.
+
+Fixpoint rename_trm (eta : renaming) (t : trm) : trm :=
+  match t with
+  | Var_trm x => B.maybe t Var_trm (L.lookup x eta)
+  | Fun_trm f ts => Fun_trm f (rename_trms eta ts)
+  | Con_trm c => Con_trm c
+  end
+with rename_trms {n : nat} (eta : renaming) (ts : trms n) : trms n :=
+  match ts with
+  | O_trms => O_trms
+  | S_trms _ t ts => S_trms _ (rename_trm eta t) (rename_trms eta ts)
+  end.
+
+Fixpoint rename_frm (eta : renaming) (p : frm) : frm :=
+  match p with
+  | Rel_frm R ts => Rel_frm R (rename_trms eta ts)
+  | Eqn_frm t1 t2 => Eqn_frm (rename_trm eta t1) (rename_trm eta t2)
+  | Neg_frm p1 => Neg_frm (rename_frm eta p1)
+  | Imp_frm p1 p2 => Imp_frm (rename_frm eta p1) (rename_frm eta p2)
+  | All_frm y p1 => All_frm y (rename_frm ((y, y) :: eta) p1)
+  end.
+
+End RENAMING.
+
 Section ALPHA. (* Reference: "https://github.com/ernius/formalmetatheory-stoughton/blob/master/Alpha.lagda" *)
 
 Inductive alpha_equiv : frm -> frm -> Prop :=

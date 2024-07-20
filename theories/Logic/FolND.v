@@ -77,6 +77,13 @@ Proof.
   now split; eapply claim1.
 Qed.
 
+Lemma generalized_weakening eta ps ps' p
+  (SUBSET : forall q, L.In q ps -> L.In q ps')
+  (INFERS : ps ⊢ p)
+  : L.map (rename_frm eta) ps' ⊢ rename_frm eta p.
+Proof.
+Abort.
+
 Theorem extend_infers ps ps' p
   (SUBSET : forall q, L.In q ps -> L.In q ps')
   (INFERS : ps ⊢ p)

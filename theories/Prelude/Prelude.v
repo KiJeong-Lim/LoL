@@ -1265,6 +1265,12 @@ Proof.
   intros p ps1 ps2 INFERS. red in INFERS. exact (INFERS p).
 Qed.
 
+Fixpoint lookup {A : Type} {B : Type} {EQ_DEC : hasEqDec A} (x : A) (zs : list (A * B)) : option B :=
+  match zs with
+  | [] => None
+  | (x', y) :: zs' => if eq_dec x x' then Some y else lookup x zs'
+  end.
+
 Definition finsubset {A : Type} (xs : list A) (X : ensemble A) : Prop :=
   forall x : A, L.In x xs -> E.elem x X.
 
