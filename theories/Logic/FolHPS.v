@@ -1947,6 +1947,13 @@ Section SIMILARITY.
 #[local] Infix "=~=" := is_similar_to : type_scope.
 #[local] Infix "\proves" := proves : type_scope.
 
+(* Reference: "Constructive Completeness Proofs and Delimited Control" written by "Danko Ilik"
+** Fact 1.3.2. "Given a derivation Γ ⊢ A, we can replace a constant c with a fresh variable x, obtaining a derivation Γ{x/c} ⊢ A{x/c}."
+** =====================================================================================================================================
+** <==?==> "Γ(c) ⊢ A(c) ===> Γ(x) ⊢ A(x)" with "x" fresh [just a opinion of mine -- may or may not be true]
+** <==?==> "Γ[x := c] ⊢ A[x := c] ===> Γ ⊢ A"            [just a opinion of mine -- may or may not be true]
+*)
+
 #[local] Existing Instance trm_similarity_instance.
 #[local] Existing Instance trms_similarity_instance.
 #[local] Existing Instance frm_similarity_instance.
