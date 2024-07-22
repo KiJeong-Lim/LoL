@@ -13,7 +13,7 @@ Inductive bit : Set :=
 Definition t : Set :=
   list bit.
 
-Notation pos := POS.t.
+#[local] Notation pos := POS.t.
 
 Definition to_nat (p : pos) : nat :=
   L.fold_left (fun i => bit_rec _ (i * 2) (i * 2 + 1)) p 1.
@@ -33,14 +33,14 @@ Proof with lia || eauto.
   revert to_nat_EQ. unfold to_nat; do 2 rewrite <- fold_left_rev_right.
   intros to_nat_EQ; eapply L.rev_inj; revert to_nat_EQ.
   generalize (rev p2) as bs2. generalize (rev p1) as bs1. clear p1 p2.
-  set (myF := fold_right (fun d => fun i => bit_rec _ (i * 2) (i * 2 + 1) d) 1).
-  assert (claim : forall bs, myF bs > 0).
+  set (f := fold_right (fun d => fun i => bit_rec _ (i * 2) (i * 2 + 1) d) 1).
+  assert (claim : forall bs, f bs > 0).
   { induction bs as [ | b bs IH]... simpl... destruct b as [ | ]; simpl bit_rec... }
   induction bs1 as [ | b1 bs1 IH], bs2 as [ | b2 bs2]; simpl...
   - destruct b2; simpl bit_rec... pose proof (claim bs2)...
   - destruct b1; simpl bit_rec... pose proof (claim bs1)...
   - destruct b1, b2; simpl bit_rec...
-    all: intros ?; assert (claim1 : myF bs1 = myF bs2)...
+    all: intros ?; assert (claim1 : f bs1 = f bs2)...
     all: f_equal...
 Qed.
 
