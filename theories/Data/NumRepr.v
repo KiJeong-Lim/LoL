@@ -287,7 +287,7 @@ Theorem of_nat_to_nat_norm (n : N10)
 Proof.
   induction n as [ | [ | | | | | | | | | ] n IH]; eauto.
   all: simpl; replace (to_nat n + (to_nat n + (to_nat n + (to_nat n + (to_nat n + (to_nat n + (to_nat n + (to_nat n + (to_nat n + (to_nat n + 0)))))))))) with (to_nat n * 10) by lia.
-  all: destruct (norm n) as [ | d n'] eqn: H_OBS; [apply of_nat_returns_nil_iff in IH; rewrite <- IH; reflexivity | rewrite -> of_nat_to_nat_10_times; [now rewrite IH | now rewrite H_OBS]].
+  all: destruct (norm n) as [ | d n'] eqn: H_OBS; [rewrite of_nat_returns_nil_iff in IH; rewrite <- IH; reflexivity | rewrite -> of_nat_to_nat_10_times; [now rewrite IH | now rewrite H_OBS]].
 Qed.
 
 Corollary N10_eq_thm (lhs : N10) (rhs : N10)

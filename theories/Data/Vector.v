@@ -603,14 +603,12 @@ Qed.
 
 End V.
 
-#[global]
-Tactic Notation "introVNil" :=
+Ltac introVNil :=
   let xs := fresh "xs" in
   intro xs; pattern xs; revert xs;
   apply V.case0.
 
-#[global]
-Tactic Notation "introVCons" ident( x' ) ident( xs' ) :=
+Ltac introVCons x' xs' :=
   let xs := fresh "xs" in
   intro xs; pattern xs; revert xs;
   apply V.caseS; intros x' xs'.
