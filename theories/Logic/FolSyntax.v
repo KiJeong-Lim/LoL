@@ -2110,22 +2110,18 @@ Definition mkL_with_constant_symbols (_constant_symbols : Set) : language :=
     relation_arity_table := _relation_arity_table;
   |}.
 
-Variable _constant_symbols : Set.
-
-Let L : language := mkL_with_constant_symbols _constant_symbols.
+Context (_constant_symbols : Set) (L := mkL_with_constant_symbols _constant_symbols).
 
 Section GENERAL_CASE.
 
-Variable _constant_symbols' : Set.
-
-Let L' : language := mkL_with_constant_symbols _constant_symbols'.
+Context (_constant_symbols' : Set) (L' := mkL_with_constant_symbols _constant_symbols').
 
 Hypothesis constant_symbols_similarity : Similarity _constant_symbols _constant_symbols'.
 
 Inductive trm_similarity : Similarity (trm L) (trm L') :=
   | Var_sim (x : ivar)
     : @Var_trm L x =~= @Var_trm L' x
-  | Fun_sim (f : _function_symbols) (ts : trms L (L.(function_arity_table) f)) (ts' : trms L' (L.(function_arity_table) f))
+  | Fun_sim (f : _function_symbols) (ts : trms L (L.(function_arity_table) f)) (ts' : trms L' (L'.(function_arity_table) f))
     (ts_SIM : ts =~= ts')
     : @Fun_trm L f ts =~= @Fun_trm L' f ts'
   | Con_sim (c : _constant_symbols) (c' : _constant_symbols')
@@ -2146,7 +2142,7 @@ with trms_similarity : forall n : arity, Similarity (trms L n) (trms L' n) :=
   trms_similarity n.
 
 Inductive frm_similarity : Similarity (frm L) (frm L') :=
-  | Rel_sim (R : _relation_symbols) (ts : trms L (L.(relation_arity_table) R)) (ts' : trms L' (L.(relation_arity_table) R))
+  | Rel_sim (R : _relation_symbols) (ts : trms L (L.(relation_arity_table) R)) (ts' : trms L' (L'.(relation_arity_table) R))
     (ts_SIM : ts =~= ts')
     : @Rel_frm L R ts =~= @Rel_frm L' R ts'
   | Eqn_sim (t1 : trm L) (t1' : trm L') (t2 : trm L) (t2' : trm L')
@@ -2202,6 +2198,69 @@ Proof with try done.
   induction p_SIM; simpl...
   - eapply fvs_trms_compat_similarity...
   - f_equal; eapply fvs_trm_compat_similarity...
+Qed.
+
+Lemma subst_trm_compat_similarity (s : subst L) (s' : subst L') (t : trm L) (t' : trm L')
+  (s_SIM : s =~= s')
+  (t_SIM : t =~= t')
+  : subst_trm s t =~= subst_trm s' t'
+with subst_trms_compat_similarity n (s : subst L) (s' : subst L') (ts : trms L n) (ts' : trms L' n)
+  (s_SIM : s =~= s')
+  (ts_SIM : ts =~= ts')
+  : subst_trms s ts =~= subst_trms s' ts'.
+Proof with eauto with *.
+  - red in t_SIM. induction t_SIM.
+    + cbn. eapply s_SIM.
+    + do 2 rewrite subst_trm_unfold. econstructor 2.
+      eapply subst_trms_compat_similarity. exact s_SIM. exact ts_SIM.
+    + econstructor 3. exact c_SIM.
+  - revert s s' s_SIM. induction ts_SIM; simpl; ii.
+    + econstructor 1.
+    + rewrite subst_trms_unfold.
+      replace (subst_trms s (S_trms n t ts)) with (@S_trms L n (subst_trm s t) (subst_trms s ts)) by reflexivity.
+      econstructor 2.
+      * eapply subst_trm_compat_similarity. exact s_SIM. exact t_SIM.
+      * eapply IHts_SIM. exact s_SIM.
+Qed.
+
+Lemma chi_frm_compat_similarity (s : subst L) (s' : subst L') (p : frm L) (p' : frm L')
+  (s_SIM : s =~= s')
+  (p_SIM : p =~= p')
+  : chi_frm s p = chi_frm s' p'.
+Proof with eauto with *.
+  unfold chi_frm. simpl. f_equal. eapply maxs_ext. intros n. unfold "∘".
+  split; intros H_in; eapply in_map_iff; apply in_map_iff in H_in; destruct H_in as [x [<- H_in]].
+  - exists x. split.
+    + unfold last_ivar_trm. eapply maxs_ext.
+      pose proof (s_SIM x) as SIM. i.
+      enough (ENOUGH : fvs_trm (s x) = fvs_trm (s' x)) by now rewrite ENOUGH.
+      eapply fvs_trm_compat_similarity...
+    + replace (fvs_frm p') with (fvs_frm p)...
+      eapply fvs_frm_compat_similarity...
+  - exists x. split.
+    + unfold last_ivar_trm. eapply maxs_ext.
+      pose proof (s_SIM x) as SIM. i.
+      enough (ENOUGH : fvs_trm (s x) = fvs_trm (s' x)) by now rewrite ENOUGH.
+      eapply fvs_trm_compat_similarity...
+    + replace (fvs_frm p) with (fvs_frm p')...
+      symmetry. eapply fvs_frm_compat_similarity...
+Qed.
+
+Lemma subst_frm_compat_simliarity (s : subst L) (s' : subst L') (p : frm L) (p' : frm L')
+  (s_SIM : s =~= s')
+  (p_SIM : p =~= p')
+  : @subst_frm L s p =~= @subst_frm L' s' p'.
+Proof with try done.
+  revert s' s s_SIM. induction p_SIM; simpl; i.
+  - econstructor 1. eapply subst_trms_compat_similarity...
+  - econstructor 2; eapply subst_trm_compat_similarity...
+  - econstructor 3...
+  - econstructor 4...
+  - assert (claim1 : chi_frm s (All_frm y p1) = chi_frm s' (All_frm y p1')).
+    { eapply chi_frm_compat_similarity... eapply All_sim... }
+    rewrite claim1. eapply All_sim. eapply IHp_SIM.
+    ii. unfold cons_subst. pose proof (s_SIM z) as claim2.
+    destruct (eq_dec z y)... subst z. econstructor.
 Qed.
 
 End GENERAL_CASE.

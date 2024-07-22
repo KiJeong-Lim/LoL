@@ -1941,3 +1941,28 @@ Proof.
 Qed.
 
 End HILBERT_PROOF_SYSTEM.
+
+Section SIMILARITY.
+
+#[local] Infix "=~=" := is_similar_to : type_scope.
+#[local] Infix "\proves" := proves : type_scope.
+
+#[local] Existing Instance trm_similarity_instance.
+#[local] Existing Instance trms_similarity_instance.
+#[local] Existing Instance frm_similarity_instance.
+#[local] Existing Instance frms_similarity_instance.
+#[local] Existing Instance subst_similarity_instance.
+
+Variable _function_symbols : Set.
+Variable _relation_symbols : Set.
+Variable _constant_symbols : Set.
+Variable _constant_symbols' : Set.
+Variable _function_arity_table : _function_symbols -> nat.
+Variable _relation_arity_table : _relation_symbols -> nat.
+
+Let L : language := mkL_with_constant_symbols _function_symbols _relation_symbols _function_arity_table _relation_arity_table _constant_symbols.
+Let L' : language := mkL_with_constant_symbols _function_symbols _relation_symbols _function_arity_table _relation_arity_table _constant_symbols'.
+
+Hypothesis constant_symbols_similarity : Similarity _constant_symbols _constant_symbols'.
+
+End SIMILARITY.
