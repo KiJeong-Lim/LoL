@@ -110,7 +110,7 @@ Definition liftM2 {M : Type -> Type} {A : Type} {B : Type} {C : Type} `{MONAD : 
   bind mx (fun x : A => bind my (fun y : B => pure (f x y))).
 
 #[universes(polymorphic=yes)]
-Definition binary_relation_on_image@{dom_lv cod_lv} {dom: Type@{dom_lv}} {cod: Type@{cod_lv}} (bin_rel: cod -> cod -> Prop) (f: dom -> cod) (lhs: dom) (rhs: dom) : Prop :=
+Definition binary_relation_on_image@{dom_lv cod_lv} {dom : Type@{dom_lv}} {cod : Type@{cod_lv}} (bin_rel : cod -> cod -> Prop) (f : dom -> cod) (lhs : dom) (rhs : dom) : Prop :=
   bin_rel (f lhs) (f rhs).
 
 Section IDENTITY.
